@@ -41,7 +41,7 @@ export default function Home() {
   return (
     <div className="pb-10 w-full">
       {/* Header */}
-      <div className="glass-panel rounded-none border-x-0 border-t-0 p-4 sticky top-0 z-50">
+      <div className="solid-header p-4">
         <div className="max-w-[600px] mx-auto">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-3">

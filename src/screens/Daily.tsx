@@ -129,7 +129,7 @@ export default function Daily() {
         onConfirm={() => navigate('home')} 
         onCancel={() => setShowConfirm(false)} 
       />
-      <div className="glass-panel rounded-none border-x-0 border-t-0 p-4 sticky top-0 z-50">
+      <div className="solid-header p-4">
         <div className="max-w-[600px] mx-auto flex items-center justify-between mb-3">
           <button onClick={() => setShowConfirm(true)} className="text-slate-400 hover:text-white text-sm font-bold transition-colors">✕ ПРЕРВАТЬ</button>
           <div className="font-mono font-bold text-lg text-brand-amber">

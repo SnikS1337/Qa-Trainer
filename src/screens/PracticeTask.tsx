@@ -303,7 +303,7 @@ export default function PracticeTask({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <div className="glass-panel rounded-none border-x-0 border-t-0 p-3 sticky top-0 z-50">
+      <div className="solid-header p-3">
         <div className="max-w-[600px] mx-auto flex items-center gap-3">
           <button onClick={() => navigate('practice')} className="text-slate-300 text-xl p-1 hover:text-white transition-colors">✕</button>
           <div className="flex-1 bg-black/30 border border-white/5 rounded-full h-2.5 overflow-hidden">

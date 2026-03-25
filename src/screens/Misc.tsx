@@ -1,7 +1,7 @@
 import { useAppStore, initialState } from '../store';
 import { QUOTES, LESSONS, ACHIEVEMENTS } from '../data';
 import { getLevelInfo } from '../utils';
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { useMemo, useRef, useEffect, useState, FormEvent } from 'react';
 import ConfirmModal from '../components/ConfirmModal';
 
 export function Splash() {
@@ -143,16 +143,47 @@ export function Certificate() {
   const { state, updateState, navigate, showToast } = useAppStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [name, setName] = useState(state.certName || '');
+  const [debugUnlocked, setDebugUnlocked] = useState(false);
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [passInput, setPassInput] = useState('');
+  const [holdTimer, setHoldTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const done = BASE_LESSONS.filter(id => state.completedLessons.includes(id));
   const allDone = done.length >= BASE_LESSONS.length;
   const isCheater = state.isCheater;
 
+  const handlePointerDown = () => {
+    if (debugUnlocked) return;
+    const timer = setTimeout(() => {
+      setShowPassModal(true);
+    }, 5000);
+    setHoldTimer(timer);
+  };
+
+  const handlePointerUp = () => {
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      setHoldTimer(null);
+    }
+  };
+
+  const handlePassSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (passInput === 'cert') {
+      setDebugUnlocked(true);
+      setShowPassModal(false);
+      showToast('Debug: Сертификат разблокирован', 'text-brand-blue');
+    } else {
+      showToast('Неверный пароль', 'text-brand-red');
+    }
+    setPassInput('');
+  };
+
   useEffect(() => {
-    if (allDone && !isCheater && canvasRef.current) {
+    if (((allDone && !isCheater) || debugUnlocked) && canvasRef.current) {
       drawCertificate(name || 'Твоё имя');
     }
-  }, [name, allDone, isCheater, state]);
+  }, [name, allDone, isCheater, state, debugUnlocked]);
 
   const drawCertificate = (certName: string) => {
     const canvas = canvasRef.current;
@@ -289,9 +320,16 @@ export function Certificate() {
         <h2 className="text-[22px] font-extrabold text-white">🎓 Сертификат</h2>
       </div>
 
-      {!allDone || isCheater ? (
+      {!allDone || (isCheater && !debugUnlocked) ? (
         <div className="text-center py-10 px-5 glass-panel border-dashed">
-          <div className="text-5xl mb-4 grayscale">🎓</div>
+          <div 
+            className="text-5xl mb-4 grayscale cursor-help select-none"
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+          >
+            🎓
+          </div>
           <div className="text-base font-bold mb-2 text-white">Сертификат заблокирован</div>
           {isCheater ? (
             <div className="text-[13px] text-brand-red leading-relaxed">Выдача сертификата невозможна, так как использовалось меню разработчика (накрутка опыта или открытие уроков).</div>
@@ -301,12 +339,41 @@ export function Certificate() {
               <div className="mt-4 text-[13px] text-brand-green font-mono">Прогресс: {done.length} / {BASE_LESSONS.length} уроков</div>
             </>
           )}
+
+          {showPassModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <div className="glass-panel p-6 max-w-[320px] w-full">
+                <h3 className="text-xl font-extrabold mb-4 text-white">Debug Access</h3>
+                <form onSubmit={handlePassSubmit}>
+                  <input 
+                    type="password" 
+                    value={passInput}
+                    onChange={e => setPassInput(e.target.value)}
+                    placeholder="Пароль"
+                    className="glass-input w-full p-3 mb-4"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setShowPassModal(false)} className="flex-1 glass-button py-3 text-xs">ОТМЕНА</button>
+                    <button type="submit" className="flex-1 bg-brand-blue/80 text-white font-bold py-3 rounded-xl text-xs">ОК</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div>
-          <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
-            ✅ Все базовые уроки пройдены! Введи своё имя и скачай сертификат.
-          </div>
+          {debugUnlocked && isCheater && (
+            <div className="text-center mb-5 p-3.5 glass-panel border-brand-red/30 bg-brand-red/10 text-[13px] text-brand-red">
+              ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
+            </div>
+          )}
+          {!debugUnlocked && (
+            <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
+              ✅ Все базовые уроки пройдены! Введи своё имя и скачай сертификат.
+            </div>
+          )}
           
           <div className="mb-4">
             <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ТВОЁ ИМЯ</label>
@@ -328,8 +395,12 @@ export function Certificate() {
             <canvas ref={canvasRef} width="800" height="560" className="w-full rounded-2xl border border-white/10 block shadow-xl"></canvas>
           </div>
           
-          <button className="w-full bg-brand-green/80 hover:bg-brand-green backdrop-blur-md border border-brand-green/50 text-white font-bold py-4 rounded-xl text-[15px] transition-colors" onClick={handleDownload}>
-            ⬇️ Скачать сертификат (PNG)
+          <button 
+            disabled={isCheater}
+            className={`w-full font-bold py-4 rounded-xl text-[15px] transition-all backdrop-blur-md border ${isCheater ? 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed grayscale' : 'bg-brand-green/80 hover:bg-brand-green border-brand-green/50 text-white'}`}
+            onClick={handleDownload}
+          >
+            {isCheater ? '🚫 Скачивание заблокировано (читы)' : '⬇️ Скачать сертификат (PNG)'}
           </button>
         </div>
       )}
