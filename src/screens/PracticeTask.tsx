@@ -15,7 +15,22 @@ export default function PracticeTask({ id }: { id: string }) {
   const [correctCount, setCorrectCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  if (!task) return null;
+  if (!task) {
+    return (
+      <div className="max-w-[600px] mx-auto p-6 pb-10 w-full">
+        <div className="flex items-center gap-3 mb-6">
+          <button className="glass-button px-3.5 py-2 text-[13px]" onClick={() => navigate('practice')}>← Назад</button>
+          <h2 className="text-[22px] font-extrabold text-white">🛠️ Практика</h2>
+        </div>
+        <div className="glass-panel p-6 text-center">
+          <div className="text-4xl mb-3">⚠️</div>
+          <div className="text-lg font-extrabold text-white mb-2">Задание не найдено</div>
+          <div className="text-sm text-slate-300 mb-5">Похоже, id задания не передался или устарел. Вернись к списку практики и открой его заново.</div>
+          <button className="glass-button px-5 py-3 text-sm text-white font-bold" onClick={() => navigate('practice')}>Вернуться к практике</button>
+        </div>
+      </div>
+    );
+  }
 
   // Debounced toggle handler to prevent race conditions
   const handleToggleError = useCallback((fieldId: string) => {
