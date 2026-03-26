@@ -266,12 +266,12 @@ export default function Home() {
             <div className="text-center p-5 text-slate-300 text-[13px] leading-relaxed">
               <div 
                 className="text-3xl mb-2 touch-none select-none cursor-pointer"
-                onTouchStart={handleRocketPressStart} 
-                onTouchEnd={handleRocketPressEnd}
-                onTouchCancel={handleRocketPressEnd}
-                onMouseDown={handleRocketPressStart}
-                onMouseUp={handleRocketPressEnd}
-                onMouseLeave={handleRocketPressEnd}
+                onTouchStart={(e) => { e.preventDefault(); handleRocketPressStart(); }}
+                onTouchEnd={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
+                onTouchCancel={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
+                onMouseDown={(e) => { e.preventDefault(); handleRocketPressStart(); }}
+                onMouseUp={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
+                onMouseLeave={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
               >
                 {rocketPressProgress > 0 ? (
                   <div className="relative inline-block">
@@ -285,7 +285,6 @@ export default function Home() {
                   </div>
                 ) : '🚀'}
               </div>
-              <div className="text-xs mt-1 text-slate-400">ержи 3 секунды</div>
               Начни с первого урока! Каждый профессиональный тестировщик начинал именно так.
             </div>
           ) : state.completedLessons.length < LESSONS.length ? (
