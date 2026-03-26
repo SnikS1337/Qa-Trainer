@@ -495,7 +495,7 @@ export function Certificate() {
 
           {showPassModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="glass-panel p-6 w-full max-w-[320px]">
+              <div className="glass-panel p-6 max-w-[400px] w-full sm:max-w-[320px]">
                  <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
                 <form onSubmit={handlePassSubmit}>
                   <input 
@@ -517,21 +517,26 @@ export function Certificate() {
         </div>
       ) : (
         <div>
-          {debugUnlocked && isCheater && (
-            <div className="text-center mb-5 p-3.5 glass-panel border-brand-red/30 bg-brand-red/10 text-[13px] text-brand-red">
-              ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
-            </div>
-          )}
-            {!debugUnlocked && (
-              <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
-                {isCheater 
-                  ? '⚠️ Доступ к сертификату заблокирован из-за использования читов.' 
-                  : (certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.')
-                  || (certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.')
-                  || (certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.')
-                }
-              </div>
-            )}
+           {debugUnlocked && (
+             <div className="text-center mb-5 p-3.5 glass-panel border-brand-amber/30 bg-brand-amber/10 text-[13px] text-brand-amber">
+               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
+             </div>
+           )}
+           {debugUnlocked && (
+             <div className="text-center mb-5 p-3.5 glass-panel border-brand-amber/30 bg-brand-amber/10 text-[13px] text-brand-amber">
+               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
+             </div>
+           )}
+           {!debugUnlocked && (
+             <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
+               {isCheater 
+                 ? '⚠️ Доступ к сертификату заблокирован из-за использования читов.' 
+                 : (certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.')
+                 || (certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.')
+                 || (certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.')
+               }
+             </div>
+           )}
           
           <div className="mb-4">
             <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ТВОЁ ИМЯ</label>
