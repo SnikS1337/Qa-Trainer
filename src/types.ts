@@ -43,8 +43,6 @@ export interface Achievement {
 
 export interface AppState {
   totalXP: number;
-  earnedXP: number; // XP за успешные прохождения
-  penaltyXP: number; // XP за провалы
   completedLessons: string[];
   streak: number;
   maxStreak: number;
@@ -63,7 +61,7 @@ export interface AppState {
   completedPractice: string[];
   certName: string;
   lastActiveDate: string;
-  lessonFailCount: Record<string, number>; // Счетчик провалов по урокам
+  lessonFailCount: Record<string, number>;
   isCheater?: boolean;
   examPassed?: boolean;
 }

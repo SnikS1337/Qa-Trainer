@@ -3,8 +3,6 @@ import { AppState } from './types';
 
 export const initialState: AppState = {
   totalXP: 0, 
-  earnedXP: 0, 
-  penaltyXP: 0, 
   completedLessons: [], 
   streak: 0, 
   maxStreak: 0,

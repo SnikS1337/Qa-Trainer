@@ -49,7 +49,7 @@ export default function App() {
             {screen === 'home' && <motion.div key="home" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Home /></motion.div>}
             {screen === 'lesson' && <motion.div key="lesson" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex"><Lesson id={currentId!} /></motion.div>}
             {screen === 'practice' && <motion.div key="practice" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Practice /></motion.div>}
-            {screen === 'practice-task' && <motion.div key="practice-task" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex"><PracticeTask id={currentId!} /></motion.div>}
+            {screen === 'practice_task' && <motion.div key="practice_task" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex"><PracticeTask id={currentId!} /></motion.div>}
             {screen === 'exam' && <motion.div key="exam" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="flex-1 flex"><Exam /></motion.div>}
             {screen === 'daily' && <motion.div key="daily" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 flex"><Daily /></motion.div>}
             {screen === 'stats' && <motion.div key="stats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Stats /></motion.div>}

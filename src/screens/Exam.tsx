@@ -42,7 +42,6 @@ export default function Exam() {
       updateState(prev => {
         const s = { ...prev };
         s.totalXP += 500;
-        s.earnedXP += 500; // Экзамен всегда дает earnedXP
         if (!s.examPassed) s.examPassed = true;
         
         // Check achievements

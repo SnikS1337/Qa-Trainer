@@ -49,8 +49,6 @@ export default function PracticeTask({ id }: { id: string }) {
     updateState(prev => {
       const s = { ...prev };
       s.totalXP += xp;
-      // Practice всегда дает earnedXP (честный XP)
-      s.earnedXP += xp;
       if (!s.completedPractice) s.completedPractice = [];
       if (passed && !s.completedPractice.includes(task.id)) s.completedPractice.push(task.id);
       checkAchievements(s);

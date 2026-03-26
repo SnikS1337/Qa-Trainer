@@ -56,8 +56,6 @@ export default function Daily() {
     updateState(prev => {
       const s = { ...prev };
       s.totalXP += xpEarned;
-      // Daily всегда дает earnedXP (это честный XP)
-      s.earnedXP += xpEarned;
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
