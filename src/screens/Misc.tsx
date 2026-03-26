@@ -63,7 +63,6 @@ export function Stats() {
           {icon:'🔥', label:'Серия дней', value: state.dailyStreak || 0, color:'text-brand-purple'},
           {icon:'💎', label:'Достижений', value: `${state.unlockedAchievements.length} / ${ACHIEVEMENTS.length}`, color:'text-brand-amber'},
           {icon:'🎯', label:'Точность ответов', value: `${state.totalQuestionsAnswered > 0 ? Math.round((state.totalCorrect / state.totalQuestionsAnswered) * 100) : 0}%`, color:'text-brand-blue'},
-          {icon:'✨', label:'Честный XP', value: `${state.totalXP > 0 ? Math.round((state.earnedXP / state.totalXP) * 100) : 0}%`, color:'text-brand-green'},
         ].map((s, i) => (
           <div key={i} className="glass-panel p-3.5 text-center">
             <div className="text-[22px] mb-1">{s.icon}</div>
@@ -71,26 +70,6 @@ export function Stats() {
             <div className="text-[10px] text-slate-300 mt-1 tracking-[1px] uppercase">{s.label}</div>
           </div>
         ))}
-      </div>
-
-      <div className="glass-panel p-4 mb-5">
-        <div className="text-[11px] text-slate-300 tracking-[2px] font-mono mb-2.5">ДЕТАЛИЗАЦИЯ XP</div>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center p-2 bg-brand-green/10 border border-brand-green/30 rounded-lg">
-            <span className="text-[13px] text-slate-300">Честный XP (успехи)</span>
-            <span className="text-brand-green font-bold font-mono">{state.earnedXP}</span>
-          </div>
-          <div className="flex justify-between items-center p-2 bg-brand-amber/10 border border-brand-amber/30 rounded-lg">
-            <span className="text-[13px] text-slate-300">Штрафной XP (провалы)</span>
-            <span className="text-brand-amber font-bold font-mono">{state.penaltyXP}</span>
-          </div>
-          <div className="flex justify-between items-center p-2 bg-white/5 border border-white/10 rounded-lg">
-            <span className="text-[13px] text-slate-300">Процент честного XP</span>
-            <span className={`font-bold font-mono ${state.totalXP > 0 && (state.earnedXP / state.totalXP) >= 0.75 ? 'text-brand-green' : 'text-brand-red'}`}>
-              {state.totalXP > 0 ? Math.round((state.earnedXP / state.totalXP) * 100) : 0}%
-            </span>
-          </div>
-        </div>
       </div>
 
       <div className="glass-panel p-4 mb-5">
@@ -509,13 +488,6 @@ export function Certificate() {
           <div className="text-base font-bold mb-2 text-white">Сертификат заблокирован</div>
           {isCheater ? (
             <div className="text-[13px] text-brand-red leading-relaxed">Выдача сертификата невозможна, так как использовалось меню разработчика (накрутка опыта или открытие уроков).</div>
-          ) : certBlocked ? (
-            <div className="text-[13px] text-brand-red leading-relaxed">
-              ⚠️ Недостаточно честного XP! Для получения сертификата требуется минимум 75% честного опыта.<br/><br/>
-              <strong>Текущий процент:</strong> {earnedXPPercent.toFixed(1)}%<br/>
-              <strong>Честный XP:</strong> {state.earnedXP} / {state.totalXP}<br/><br/>
-              Проходи уроки успешно, чтобы увеличить процент честного XP!
-            </div>
           ) : (
             <>
               <div className="text-[13px] text-slate-300 leading-relaxed">Пройди уроки по выбранной категории, чтобы получить сертификат:</div>
