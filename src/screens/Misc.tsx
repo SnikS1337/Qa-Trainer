@@ -156,13 +156,6 @@ export function Certificate() {
   const foundationDone = coreFoundationDone; // Для сертификата "Основы" теперь требуются все 9 уроков основ
   const careerDone = coreFoundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
 
-  // НОВАЯ ЗАЩИТА: Проверка процента честного XP (минимум 75%)
-  const earnedXPPercent = state.totalXP > 0 ? (state.earnedXP / state.totalXP) * 100 : 0;
-  const hasEnoughEarnedXP = earnedXPPercent >= 75;
-  
-  // Блокируем сертификат если меньше 75% честного XP
-  const certBlocked = !hasEnoughEarnedXP && !debugUnlocked;
-
   // Определяем тип доступного сертификата (наивысший из пройденных)
   useEffect(() => {
     if (careerDone) setCertType('career');
@@ -529,13 +522,16 @@ export function Certificate() {
               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
             </div>
           )}
-           {!debugUnlocked && (
-            <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
-              {certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.'}
-              {certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.'}
-              {certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.'}
-            </div>
-          )}
+            {!debugUnlocked && (
+              <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
+                {isCheater 
+                  ? '⚠️ Доступ к сертификату заблокирован из-за использования читов.' 
+                  : (certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.')
+                  || (certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.')
+                  || (certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.')
+                }
+              </div>
+            )}
           
           <div className="mb-4">
             <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ТВОЁ ИМЯ</label>
