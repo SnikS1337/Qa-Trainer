@@ -8,6 +8,11 @@ export default function Home() {
   const { state, navigate, updateState } = useAppStore();
   const lvl = getLevelInfo(state.totalXP);
 
+  // Scroll to top when component mounts
+  if(typeof window !== 'undefined') {
+    window.scrollTo(0, 0);
+  }
+
   const [showDevMenu, setShowDevMenu] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,10 +40,12 @@ export default function Home() {
     return QUOTES[idx % QUOTES.length];
   }, [state.lastQuoteIndex, state.dailyQuoteDate, updateState]);
 
-  const categories = Array.from(new Set(LESSONS.map(l => l.category)));
-  const today = new Date().toDateString();
-  const dailyDone = state.lastDailyDate === today;
-  const practDone = state.completedPractice?.length || 0;
+  const categories = ['Основы', 'Техники тест-дизайна', 'Продвинутый уровень', 'Процессы', 'Карьера'];
+
+  // Check completion status for extra modes
+  const dailyDone = state.lastDailyDate === new Date().toDateString();
+  const practiceCompletedCount = PRACTICE_TASKS.filter(t => state.completedPractice.includes(t.id)).length;
+  const practiceDone = practiceCompletedCount === PRACTICE_TASKS.length;
 
   return (
     <div className="pb-10 w-full">

@@ -4,6 +4,11 @@ import { PRACTICE_TASKS } from '../data';
 export default function Practice() {
   const { state, navigate } = useAppStore();
 
+  // Scroll to top when component mounts
+  if(typeof window !== 'undefined') {
+    window.scrollTo(0, 0);
+  }
+
   const typeLabels: Record<string, string> = { 
     triage: '🔴 Расстановка severity', 
     find_error: '🔍 Найди ошибки', 
@@ -11,47 +16,42 @@ export default function Practice() {
     bug_report: '📝 Напиши баг-репорт' 
   };
 
+  const groupedTasks = PRACTICE_TASKS.reduce((acc, task) => {
+    if (!acc[task.type]) acc[task.type] = [];
+    acc[task.type].push(task);
+    return acc;
+  }, {} as Record<string, typeof PRACTICE_TASKS>);
+
   return (
     <div className="max-w-[600px] mx-auto p-6 pb-10 w-full">
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3 mb-6">
         <button className="glass-button px-3.5 py-2 text-[13px]" onClick={() => navigate('home')}>← Назад</button>
         <h2 className="text-[22px] font-extrabold text-white">🛠️ Практика</h2>
       </div>
-      <p className="text-[13px] text-slate-300 mb-5 leading-relaxed">Реальные сценарии из работы тестировщика. Применяй знания на практике.</p>
-
-      <div className="flex flex-col gap-3">
-        {PRACTICE_TASKS.map((task, idx) => {
-          const done = state.completedPractice?.includes(task.id);
-          
-          return (
-            <div 
-              key={task.id}
-              onClick={() => navigate('practice-task', task.id)}
-              className={`glass-panel p-4 cursor-pointer relative overflow-hidden transition-all duration-200 hover:translate-x-1 ${done ? 'opacity-70' : ''}`}
-            >
-              {done && (
-                <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: task.color }}>
-                  ПРОЙДЕНО ✓
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl border-[1.5px] flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor: `${task.color}18`, borderColor: `${task.color}40` }}>
-                  {task.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm mb-0.5 text-white">{task.title}</div>
-                  <div className="text-xs text-slate-300 mb-1.5 truncate">{task.desc}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold font-mono" style={{ color: task.color }}>{typeLabels[task.type] || task.type}</span>
-                    <span className="text-slate-600">·</span>
-                    <span className="bg-gradient-to-br from-amber-500 to-amber-600 text-black text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">+{task.xp} XP</span>
+      
+      <div className="space-y-5">
+        {Object.entries(groupedTasks).map(([type, tasks]) => (
+          <div key={type} className="glass-panel p-5">
+            <div className="text-[15px] font-bold mb-4 text-white">{typeLabels[type]}</div>
+            <div className="grid grid-cols-2 gap-3">
+              {tasks.map(task => {
+                const done = state.completedPractice.includes(task.id);
+                return (
+                  <div 
+                    key={task.id} 
+                    onClick={() => navigate('practice_task', task.id)}
+                    className={`p-3.5 rounded-xl cursor-pointer transition-all ${done ? 'bg-brand-green/10 border border-brand-green/30' : 'bg-white/5 hover:bg-white/10 border border-white/10'}`}
+                  >
+                    <div className="text-[13px] font-bold text-white mb-1">#{task.id.split('-')[1]}</div>
+                    <div className="text-[11px] text-slate-300 truncate">{task.title}</div>
+                    <div className="text-[10px] text-slate-400 font-mono mt-1">{task.xp} XP</div>
+                    {done && <div className="text-[8px] text-brand-green font-bold mt-1">ГОТОВО ✓</div>}
                   </div>
-                </div>
-                <div className="text-lg shrink-0" style={{ color: task.color }}>›</div>
-              </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
