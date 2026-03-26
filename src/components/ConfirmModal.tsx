@@ -18,14 +18,15 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            className="absolute inset-0 modal-backdrop"
             onClick={onCancel}
           />
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95, y: 10 }} 
+            initial={{ opacity: 0, scale: 0.97, y: 12 }} 
             animate={{ opacity: 1, scale: 1, y: 0 }} 
-            exit={{ opacity: 0, scale: 0.95, y: 10 }} 
-            className="relative glass-panel p-6 max-w-[340px] w-full"
+            exit={{ opacity: 0, scale: 0.97, y: 10 }} 
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="relative glass-panel modal-panel p-6 max-w-[340px] w-full"
           >
             <h3 className="text-xl font-extrabold mb-2 text-white">{title}</h3>
             <p className="text-slate-300 text-[14px] leading-relaxed mb-6">{message}</p>

@@ -80,6 +80,16 @@ export default function App() {
   return (
     <AppContext.Provider value={{ ...store, navigate, showToast }}>
       <div className="min-h-screen text-white font-sans selection:bg-brand-purple/30 relative overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screenBgClass}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className={`screen-background-layer ${screenBgClass}`}
+          />
+        </AnimatePresence>
         <div className="noise-overlay pointer-events-none z-0"></div>
         
         <div className="relative z-10 min-h-screen flex flex-col">

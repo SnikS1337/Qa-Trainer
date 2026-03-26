@@ -493,8 +493,8 @@ export function Certificate() {
           )}
 
           {showPassModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="glass-panel p-6 max-w-[400px] w-full sm:max-w-[320px]">
+            <div className="fixed inset-0 z-[100] modal-backdrop flex items-center justify-center p-4">
+              <div className="glass-panel modal-panel p-6 max-w-[400px] w-full sm:max-w-[320px]">
                  <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
                 <form onSubmit={handlePassSubmit}>
                   <input 

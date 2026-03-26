@@ -112,7 +112,7 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[90] modal-backdrop flex items-center justify-center p-4">
       <ConfirmModal 
         isOpen={showConfirm} 
         title="Сбросить прогресс?" 
@@ -120,7 +120,7 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
         onConfirm={handleConfirmReset} 
         onCancel={() => setShowConfirm(false)} 
       />
-      <div className="glass-panel w-full max-w-sm p-6 relative">
+      <div className="glass-panel modal-panel w-full max-w-sm p-6 relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl transition-colors">✕</button>
         
         <h2 className="text-xl font-bold mb-4 font-mono text-brand-green">DEV MENU</h2>
