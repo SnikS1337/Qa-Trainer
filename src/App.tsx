@@ -33,8 +33,9 @@ export default function App() {
   const state = store.state;
 
   useEffect(() => {
-    // No automatic redirect, wait for user to click start
-  }, [screen]);
+    // Scroll to top whenever screen changes
+    window.scrollTo(0, 0);
+  }, [screen, currentId]);
 
   return (
     <AppContext.Provider value={{ ...store, navigate, showToast }}>
