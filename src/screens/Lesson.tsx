@@ -6,6 +6,7 @@ import { shuffle, shuffleOptions } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 import { motion, AnimatePresence } from 'motion/react';
+import { AnimatedProgressBar } from '../components/AnimatedProgressBar';
 
 export default function Lesson({ id }: { id: string }) {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -261,7 +262,11 @@ export default function Lesson({ id }: { id: string }) {
         <div className="max-w-[600px] mx-auto flex items-center gap-3">
           <button onClick={() => setShowConfirm(true)} className="text-slate-300 text-xl p-1 hover:text-white transition-colors">✕</button>
           <div className="flex-1 bg-black/30 border border-white/5 rounded-full h-2.5 overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: lesson.color }}></div>
+            <AnimatedProgressBar 
+              value={progress} 
+              color={lesson.color}
+              height="10px"
+            />
           </div>
           <div className="flex gap-1 text-xl">
             {[0,1,2].map(i => (
