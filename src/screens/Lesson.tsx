@@ -236,10 +236,10 @@ export default function Lesson({ id }: { id: string }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={qIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 12, scale: 0.995 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.995 }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className={`glass-panel p-5 mb-5 transition-colors duration-300 ${answered ? (isCorrectAns ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}>
               <div className="text-[17px] font-bold leading-relaxed text-white">{q.q}</div>
@@ -269,7 +269,7 @@ export default function Lesson({ id }: { id: string }) {
                 key={i} 
                 disabled={answered} 
                 onClick={() => setSelected(i)} 
-                className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all duration-150 backdrop-blur-md ${bg} ${border} ${text} ${!answered ? 'hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.02] cursor-pointer' : 'cursor-default'}`} 
+                className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all duration-200 backdrop-blur-md ${bg} ${border} ${text} ${!answered ? 'hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.01] cursor-pointer' : 'cursor-default'}`} 
                 style={!answered && isSelected ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` } : undefined}
               >
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono shrink-0 ${answered && isCorrectOption ? 'bg-brand-green/20 text-brand-green' : isSelected && !answered ? 'bg-white/20 text-white' : 'bg-black/30 text-slate-300'}`} style={!answered && isSelected ? { backgroundColor: `${lesson.color}40`, color: lesson.color } : undefined}>
@@ -301,7 +301,7 @@ export default function Lesson({ id }: { id: string }) {
                     <button key={item} disabled={answered} onClick={() => {
                       if (isSelected) setSortOrder(sortOrder.filter(x => x !== item));
                       else setSortOrder([...sortOrder, item]);
-                    }} className={`w-full text-left p-3 rounded-xl border-[1.5px] font-semibold text-[13px] transition-all backdrop-blur-md text-white ${isSelected ? 'opacity-35 border-white/5 bg-black/20' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'}`}>
+                    }} className={`w-full text-left p-3 rounded-xl border-[1.5px] font-semibold text-[13px] transition-all duration-200 backdrop-blur-md text-white ${isSelected ? 'opacity-35 border-white/5 bg-black/20' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.08)]'}`}>
                       {item}
                     </button>
                   );

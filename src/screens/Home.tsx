@@ -197,8 +197,8 @@ export default function Home() {
                   <div 
                     key={lesson.id} 
                     onClick={() => !locked && navigate('lesson', lesson.id)}
-                    className={`glass-panel p-4 mb-3 relative overflow-hidden transition-all duration-300
-                      ${locked ? 'opacity-50 cursor-default' : 'cursor-pointer hover:translate-x-1 hover:bg-white/10'}
+                    className={`glass-panel interactive-card p-4 mb-3 relative overflow-hidden
+                      ${locked ? 'opacity-50 cursor-default' : 'cursor-pointer hover:bg-white/10 hover:shadow-[0_0_18px_rgba(255,255,255,0.08)]'}
                       ${done ? 'border-opacity-50' : ''}`}
                     style={{ borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined }}
                   >
@@ -234,7 +234,7 @@ export default function Home() {
         <div className="pb-10">
            <div 
              onClick={() => !dailyDone && navigate('daily')}
-             className={`glass-panel p-4 mb-3 transition-all duration-300 border-purple-400/30 bg-purple-400/5 ${dailyDone ? 'opacity-60 cursor-default' : 'cursor-pointer hover:bg-purple-400/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:scale-[1.02]'}`}
+             className={`glass-panel interactive-card p-4 mb-3 border-purple-400/30 bg-purple-400/5 ${dailyDone ? 'opacity-60 cursor-default' : 'cursor-pointer hover:bg-purple-400/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'}`}
            >
             <div className="flex items-center gap-3">
               <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
@@ -249,7 +249,7 @@ export default function Home() {
           {state.completedLessons.length >= 4 && (
              <div 
                onClick={() => navigate('exam')}
-               className="glass-panel p-4 mb-3 cursor-pointer transition-all duration-300 border-red-400/30 bg-red-400/5 hover:bg-red-400/10 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)] hover:scale-[1.02]"
+               className="glass-panel interactive-card p-4 mb-3 cursor-pointer border-red-400/30 bg-red-400/5 hover:bg-red-400/10 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
              >
               <div className="flex items-center gap-3">
                 <div className="text-3xl">🎯</div>
@@ -264,7 +264,7 @@ export default function Home() {
 
            <div 
              onClick={() => navigate('practice')}
-             className="glass-panel p-4 mb-3 cursor-pointer transition-all duration-300 border-blue-400/30 bg-blue-400/5 hover:bg-blue-400/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:scale-[1.02]"
+             className="glass-panel interactive-card p-4 mb-3 cursor-pointer border-blue-400/30 bg-blue-400/5 hover:bg-blue-400/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
            >
             <div className="flex items-center gap-3">
               <div className="text-3xl">🛠️</div>

@@ -40,7 +40,7 @@ export default function Practice() {
                     key={task.id} 
                     onClick={() => navigate('practice_task', task.id)}
                     type="button"
-                    className={`p-3.5 rounded-xl text-left transition-all duration-200 ${done ? 'bg-brand-green/10 border border-brand-green/30' : 'bg-white/5 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] border border-white/10'} cursor-pointer`}
+                    className={`interactive-card p-3.5 rounded-xl text-left duration-200 ${done ? 'bg-brand-green/10 border border-brand-green/30' : 'bg-white/5 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] border border-white/10'} cursor-pointer`}
                   >
                     <div className="text-[13px] font-bold text-white mb-1">#{task.id.split('-')[1]}</div>
                     <div className="text-[11px] text-slate-300 truncate">{task.title}</div>

@@ -479,7 +479,7 @@ export function Certificate() {
           </div>
           <div className="text-base font-bold mb-2 text-white">Сертификат заблокирован</div>
           {isCheater ? (
-            <div className="text-[13px] text-brand-red leading-relaxed">Выдача сертификата невозможна, так как использовалось меню разработчика (накрутка опыта или открытие уроков).</div>
+            <div className="text-[13px] text-brand-red leading-relaxed">Сертификат можно просмотреть для отладки, но он будет помечен водяным знаком и не может быть скачан.</div>
           ) : (
             <>
               <div className="text-[13px] text-slate-300 leading-relaxed">Пройди уроки по выбранной категории, чтобы получить сертификат:</div>

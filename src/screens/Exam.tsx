@@ -170,7 +170,7 @@ export default function Exam() {
             <button
               key={idx}
               onClick={() => setSelectedOption(idx)}
-              className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-200 backdrop-blur-md ${selectedOption === idx ? 'border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:border-white/20'}`}
+              className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-220 backdrop-blur-md ${selectedOption === idx ? 'border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.08)] hover:scale-[1.01]'}`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${selectedOption === idx ? 'border-brand-purple' : 'border-white/20'}`}>
@@ -186,7 +186,7 @@ export default function Exam() {
           <button 
             disabled={selectedOption === null} 
             onClick={handleAnswer} 
-            className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all backdrop-blur-md border ${selectedOption !== null ? 'bg-brand-purple/80 border-brand-purple/50 text-white hover:bg-brand-purple' : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
+            className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all duration-220 backdrop-blur-md border ${selectedOption !== null ? 'bg-brand-purple/80 border-brand-purple/50 text-white hover:bg-brand-purple hover:shadow-[0_0_16px_rgba(167,139,250,0.28)] hover:scale-[1.01]' : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
           >
             {currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ ЭКЗАМЕН' : 'СЛЕДУЮЩИЙ ВОПРОС'}
           </button>
