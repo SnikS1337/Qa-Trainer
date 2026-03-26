@@ -104,54 +104,25 @@ export default function Lesson({ id }: { id: string }) {
     const pct = Math.round((correct / total) * 100);
     const passed = pct >= 60 && hearts > 0;
     const perfect = correct === total && hearts === 3;
-    
-    // Новая система начисления XP
-    let gainedXP = 0;
-    let earnedXP = 0;
-    let penaltyXP = 0;
-    
-    if (passed) {
-      // Успешное прохождение - весь XP идет в earnedXP
-      gainedXP = perfect ? Math.round(lesson!.xp * 1.5) : lesson!.xp;
-      earnedXP = gainedXP;
-    } else {
-      // Провал - проверяем лимит провалов (максимум 3 раза)
-      const failCount = (state.lessonFailCount[lesson!.id] || 0);
-      if (failCount < 3) {
-        // Даем 20% XP как штрафной
-        gainedXP = Math.round(lesson!.xp * 0.2);
-        penaltyXP = gainedXP;
-      } else {
-        // После 3 провалов XP больше не дается
-        gainedXP = 0;
-      }
-    }
+    const gainedXP = passed ? (perfect ? Math.round(lesson!.xp * 1.5) : lesson!.xp) : Math.round(lesson!.xp * 0.2);
 
     updateState(prev => {
       const s = { ...prev };
       s.totalXP += gainedXP;
-      s.earnedXP += earnedXP;
-      s.penaltyXP += penaltyXP;
       s.streak = passed ? s.streak + 1 : 0;
       if (s.streak > s.maxStreak) s.maxStreak = s.streak;
-      
-      // Обновляем счетчик провалов
-      if (!passed) {
-        s.lessonFailCount = { ...s.lessonFailCount };
-        s.lessonFailCount[lesson!.id] = (s.lessonFailCount[lesson!.id] || 0) + 1;
-        s.retries++;
-      } else {
-        // При успехе сбрасываем счетчик провалов для этого урока
-        if (s.lessonFailCount[lesson!.id]) {
-          s.lessonFailCount = { ...s.lessonFailCount };
-          delete s.lessonFailCount[lesson!.id];
-        }
-      }
       
       if (passed && !s.completedLessons.includes(lesson!.id)) {
         s.completedLessons.push(lesson!.id);
       }
       if (perfect) s.perfectLessons++;
+      if (!passed) s.retries++;
+      
+      // Сбрасываем счетчик провалов при любом завершении урока
+      if (s.lessonFailCount[lesson!.id]) {
+        s.lessonFailCount = { ...s.lessonFailCount };
+        delete s.lessonFailCount[lesson!.id];
+      }
       
       checkAchievements(s);
       return s;
@@ -160,11 +131,6 @@ export default function Lesson({ id }: { id: string }) {
     if (passed) {
       setTimeout(() => confetti(), 200);
       if (perfect) setTimeout(() => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'), 1000);
-    } else {
-      const failCount = (state.lessonFailCount[lesson!.id] || 0) + 1;
-      if (failCount >= 3) {
-        setTimeout(() => showToast('⚠️ Лимит провалов достигнут. Пройди урок успешно!', 'text-brand-red'), 500);
-      }
     }
   };
 
@@ -177,21 +143,8 @@ export default function Lesson({ id }: { id: string }) {
     const pct = Math.round((correct / total) * 100);
     const passed = pct >= 60 && hearts > 0;
     const perfect = correct === total && hearts === 3;
-    
-    // Рассчитываем XP для отображения
-    let gainedXP = 0;
-    if (passed) {
-      gainedXP = perfect ? Math.round(lesson.xp * 1.5) : lesson.xp;
-    } else {
-      const failCount = (state.lessonFailCount[lesson.id] || 0);
-      if (failCount < 3) {
-        gainedXP = Math.round(lesson.xp * 0.2);
-      }
-    }
-    
+    const gainedXP = passed ? (perfect ? Math.round(lesson.xp * 1.5) : lesson.xp) : Math.round(lesson.xp * 0.2);
     const motivMsg = MOTIVATIONAL_MESSAGES.find(m => pct >= m.pct)!;
-    const failCount = (state.lessonFailCount[lesson.id] || 0);
-    const showFailWarning = !passed && failCount >= 3;
 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center w-full">
@@ -217,12 +170,6 @@ export default function Lesson({ id }: { id: string }) {
           <div className="p-4 bg-brand-green/10 rounded-xl text-[13px] text-brand-green leading-relaxed mb-6 text-left border border-brand-green/20">
             💡 Практикуй каждый день — 15 минут регулярно лучше, чем 3 часа раз в неделю!
           </div>
-
-          {showFailWarning && (
-            <div className="p-4 bg-brand-red/10 rounded-xl text-[13px] text-brand-red leading-relaxed mb-6 text-left border border-brand-red/20">
-              ⚠️ Лимит провалов достигнут! Дальнейшие попытки не дадут XP. Пройди урок успешно!
-            </div>
-          )}
 
           <div className="flex flex-col gap-3">
             <button className="w-full bg-brand-green/80 hover:bg-brand-green backdrop-blur-md border border-brand-green/50 text-white font-bold py-4 rounded-xl uppercase tracking-wide transition-all" onClick={() => navigate('home')}>
