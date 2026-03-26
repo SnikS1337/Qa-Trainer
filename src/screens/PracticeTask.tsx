@@ -111,13 +111,13 @@ export default function PracticeTask({ id }: { id: string }) {
                   {task.severities.map((sev: any) => {
                     const isSelected = sel === sev.key;
                     return (
-                      <button 
-                        key={sev.key} 
-                        disabled={answered}
-                        onClick={() => setSelections({ ...selections, [bug.id]: sev.key })}
-                        className={`border-[1.5px] rounded-lg px-3 py-1.5 text-[11px] font-bold font-mono transition-all backdrop-blur-sm ${isSelected ? 'opacity-100' : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'}`}
-                        style={isSelected ? { backgroundColor: `${sev.color}25`, borderColor: sev.color, color: sev.color } : undefined}
-                      >
+                       <button 
+                         key={sev.key} 
+                         disabled={answered}
+                         onClick={() => setSelections({ ...selections, [bug.id]: sev.key })}
+                         className={`border-[1.5px] rounded-lg px-3 py-1.5 text-[11px] font-bold font-mono transition-all duration-200 backdrop-blur-sm ${isSelected ? 'opacity-100' : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_8px_rgba(255,255,255,0.1)] hover:scale-[1.03] cursor-pointer'}`}
+                         style={isSelected ? { backgroundColor: `${sev.color}25`, borderColor: sev.color, color: sev.color } : undefined}
+                       >
                         {sev.label}
                       </button>
                     );
@@ -183,7 +183,7 @@ export default function PracticeTask({ id }: { id: string }) {
             }
 
             return (
-              <div key={field.id} onClick={() => handleToggleError(field.id)} className={`border-[1.5px] rounded-2xl p-3.5 cursor-pointer transition-all select-none backdrop-blur-md ${bg} ${border} ${!answered && !isSelected && 'hover:border-white/20 hover:bg-white/10'}`}>
+              <div key={field.id} onClick={() => handleToggleError(field.id)} className={`border-[1.5px] rounded-2xl p-3.5 cursor-pointer transition-all duration-200 select-none backdrop-blur-md ${bg} ${border} ${!answered && !isSelected ? 'hover:border-white/30 hover:bg-white/10 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.02] cursor-pointer' : 'cursor-default'}`}>
                 <div className="text-[10px] text-slate-400 font-mono tracking-[1px] mb-1 uppercase">{field.label}</div>
                 <div className="text-[13px] font-semibold leading-relaxed whitespace-pre-line text-white">{field.value}</div>
                 

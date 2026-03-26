@@ -502,7 +502,7 @@ export function Certificate() {
 
           {showPassModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="glass-panel p-6 max-w-[320px] w-full">
+              <div className="glass-panel p-6 w-full max-w-[320px]">
                  <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
                 <form onSubmit={handlePassSubmit}>
                   <input 

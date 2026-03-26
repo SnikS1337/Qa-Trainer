@@ -191,13 +191,13 @@ export default function Daily() {
               textClass = 'text-white font-bold';
             }
 
-            return (
-              <button
-                key={idx}
-                disabled={answered}
-                onClick={() => setSelectedOption(idx)}
-                className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-200 backdrop-blur-md ${bgClass} ${borderClass} ${textClass} ${!answered && 'hover:bg-white/10 hover:border-white/20'}`}
-              >
+             return (
+               <button
+                 key={idx}
+                 disabled={answered}
+                 onClick={() => setSelectedOption(idx)}
+                 className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-200 backdrop-blur-md ${bgClass} ${borderClass} ${textClass} ${!answered ? 'hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.02] cursor-pointer' : 'cursor-default'}`}
+               >
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${selectedOption === idx || (answered && idx === q.ans) ? borderClass : 'border-white/20'}`}>
                     {(selectedOption === idx || (answered && idx === q.ans)) && <div className={`w-3 h-3 rounded-full ${answered && idx === q.ans ? 'bg-brand-green' : (answered && idx === selectedOption ? 'bg-brand-red' : 'bg-brand-amber')}`}></div>}

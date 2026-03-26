@@ -265,23 +265,18 @@ export default function Lesson({ id }: { id: string }) {
             }
 
             return (
-              <motion.button 
+              <button 
                 key={i} 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                whileHover={!answered ? { scale: 1.02, x: 5 } : {}}
-                whileTap={!answered ? { scale: 0.98 } : {}}
                 disabled={answered} 
                 onClick={() => setSelected(i)} 
-                className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all backdrop-blur-md ${bg} ${border} ${text} ${!answered && 'hover:bg-white/10 hover:border-white/20'}`} 
+                className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all duration-150 backdrop-blur-md ${bg} ${border} ${text} ${!answered ? 'hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.02] cursor-pointer' : 'cursor-default'}`} 
                 style={!answered && isSelected ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` } : undefined}
               >
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono shrink-0 ${answered && isCorrectOption ? 'bg-brand-green/20 text-brand-green' : isSelected && !answered ? 'bg-white/20 text-white' : 'bg-black/30 text-slate-300'}`} style={!answered && isSelected ? { backgroundColor: `${lesson.color}40`, color: lesson.color } : undefined}>
                   {['A','B','C','D'][i]}
                 </span>
                 <span className="flex-1 leading-relaxed">{opt}</span>
-              </motion.button>
+              </button>
             );
           })}
 
