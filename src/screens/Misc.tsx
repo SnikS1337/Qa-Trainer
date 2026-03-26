@@ -229,87 +229,40 @@ export function Certificate() {
     const W = 800, H = 560;
     ctx.clearRect(0, 0, W, H);
 
-    // Modern gradient background
-    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, '#ffffff'); 
-    bgGrad.addColorStop(0.2, '#f8fafc'); 
-    bgGrad.addColorStop(0.8, '#e2e8f0'); 
-    bgGrad.addColorStop(1, '#cbd5e1');
-    ctx.fillStyle = bgGrad; 
+    // Professional cream background
+    ctx.fillStyle = '#FEFCF7';
     ctx.fillRect(0, 0, W, H);
 
-    // Subtle pattern
-    ctx.strokeStyle = 'rgba(30, 58, 138, 0.05)';
-    ctx.lineWidth = 2;
-    for (let x = 0; x < W; x += 60) { 
-      ctx.beginPath(); 
-      ctx.moveTo(x, 0); 
-      ctx.lineTo(x, H); 
-      ctx.stroke(); 
+    // Soft border
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(20, 20, W-40, H-40);
+
+    // Decorative elements
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.05)';
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * W;
+      const y = Math.random() * H;
+      const size = Math.random() * 30 + 10;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
     }
-    for (let y = 0; y < H; y += 60) { 
-      ctx.beginPath(); 
-      ctx.moveTo(0, y); 
-      ctx.lineTo(W, y); 
-      ctx.stroke(); 
-    }
 
-    // Main border with shadow
-    ctx.shadowColor = 'rgba(30, 64, 175, 0.2)';
-    ctx.shadowBlur = 15;
+    // Central decorative circle
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.2)';
     ctx.lineWidth = 2;
-    ctx.strokeStyle = '#38bdf8';
-    ctx.strokeRect(40, 40, W-80, H-80);
-    ctx.shadowBlur = 0;
-
-    // Decorative corner elements
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 3;
-    
-    // Top-left corner
     ctx.beginPath();
-    ctx.moveTo(45, 40); ctx.lineTo(75, 40); ctx.stroke();
-    ctx.beginPath(); 
-    ctx.moveTo(40, 45); ctx.lineTo(40, 75); ctx.stroke();
-    
-    // Top-right corner
-    ctx.beginPath();
-    ctx.moveTo(W-45, 40); ctx.lineTo(W-75, 40); ctx.stroke();
-    ctx.beginPath(); 
-    ctx.moveTo(W-40, 45); ctx.lineTo(W-40, 75); ctx.stroke();
-    
-    // Bottom-left corner
-    ctx.beginPath();
-    ctx.moveTo(45, H-40); ctx.lineTo(75, H-40); ctx.stroke();
-    ctx.beginPath(); 
-    ctx.moveTo(40, H-45); ctx.lineTo(40, H-75); ctx.stroke();
-    
-    // Bottom-right corner
-    ctx.beginPath();
-    ctx.moveTo(W-45, H-40); ctx.lineTo(W-75, H-40); ctx.stroke();
-    ctx.beginPath(); 
-    ctx.moveTo(W-40, H-45); ctx.lineTo(W-40, H-75); ctx.stroke();
-
-    // Logo area with modern styling
-    ctx.font = 'bold 48px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#1e3a8a';
-    ctx.fillText('🧪', W/2, 140);
-
-    // Title styling
-    ctx.font = 'bold 24px Arial, sans-serif';
-    ctx.fillStyle = '#1e40af';
-    ctx.fillText('QA TRAINER BY SNIKS1337', W/2, 180);
-
-    // Decorative separator
-    ctx.strokeStyle = '#93c5fd';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(W/2 - 100, 190);
-    ctx.lineTo(W/2 + 100, 190);
+    ctx.arc(W/2, H/2, 200, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Certificate heading with certificate type
+    // Main title
+    ctx.font = 'bold 28px Arial, sans-serif';
+    ctx.fillStyle = '#4C1D95';
+    ctx.textAlign = 'center';
+    ctx.fillText('QA TRAINER BY SNIKS1337', W/2, 80);
+
+    // Certificate type heading
     let headingText = '';
     switch(certType) {
       case 'foundation':
@@ -324,40 +277,38 @@ export function Certificate() {
       default:
         headingText = 'СЕРТИФИКАТ ОБ УСПЕШНОМ ОКОНЧАНИИ ОБУЧЕНИЯ';
     }
-    ctx.font = 'bold 16px Arial, sans-serif';
-    ctx.fillStyle = '#1d4ed8';
+    
+    ctx.font = 'italic 20px Georgia, serif';
+    ctx.fillStyle = '#5B21B6';
     
     // Wrap text to multiple lines if needed
-    const maxWidth = W - 200;
-    const lineHeight = 22;
-    const textLines = wrapText(ctx, headingText, maxWidth, 16);
-    const startY = 230;
+    const maxWidth = W - 100;
+    const lineHeight = 25;
+    const textLines = wrapText(ctx, headingText, maxWidth, 20);
+    const startY = 120;
     
     textLines.forEach((line, index) => {
       ctx.fillText(line, W/2, startY + index * lineHeight);
     });
 
-    // Certificate recipient name with enhanced styling
-    const fs = certName.length > 22 ? 32 : certName.length > 16 ? 36 : 42;
-    ctx.font = `bold italic ${fs}px Georgia, serif`;
-    ctx.fillStyle = '#1e3a8a';
-    
-    // Center name vertically
-    const nameY = startY + textLines.length * lineHeight + 50;
+    // Certificate recipient name
+    ctx.font = `bold 36px Georgia, serif`;
+    ctx.fillStyle = '#1F2937';
+    const nameY = startY + textLines.length * lineHeight + 40;
     ctx.fillText(certName, W/2, nameY);
 
     // Elegant underline for name
     const nameWidth = ctx.measureText(certName).width;
-    ctx.strokeStyle = '#bfdbfe';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(W/2 - nameWidth/2 - 10, nameY + 10);
-    ctx.lineTo(W/2 + nameWidth/2 + 10, nameY + 10);
+    ctx.moveTo(W/2 - nameWidth/2, nameY + 15);
+    ctx.lineTo(W/2 + nameWidth/2, nameY + 15);
     ctx.stroke();
 
     // Description based on certificate type
     ctx.font = 'italic 16px Georgia, serif';
-    ctx.fillStyle = '#374151';
+    ctx.fillStyle = '#4B5563';
     let description = '';
     switch(certType) {
       case 'foundation':
@@ -372,10 +323,10 @@ export function Certificate() {
       default:
         description = 'успешно завершил(а) базовый курс ручного тестирования';
     }
-    const descY = nameY + 50;
+    const descY = nameY + 40;
     ctx.fillText(description, W/2, descY);
 
-    // Skill badges with improved styling
+    // Skills section with horizontal layout
     let skills: string[] = [];
     switch(certType) {
       case 'foundation':
@@ -390,46 +341,34 @@ export function Certificate() {
       default:
         skills = ['Тест-дизайн','Пирамида тестов','Граничные значения','Баг-репорты','Agile QA'];
     }
-    
-    const skillY = descY + 40;
-    const skillRadius = 30;
-    const centerX = W/2;
-    const totalAngle = Math.PI * 2;
-    const angleStep = totalAngle / skills.length;
-    
-    skills.forEach((skill, i) => {
-      const angle = i * angleStep - Math.PI/2; // Start from top (12 o'clock)
-      const radius = 120; // Distance from center
-      
-      const x = centerX + radius * Math.cos(angle);
-      const y = skillY + radius * Math.sin(angle);
-      
-      // Draw circular badge
-      ctx.fillStyle = '#dbeafe';
-      ctx.beginPath();
-      ctx.arc(x, y, skillRadius, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Border
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Text in the center of the badge
-      ctx.fillStyle = '#1e40af';
-      ctx.font = 'bold 11px Arial, sans-serif';
+
+    const skillsY = descY + 50;
+    const skillBoxWidth = 120;
+    const totalSkillsWidth = skills.length * skillBoxWidth + (skills.length - 1) * 20;
+    const startX = (W - totalSkillsWidth) / 2;
+
+    for (let i = 0; i < skills.length; i++) {
+      const x = startX + i * (skillBoxWidth + 20);
+      const y = skillsY;
+
+      // Skill box
+      ctx.fillStyle = '#F3F4F6';
+      ctx.fillRect(x, y, skillBoxWidth, 40);
+
+      // Skill box border
+      ctx.strokeStyle = '#8B5CF6';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, skillBoxWidth, 40);
+
+      // Skill text
+      ctx.fillStyle = '#4C1D95';
+      ctx.font = 'bold 12px Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Wrap long text
-      const skillWords = wrapText(ctx, skill, skillRadius * 1.5, 11);
-      skillWords.forEach((word, idx, arr) => {
-        ctx.fillText(word, x, y + (idx - (arr.length - 1) / 2) * 12);
-      });
-    });
+      ctx.fillText(skills[i], x + skillBoxWidth/2, y + 25);
+    }
 
     // Stats section
-    const statsY = skillY + 200;
+    const statsY = skillsY + 70;
     const lvl=getLevelInfo(state.totalXP);
     const statsData = [
       {l:'Уровень', v:lvl.name},
@@ -438,30 +377,30 @@ export function Certificate() {
       {l:'Уроков', v:state.completedLessons.length+'/'+LESSONS.length},
     ];
     
-    ctx.font = 'bold 14px Arial, sans-serif';
+    ctx.font = '14px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#1e40af';
+    ctx.fillStyle = '#374151';
     
-    statsData.forEach((s, i, arr) => {
-      const x = 100 + i * (W - 200) / arr.length;
-      ctx.fillText(s.v, x, statsY);
-      ctx.font = 'bold 10px Arial, sans-serif';
-      ctx.fillStyle = '#64748b';
-      ctx.fillText(s.l, x, statsY + 20);
+    for (let i = 0; i < statsData.length; i++) {
+      const x = 100 + i * (W - 200) / statsData.length;
       ctx.font = 'bold 14px Arial, sans-serif';
-      ctx.fillStyle = '#1e40af';
-    });
+      ctx.fillText(statsData[i].v, x, statsY);
+      ctx.font = '10px Arial, sans-serif';
+      ctx.fillStyle = '#6B7280';
+      ctx.fillText(statsData[i].l, x, statsY + 18);
+      ctx.fillStyle = '#374151';
+    }
 
     // Signature lines
     const sigY = statsY + 50;
-    ctx.strokeStyle = '#cbd5e1';
+    ctx.strokeStyle = '#8B5CF6';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(100, sigY);
     ctx.lineTo(250, sigY);
     ctx.stroke();
     
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = '#4B5563';
     ctx.font = 'bold 12px Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Руководитель курса', 175, sigY + 20);
@@ -472,32 +411,28 @@ export function Certificate() {
     ctx.stroke();
     ctx.fillText('Ученик', W - 175, sigY + 20);
 
-    // Footer with date and ID
-    const footerY = H - 40;
-    ctx.strokeStyle = '#e2e8f0';
+    // Footer with date
+    const footerY = H - 30;
+    ctx.strokeStyle = '#E5E7EB';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(60, footerY - 15);
-    ctx.lineTo(W - 60, footerY - 15);
+    ctx.moveTo(60, footerY - 10);
+    ctx.lineTo(W - 60, footerY - 10);
     ctx.stroke();
     
     ctx.font = '10px Arial, sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.textAlign = 'left';
+    ctx.fillStyle = '#6B7280';
+    ctx.textAlign = 'center';
     const ds = new Date().toLocaleDateString('ru-RU', {year:'numeric',month:'long',day:'numeric'});
-    ctx.fillText('Дата: ' + ds, 60, footerY);
-    
-    ctx.textAlign = 'right';
-    const certId = 'QA-' + Math.abs(certName.split('').reduce((a,c) => a*31 + c.charCodeAt(0), 0) % 99999).toString().padStart(5, '0');
-    ctx.fillText('ID: ' + certId, W - 60, footerY);
+    ctx.fillText('Дата: ' + ds, W/2, footerY);
 
     // Watermark for debug mode
     if (debugUnlocked && isCheater) {
       ctx.save();
       ctx.translate(W/2, H/2);
       ctx.rotate(-Math.PI/6);
-      ctx.font = 'bold 36px Arial';
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+      ctx.font = 'bold 48px Arial';
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 0);
