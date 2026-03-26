@@ -16,7 +16,7 @@ export default function Practice() {
     bug_report: '📝 Напиши баг-репорт' 
   };
 
-  const groupedTasks = PRACTICE_TASKS.reduce((acc, task) => {
+  const groupedTasks: Record<string, typeof PRACTICE_TASKS> = PRACTICE_TASKS.reduce((acc, task) => {
     if (!acc[task.type]) acc[task.type] = [];
     acc[task.type].push(task);
     return acc;

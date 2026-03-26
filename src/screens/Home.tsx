@@ -215,7 +215,7 @@ export default function Home() {
               <div className="text-3xl">🛠️</div>
               <div className="flex-1">
                 <div className="font-extrabold text-sm mb-1 text-white">Практические задания</div>
-                <div className="text-xs text-slate-300">Реальные сценарии · {practDone}/{PRACTICE_TASKS.length} пройдено</div>
+                <div className="text-xs text-slate-300">Реальные сценарии · {practiceCompletedCount}/{PRACTICE_TASKS.length} пройдено</div>
               </div>
               <div className="text-emerald-400 text-lg">›</div>
             </div>
