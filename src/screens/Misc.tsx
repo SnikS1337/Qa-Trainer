@@ -524,7 +524,7 @@ export function Certificate() {
            )}
            {debugUnlocked && (
              <div className="text-center mb-5 p-3.5 glass-panel border-brand-amber/30 bg-brand-amber/10 text-[13px] text-brand-amber">
-               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
+               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано.
              </div>
            )}
            {!debugUnlocked && (
@@ -537,37 +537,37 @@ export function Certificate() {
                }
              </div>
            )}
-          
-          <div className="mb-4">
-            <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ТВОЁ ИМЯ</label>
-            <input 
-              type="text" 
-              placeholder="Например: Иван Петров" 
-              maxLength={40}
-              value={name}
-              onChange={e => {
-                if (!isCheater && !debugUnlocked) {
-                  setName(e.target.value);
-                  updateState({ certName: e.target.value });
-                }
-              }}
-              disabled={isCheater || debugUnlocked}
-              className={`w-full glass-input p-3.5 text-white font-sans text-[15px] font-semibold ${(isCheater || debugUnlocked) ? 'bg-gray-700 cursor-not-allowed' : ''}`}
-            />
-          </div>
+           
+           {/* Показываем поле ввода имени только если пользователь не читер и не в debug режиме */}
+           {!(isCheater || debugUnlocked) && (
+             <div className="mb-4">
+               <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ТВОЁ ИМЯ</label>
+               <input 
+                 type="text" 
+                 placeholder="Например: Иван Петров" 
+                 maxLength={40}
+                 value={name}
+                 onChange={e => {
+                   setName(e.target.value);
+                   updateState({ certName: e.target.value });
+                 }}
+                 className="w-full glass-input p-3.5 text-white font-sans text-[15px] font-semibold"
+               />
+             </div>
+           )}
           
           <div className="mb-5">
             <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ПРЕДПРОСМОТР</label>
             <canvas ref={canvasRef} width="800" height="560" className="w-full rounded-2xl border border-white/10 block shadow-xl"></canvas>
           </div>
           
-           <button 
-              disabled={isCheater || debugUnlocked}
-              className={`w-full font-bold py-4 rounded-xl text-[15px] transition-all backdrop-blur-md border ${(isCheater || debugUnlocked) ? 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed grayscale' : 'bg-brand-green/80 hover:bg-brand-green border-brand-green/50 text-white'}`}
-              onClick={handleDownload}
-            >
-              {(isCheater || debugUnlocked) ? '🚫 Скачивание заблокировано (дебаг меню активировано)' : '⬇️ Скачать сертификат (PNG)'}
-            </button>
+            <button 
+               disabled={isCheater || debugUnlocked}
+               className={`w-full font-bold py-4 rounded-xl text-[15px] transition-all backdrop-blur-md border ${(isCheater || debugUnlocked) ? 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed grayscale' : 'bg-brand-green/80 hover:bg-brand-green border-brand-green/50 text-white'}`}
+               onClick={handleDownload}
+             >
+               {(isCheater || debugUnlocked) ? '🚫 Скачивание заблокировано' : '⬇️ Скачать сертификат (PNG)'}
+             </button>
         </div>
       )}
     </div>
