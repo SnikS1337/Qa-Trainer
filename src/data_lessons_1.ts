@@ -51,7 +51,7 @@ export const LESSONS_PART_1: Lesson[] = [
     ]
   },
   {
-    id: "testcase", title: "Тест-кейсы и баг-репорты", icon: "📝", color: "#a855f7",
+    id: "testcase", title: "Написание: Тест-кейсы и Баг-репорты", icon: "📝", color: "#a855f7",
     category: "Основы", xp: 20,
     desc: "Документирование процесса",
     questions: [
@@ -86,7 +86,7 @@ export const LESSONS_PART_1: Lesson[] = [
     ]
   },
   {
-    id: "checklist", title: "Чек-листы и тест-кейсы", icon: "✅", color: "#38bdf8",
+    id: "checklist", title: "Типы документации: Чек-листы и Тест-кейсы", icon: "✅", color: "#38bdf8",
     category: "Основы", xp: 20,
     desc: "Когда что использовать",
     questions: [
@@ -97,7 +97,7 @@ export const LESSONS_PART_1: Lesson[] = [
     ]
   },
   {
-    id: "api", title: "Тестирование API", icon: "🔌", color: "#38bdf8",
+    id: "api", title: "API Тестирование: Основы", icon: "🔌", color: "#38bdf8",
     category: "Продвинутый уровень", xp: 35,
     desc: "REST, HTTP, Postman и основы API QA",
     questions: [

@@ -51,6 +51,21 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   const importProgress = () => {
     try {
       const parsed = JSON.parse(importData);
+      
+      // Validate that parsed data has the expected structure of AppState
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('Invalid data structure');
+      }
+      
+      // Check for required AppState properties
+      const requiredFields = ['totalXP', 'completedLessons', 'streak', 'maxStreak', 'perfectLessons', 'retries', 'bestStreak', 'unlockedAchievements', 'lastQuoteIndex', 'dailyQuoteDate', 'examBestScore', 'examAttempts', 'dailyStreak', 'lastDailyDate', 'totalQuestionsAnswered', 'totalCorrect', 'completedPractice', 'certName', 'lastActiveDate'];
+      
+      for (const field of requiredFields) {
+        if (!(field in parsed)) {
+          throw new Error(`Missing field: ${field}`);
+        }
+      }
+      
       updateState({ ...parsed, isCheater: true });
       showToast('Прогресс загружен', 'text-brand-green');
       setImportData('');

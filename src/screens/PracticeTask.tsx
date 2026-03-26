@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS, ACHIEVEMENTS } from '../data';
+import { AppState } from '../types';
 import confetti from 'canvas-confetti';
 
 export default function PracticeTask({ id }: { id: string }) {
@@ -15,7 +16,7 @@ export default function PracticeTask({ id }: { id: string }) {
 
   if (!task) return null;
 
-  const checkAchievements = (newState: any) => {
+  const checkAchievements = (newState: AppState) => {
     ACHIEVEMENTS.forEach(a => {
       if (!newState.unlockedAchievements.includes(a.id) && a.check(newState)) {
         newState.unlockedAchievements.push(a.id);

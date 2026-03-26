@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
+import { AppState } from '../types';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
@@ -27,7 +28,7 @@ export default function Lesson({ id }: { id: string }) {
     }
   }, [lesson]);
 
-  const checkAchievements = (newState: any) => {
+  const checkAchievements = (newState: AppState) => {
     ACHIEVEMENTS.forEach(a => {
       if (!newState.unlockedAchievements.includes(a.id) && a.check(newState)) {
         newState.unlockedAchievements.push(a.id);
@@ -37,7 +38,7 @@ export default function Lesson({ id }: { id: string }) {
   };
 
   const handleCheck = () => {
-    // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса // Добавляем определение переменной q
+    const q = questions[qIndex]; // Добавляем определение переменной q
     if (answered) {
       if (hearts === 0 || qIndex + 1 >= questions.length) {
         finishLesson();
@@ -63,11 +64,8 @@ export default function Lesson({ id }: { id: string }) {
     if (isCorrect) {
       newCorrect++;
       newConsecutive++;
-      if (newConsecutive >= 3) {
-        showToast(`🔥 ${newConsecutive} подряд!`, 'text-brand-amber');
+       if (newConsecutive >= 3) {
         setCurrentStreak(newConsecutive); // Обновляем состояние для отображения визуального уведомления
-      } else if (newConsecutive >= 1) {
-        setCurrentStreak(newConsecutive);
       }
     } else {
       newHearts--;
@@ -286,7 +284,7 @@ export default function Lesson({ id }: { id: string }) {
           </div>
         )}
 
-        {currentStreak >= 3 && (
+        {answered && currentStreak >= 3 && (
           <div className="mt-4 p-4 rounded-2xl text-[13px] leading-relaxed font-bold text-center text-brand-amber animate-pulse glass-panel backdrop-blur-xl border border-brand-amber/30">
             🔥 {currentStreak} подряд!
           </div>

@@ -12,7 +12,6 @@ export function Splash() {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center w-full">
       <div className="max-w-[380px] w-full glass-panel p-8">
         <div className="text-[64px] mb-4 animate-bounce">🧪</div>
-        <div className="font-mono text-[11px] text-brand-green tracking-[4px] mb-2 uppercase">v2.0 — React</div>
         <h1 className="text-4xl font-extrabold leading-[1.1] mb-3 text-white">QA<br/><span className="text-brand-green">Trainer</span></h1>
         <p className="text-slate-300 text-[15px] leading-relaxed mb-2">Стань профессиональным тестировщиком. Учись играя, как в Duolingo.</p>
         
@@ -137,7 +136,9 @@ export function Achievements() {
   );
 }
 
-const BASE_LESSONS = ['pyramid','equiv','boundary','decision','testcase','states','types','checklist'];
+const FOUNDATION_LESSONS = ['pyramid','testcase','types','checklist','buglife','requirements','smoke_sanity','defect_types','equiv','boundary']; // Основы - 10 уроков
+const DESIGN_TECHNIQUES_LESSONS = ['equiv','boundary']; // Техники тест-дизайна - 2 урока
+const CAREER_LESSON = ['interview']; // Карьера - 1 урок
 
 export function Certificate() {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -147,9 +148,22 @@ export function Certificate() {
   const [showPassModal, setShowPassModal] = useState(false);
   const [passInput, setPassInput] = useState('');
   const [holdTimer, setHoldTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [certType, setCertType] = useState<'none'|'foundation'|'design'|'career'>('none');
 
-  const done = BASE_LESSONS.filter(id => state.completedLessons.includes(id));
-  const allDone = done.length >= BASE_LESSONS.length;
+  // Проверяем, какие сертификаты доступны
+  const coreFoundationDone = ['pyramid','testcase','types','checklist','buglife','requirements','smoke_sanity','defect_types'].every(id => state.completedLessons.includes(id)); // 8 основных уроков
+  const designDone = coreFoundationDone && DESIGN_TECHNIQUES_LESSONS.every(id => state.completedLessons.includes(id)); // 2 урока техник дизайна
+  const foundationDone = designDone; // Для сертификата "Основы" теперь требуются все 10 уроков (8 основных + 2 техники)
+  const careerDone = designDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы + техники)
+
+  // Определяем тип доступного сертификата (наивысший из пройденных)
+  useEffect(() => {
+    if (careerDone) setCertType('career');
+    else if (designDone) setCertType('design');
+    else if (coreFoundationDone) setCertType('foundation'); // Используем только 8 основных уроков для сертификата "Основы"
+    else setCertType('none');
+  }, [careerDone, designDone, coreFoundationDone]);
+
   const isCheater = state.isCheater;
 
   const handlePointerDown = () => {
@@ -180,10 +194,31 @@ export function Certificate() {
   };
 
   useEffect(() => {
-    if (((allDone && !isCheater) || debugUnlocked) && canvasRef.current) {
+    if (((certType !== 'none' && !isCheater) || debugUnlocked) && canvasRef.current) {
       drawCertificate(name || 'Твоё имя');
     }
-  }, [name, allDone, isCheater, debugUnlocked]);
+  }, [name, certType, isCheater, debugUnlocked]);
+
+  // Helper function to wrap text
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, fontSize: number = 18): string[] => {
+    ctx.font = `${fontSize}px Arial, sans-serif`;
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + ' ' + word).width;
+      if (width < maxWidth) {
+        currentLine += ' ' + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
+  };
 
   const drawCertificate = (certName: string) => {
     const canvas = canvasRef.current;
@@ -194,125 +229,278 @@ export function Certificate() {
     const W = 800, H = 560;
     ctx.clearRect(0, 0, W, H);
 
-    // Background gradient
+    // Modern gradient background
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, '#060a12'); bgGrad.addColorStop(0.5, '#0c1628'); bgGrad.addColorStop(1, '#060a12');
-    ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+    bgGrad.addColorStop(0, '#ffffff'); 
+    bgGrad.addColorStop(0.2, '#f8fafc'); 
+    bgGrad.addColorStop(0.8, '#e2e8f0'); 
+    bgGrad.addColorStop(1, '#cbd5e1');
+    ctx.fillStyle = bgGrad; 
+    ctx.fillRect(0, 0, W, H);
 
-    // Grid pattern
-    ctx.strokeStyle = 'rgba(28,40,64,0.8)'; ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-    // Corner brackets
-    [[0,0,1,1],[W,0,-1,1],[0,H,1,-1],[W,H,-1,-1]].forEach(([cx,cy,dx,dy]) => {
-      ctx.strokeStyle='#22d3a060'; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.moveTo(cx+dx*22,cy); ctx.lineTo(cx,cy); ctx.lineTo(cx,cy+dy*22); ctx.stroke();
-      ctx.strokeStyle='#22d3a030'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(cx+dx*50,cy); ctx.lineTo(cx+dx*30,cy); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx,cy+dy*50); ctx.lineTo(cx,cy+dy*30); ctx.stroke();
-    });
-
-    // Borders
-    ctx.strokeStyle='#22d3a025'; ctx.lineWidth=1.5; ctx.strokeRect(20,20,W-40,H-40);
-    ctx.strokeStyle='#22d3a012'; ctx.lineWidth=1; ctx.strokeRect(28,28,W-56,H-56);
-
-    // Glow lines top/bottom
-    const makeHGrad = () => { const g=ctx.createLinearGradient(0,0,W,0); g.addColorStop(0,'transparent'); g.addColorStop(0.3,'#22d3a080'); g.addColorStop(0.7,'#22d3a080'); g.addColorStop(1,'transparent'); return g; };
-    ctx.strokeStyle=makeHGrad(); ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(60,78); ctx.lineTo(W-60,78); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(60,H-78); ctx.lineTo(W-60,H-78); ctx.stroke();
-
-    // Side accent dots
-    for (let i=0; i<6; i++) {
-      ctx.fillStyle='rgba(34,211,160,'+(0.1+i*0.05)+')';
-      ctx.beginPath(); ctx.arc(42,150+i*38,2.5,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(W-42,150+i*38,2.5,0,Math.PI*2); ctx.fill();
+    // Subtle pattern
+    ctx.strokeStyle = 'rgba(30, 58, 138, 0.05)';
+    ctx.lineWidth = 2;
+    for (let x = 0; x < W; x += 60) { 
+      ctx.beginPath(); 
+      ctx.moveTo(x, 0); 
+      ctx.lineTo(x, H); 
+      ctx.stroke(); 
+    }
+    for (let y = 0; y < H; y += 60) { 
+      ctx.beginPath(); 
+      ctx.moveTo(0, y); 
+      ctx.lineTo(W, y); 
+      ctx.stroke(); 
     }
 
-    // Emoji icon with glow
-    ctx.save();
-    ctx.shadowColor='#22d3a060'; ctx.shadowBlur=20;
-    ctx.font='48px serif'; ctx.textAlign='center'; ctx.fillText('🧪',W/2,132);
-    ctx.restore();
+    // Main border with shadow
+    ctx.shadowColor = 'rgba(30, 64, 175, 0.2)';
+    ctx.shadowBlur = 15;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeRect(40, 40, W-80, H-80);
+    ctx.shadowBlur = 0;
 
-    // QA TRAINER label
-    ctx.font='bold 10px monospace'; ctx.fillStyle='#22d3a0'; ctx.textAlign='center';
-    ctx.fillText('Q A   T R A I N E R',W/2,158);
+    // Decorative corner elements
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    
+    // Top-left corner
+    ctx.beginPath();
+    ctx.moveTo(45, 40); ctx.lineTo(75, 40); ctx.stroke();
+    ctx.beginPath(); 
+    ctx.moveTo(40, 45); ctx.lineTo(40, 75); ctx.stroke();
+    
+    // Top-right corner
+    ctx.beginPath();
+    ctx.moveTo(W-45, 40); ctx.lineTo(W-75, 40); ctx.stroke();
+    ctx.beginPath(); 
+    ctx.moveTo(W-40, 45); ctx.lineTo(W-40, 75); ctx.stroke();
+    
+    // Bottom-left corner
+    ctx.beginPath();
+    ctx.moveTo(45, H-40); ctx.lineTo(75, H-40); ctx.stroke();
+    ctx.beginPath(); 
+    ctx.moveTo(40, H-45); ctx.lineTo(40, H-75); ctx.stroke();
+    
+    // Bottom-right corner
+    ctx.beginPath();
+    ctx.moveTo(W-45, H-40); ctx.lineTo(W-75, H-40); ctx.stroke();
+    ctx.beginPath(); 
+    ctx.moveTo(W-40, H-45); ctx.lineTo(W-40, H-75); ctx.stroke();
 
-    // Separator dot line
-    ctx.fillStyle='#22d3a030';
-    for (let i=-3; i<=3; i++) { ctx.beginPath(); ctx.arc(W/2+i*16,170,1.5,0,Math.PI*2); ctx.fill(); }
+    // Logo area with modern styling
+    ctx.font = 'bold 48px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#1e3a8a';
+    ctx.fillText('🧪', W/2, 140);
 
-    // "СЕРТИФИКАТ" heading
-    ctx.font='bold 13px monospace'; ctx.fillStyle='#2a3a5c';
-    ctx.fillText('С Е Р Т И Ф И К А Т   О Б   О К О Н Ч А Н И И',W/2,205);
+    // Title styling
+    ctx.font = 'bold 24px Arial, sans-serif';
+    ctx.fillStyle = '#1e40af';
+    ctx.fillText('QA TRAINER BY SNIKS1337', W/2, 180);
 
-    // Name
-    const fs = certName.length > 22 ? 34 : certName.length > 16 ? 40 : 48;
-    ctx.font='bold '+fs+'px Georgia,serif';
-    const ng=ctx.createLinearGradient(W/2-220,0,W/2+220,0);
-    ng.addColorStop(0,'#22d3a0'); ng.addColorStop(0.5,'#a8f0dc'); ng.addColorStop(1,'#22d3a0');
-    ctx.fillStyle=ng; ctx.fillText(certName,W/2,266);
+    // Decorative separator
+    ctx.strokeStyle = '#93c5fd';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W/2 - 100, 190);
+    ctx.lineTo(W/2 + 100, 190);
+    ctx.stroke();
 
-    // Name underline
-    const nw=Math.min(ctx.measureText(certName).width+60,520);
-    const ug=ctx.createLinearGradient(W/2-nw/2,0,W/2+nw/2,0);
-    ug.addColorStop(0,'transparent'); ug.addColorStop(0.5,'#22d3a050'); ug.addColorStop(1,'transparent');
-    ctx.strokeStyle=ug; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(W/2-nw/2,278); ctx.lineTo(W/2+nw/2,278); ctx.stroke();
-
-    // Description
-    ctx.font='15px Georgia,serif'; ctx.fillStyle='#6b7a9a';
-    ctx.fillText('успешно завершил(а) базовый курс ручного тестирования',W/2,310);
-
-    // Skill chips
-    const skills=['Тест-дизайн','Пирамида тестов','Граничные значения','Баг-репорты','Agile QA'];
-    const cw=126, ch=26, tot=skills.length*cw+(skills.length-1)*8, sx=W/2-tot/2;
-    skills.forEach((sk,i)=>{
-      const x=sx+i*(cw+8), y=328;
-      ctx.fillStyle='rgba(34,211,160,0.07)'; 
-      ctx.beginPath(); ctx.roundRect(x,y,cw,ch,5); ctx.fill();
-      ctx.strokeStyle='rgba(34,211,160,0.22)'; ctx.lineWidth=1; 
-      ctx.beginPath(); ctx.roundRect(x,y,cw,ch,5); ctx.stroke();
-      ctx.font='10px monospace'; ctx.fillStyle='#22d3a0'; ctx.fillText(sk,x+cw/2,y+17);
+    // Certificate heading with certificate type
+    let headingText = '';
+    switch(certType) {
+      case 'foundation':
+        headingText = 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ КУРСА ПО ОСНОВАМ ТЕСТИРОВАНИЯ';
+        break;
+      case 'design':
+        headingText = 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ КУРСА ПО ТЕХНИКАМ ТЕСТ-ДИЗАЙНА';
+        break;
+      case 'career':
+        headingText = 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ КУРСА ПО КАРЬЕРНОМУ РОСТУ В QA';
+        break;
+      default:
+        headingText = 'СЕРТИФИКАТ ОБ УСПЕШНОМ ОКОНЧАНИИ ОБУЧЕНИЯ';
+    }
+    ctx.font = 'bold 16px Arial, sans-serif';
+    ctx.fillStyle = '#1d4ed8';
+    
+    // Wrap text to multiple lines if needed
+    const maxWidth = W - 200;
+    const lineHeight = 22;
+    const textLines = wrapText(ctx, headingText, maxWidth, 16);
+    const startY = 230;
+    
+    textLines.forEach((line, index) => {
+      ctx.fillText(line, W/2, startY + index * lineHeight);
     });
 
-    // Stats row
+    // Certificate recipient name with enhanced styling
+    const fs = certName.length > 22 ? 32 : certName.length > 16 ? 36 : 42;
+    ctx.font = `bold italic ${fs}px Georgia, serif`;
+    ctx.fillStyle = '#1e3a8a';
+    
+    // Center name vertically
+    const nameY = startY + textLines.length * lineHeight + 50;
+    ctx.fillText(certName, W/2, nameY);
+
+    // Elegant underline for name
+    const nameWidth = ctx.measureText(certName).width;
+    ctx.strokeStyle = '#bfdbfe';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W/2 - nameWidth/2 - 10, nameY + 10);
+    ctx.lineTo(W/2 + nameWidth/2 + 10, nameY + 10);
+    ctx.stroke();
+
+    // Description based on certificate type
+    ctx.font = 'italic 16px Georgia, serif';
+    ctx.fillStyle = '#374151';
+    let description = '';
+    switch(certType) {
+      case 'foundation':
+        description = 'успешно завершил(а) курс по основам ручного тестирования';
+        break;
+      case 'design':
+        description = 'успешно завершил(а) курс по техникам тест-дизайна';
+        break;
+      case 'career':
+        description = 'успешно завершил(а) курс по карьерному росту в QA';
+        break;
+      default:
+        description = 'успешно завершил(а) базовый курс ручного тестирования';
+    }
+    const descY = nameY + 50;
+    ctx.fillText(description, W/2, descY);
+
+    // Skill badges with improved styling
+    let skills: string[] = [];
+    switch(certType) {
+      case 'foundation':
+        skills = ['Тест-дизайн','Пирамида тестов','Граничные значения','Баг-репорты','Agile QA'];
+        break;
+      case 'design':
+        skills = ['Классы эквивалентности','Граничные значения','Таблицы решений','Тест-кейсы','Исследовательское тестирование'];
+        break;
+      case 'career':
+        skills = ['Собеседования','CV и портфолио','Карьерный рост','Презентация навыков','Работа в команде'];
+        break;
+      default:
+        skills = ['Тест-дизайн','Пирамида тестов','Граничные значения','Баг-репорты','Agile QA'];
+    }
+    
+    const skillY = descY + 40;
+    const skillRadius = 30;
+    const centerX = W/2;
+    const totalAngle = Math.PI * 2;
+    const angleStep = totalAngle / skills.length;
+    
+    skills.forEach((skill, i) => {
+      const angle = i * angleStep - Math.PI/2; // Start from top (12 o'clock)
+      const radius = 120; // Distance from center
+      
+      const x = centerX + radius * Math.cos(angle);
+      const y = skillY + radius * Math.sin(angle);
+      
+      // Draw circular badge
+      ctx.fillStyle = '#dbeafe';
+      ctx.beginPath();
+      ctx.arc(x, y, skillRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Border
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Text in the center of the badge
+      ctx.fillStyle = '#1e40af';
+      ctx.font = 'bold 11px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Wrap long text
+      const skillWords = wrapText(ctx, skill, skillRadius * 1.5, 11);
+      skillWords.forEach((word, idx, arr) => {
+        ctx.fillText(word, x, y + (idx - (arr.length - 1) / 2) * 12);
+      });
+    });
+
+    // Stats section
+    const statsY = skillY + 200;
     const lvl=getLevelInfo(state.totalXP);
-    [
+    const statsData = [
       {l:'Уровень', v:lvl.name},
       {l:'Набрано XP', v:state.totalXP+' XP'},
       {l:'Достижений', v:state.unlockedAchievements.length.toString()},
       {l:'Уроков', v:state.completedLessons.length+'/'+LESSONS.length},
-    ].forEach((s,i,arr)=>{
-      const x=60+(W-120)/arr.length*i+(W-120)/arr.length/2;
-      ctx.font='bold 15px monospace'; ctx.fillStyle='#c8d8f0'; ctx.fillText(s.v,x,402);
-      ctx.font='9px monospace'; ctx.fillStyle='#2a3a5c'; ctx.fillText(s.l.toUpperCase(),x,416);
+    ];
+    
+    ctx.font = 'bold 14px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#1e40af';
+    
+    statsData.forEach((s, i, arr) => {
+      const x = 100 + i * (W - 200) / arr.length;
+      ctx.fillText(s.v, x, statsY);
+      ctx.font = 'bold 10px Arial, sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(s.l, x, statsY + 20);
+      ctx.font = 'bold 14px Arial, sans-serif';
+      ctx.fillStyle = '#1e40af';
     });
 
-    // Bottom rule
-    ctx.fillStyle='#1c2840'; ctx.fillRect(60,432,W-120,1);
-
-    // Date & ID
-    const ds=new Date().toLocaleDateString('ru-RU',{year:'numeric',month:'long',day:'numeric'});
-    const certId='QA-'+Math.abs(certName.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)%99999).toString().padStart(5,'0');
-    ctx.font='10px monospace'; ctx.fillStyle='#2a3a5c';
-    ctx.textAlign='left'; ctx.fillText('Дата: '+ds,60,452);
-    ctx.textAlign='right'; ctx.fillText('ID: '+certId,W-60,452);
-    ctx.textAlign='center'; ctx.fillStyle='#161e30'; ctx.font='10px monospace';
-    ctx.fillText('qa-trainer  •  Школа ручного тестирования  •  Ручное тестирование ПО',W/2,485);
+    // Signature lines
+    const sigY = statsY + 50;
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(100, sigY);
+    ctx.lineTo(250, sigY);
+    ctx.stroke();
     
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 12px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Руководитель курса', 175, sigY + 20);
+    
+    ctx.beginPath();
+    ctx.moveTo(W - 100, sigY);
+    ctx.lineTo(W - 250, sigY);
+    ctx.stroke();
+    ctx.fillText('Ученик', W - 175, sigY + 20);
+
+    // Footer with date and ID
+    const footerY = H - 40;
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(60, footerY - 15);
+    ctx.lineTo(W - 60, footerY - 15);
+    ctx.stroke();
+    
+    ctx.font = '10px Arial, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'left';
+    const ds = new Date().toLocaleDateString('ru-RU', {year:'numeric',month:'long',day:'numeric'});
+    ctx.fillText('Дата: ' + ds, 60, footerY);
+    
+    ctx.textAlign = 'right';
+    const certId = 'QA-' + Math.abs(certName.split('').reduce((a,c) => a*31 + c.charCodeAt(0), 0) % 99999).toString().padStart(5, '0');
+    ctx.fillText('ID: ' + certId, W - 60, footerY);
+
     // Watermark for debug mode
     if (debugUnlocked && isCheater) {
       ctx.save();
       ctx.translate(W/2, H/2);
-      ctx.rotate(-Math.PI/6); // Rotate the watermark
-      ctx.font = 'bold 48px Arial';
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'; // Semi-transparent red
+      ctx.rotate(-Math.PI/6);
+      ctx.font = 'bold 36px Arial';
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('NOT VALID', 0, 0);
+      ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 0);
       ctx.restore();
     }
   };
@@ -333,7 +521,7 @@ export function Certificate() {
         <h2 className="text-[22px] font-extrabold text-white">🎓 Сертификат</h2>
       </div>
 
-      {!(allDone || debugUnlocked) ? (
+      {certType === 'none' && !debugUnlocked ? (
         <div className="text-center py-10 px-5 glass-panel border-dashed">
           <div 
             className="text-5xl mb-4 grayscale cursor-help select-none"
@@ -348,8 +536,13 @@ export function Certificate() {
             <div className="text-[13px] text-brand-red leading-relaxed">Выдача сертификата невозможна, так как использовалось меню разработчика (накрутка опыта или открытие уроков).</div>
           ) : (
             <>
-              <div className="text-[13px] text-slate-300 leading-relaxed">Пройди все базовые уроки (первые 8), чтобы получить сертификат</div>
-              <div className="mt-4 text-[13px] text-brand-green font-mono">Прогресс: {done.length} / {BASE_LESSONS.length} уроков</div>
+              <div className="text-[13px] text-slate-300 leading-relaxed">Пройди уроки по выбранной категории, чтобы получить сертификат:</div>
+              <div className="mt-2 text-[13px] text-slate-300 leading-relaxed">
+                <div><strong>• Основы</strong>: {FOUNDATION_LESSONS.length} уроков ({FOUNDATION_LESSONS.filter(id => state.completedLessons.includes(id)).length} / {FOUNDATION_LESSONS.length} пройдено)</div>
+                <div><strong>• Техники тест-дизайна</strong>: {DESIGN_TECHNIQUES_LESSONS.length} урока ({DESIGN_TECHNIQUES_LESSONS.filter(id => state.completedLessons.includes(id)).length} / {DESIGN_TECHNIQUES_LESSONS.length} пройдено, требуется все из Основ)</div>
+                <div><strong>• Карьера</strong>: 1 урок + все из Основ</div>
+              </div>
+              <div className="mt-4 text-[13px] text-brand-green font-mono">Прогресс: основы {['pyramid','testcase','types','checklist','buglife','requirements','smoke_sanity','defect_types'].filter(id => state.completedLessons.includes(id)).length} / 8 уроков</div>
             </>
           )}
 
@@ -382,9 +575,11 @@ export function Certificate() {
               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
             </div>
           )}
-          {!debugUnlocked && (
+           {!debugUnlocked && (
             <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
-              ✅ Все базовые уроки пройдены! Введи своё имя и скачай сертификат.
+              {certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.'}
+              {certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.'}
+              {certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.'}
             </div>
           )}
           
