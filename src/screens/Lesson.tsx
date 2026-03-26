@@ -281,10 +281,20 @@ export default function Lesson({ id }: { id: string }) {
         </div>
         <div className="text-xs text-slate-300 mb-4 font-mono">Вопрос {qIndex + 1} из {questions.length}</div>
 
-        <div className={`glass-panel p-5 mb-5 transition-colors duration-300 ${answered ? (isCorrectAns ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}>
-          <div className="text-[17px] font-bold leading-relaxed text-white">{q.q}</div>
-          {q.type === 'sort' && <div className="mt-2 text-xs text-slate-300">👇 Нажимай на варианты в правильном порядке (снизу вверх)</div>}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={qIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className={`glass-panel p-5 mb-5 transition-colors duration-300 ${answered ? (isCorrectAns ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}>
+              <div className="text-[17px] font-bold leading-relaxed text-white">{q.q}</div>
+              {q.type === 'sort' && <div className="mt-2 text-xs text-slate-300">👇 Нажимай на варианты в правильном порядке (снизу вверх)</div>}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         <div className="flex-1 flex flex-col gap-2.5">
           {q.type === 'choice' && q.opts.map((opt: string, i: number) => {

@@ -127,8 +127,19 @@ export default function Home() {
               {catLessons.map((lesson, idxInCat) => {
                 const done = state.completedLessons.includes(lesson.id);
                 let locked = !catUnlocked;
+                
+                // Проверка последовательности уроков
                 if (catUnlocked && idxInCat > 0) {
                   locked = !state.completedLessons.includes(catLessons[idxInCat - 1].id);
+                }
+                
+                // НОВАЯ ЗАЩИТА: Проверка earnedXP для открытия уроков
+                // Требуется минимум earnedXP для продвижения
+                const requiredEarnedXP = idxInCat * 15; // 15 earnedXP на каждый урок
+                const hasEnoughEarnedXP = state.earnedXP >= requiredEarnedXP;
+                
+                if (!hasEnoughEarnedXP && !done) {
+                  locked = true;
                 }
 
                 return (
@@ -143,6 +154,11 @@ export default function Home() {
                     {done && (
                       <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: lesson.color }}>
                         ГОТОВО ✓
+                      </div>
+                    )}
+                    {locked && !hasEnoughEarnedXP && !done && (
+                      <div className="absolute top-0 right-0 bg-brand-red/80 text-white text-[8px] font-extrabold px-2 py-1 rounded-bl-xl tracking-[1px] font-mono">
+                        Нужно {requiredEarnedXP} честного XP
                       </div>
                     )}
                     <div className="flex items-center gap-3">
