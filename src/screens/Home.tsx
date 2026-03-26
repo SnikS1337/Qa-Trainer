@@ -57,13 +57,15 @@ export default function Home() {
     setRocketPressProgress(0);
   };
 
-  const handlePointerDown = () => {
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault(); // Prevent scroll when pressing anywhere
     pressTimer.current = setTimeout(() => {
       setShowDevMenu(true);
     }, 1000);
   };
 
-  const handlePointerUpOrLeave = () => {
+  const handlePointerUpOrLeave = (e: React.PointerEvent) => {
+    e.preventDefault(); // Prevent scroll
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
