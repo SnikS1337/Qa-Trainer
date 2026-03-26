@@ -62,4 +62,5 @@ export interface AppState {
   certName: string;
   lastActiveDate: string;
   isCheater?: boolean;
+  examPassed?: boolean;
 }

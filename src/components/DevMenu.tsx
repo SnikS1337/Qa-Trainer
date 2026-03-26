@@ -60,7 +60,7 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
       <ConfirmModal 
         isOpen={showConfirm} 
         title="Сбросить прогресс?" 

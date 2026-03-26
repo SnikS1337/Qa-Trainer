@@ -19,6 +19,7 @@ export default function Lesson({ id }: { id: string }) {
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   useEffect(() => {
     if (lesson) {
@@ -36,6 +37,7 @@ export default function Lesson({ id }: { id: string }) {
   };
 
   const handleCheck = () => {
+    // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса // Добавляем определение переменной q
     if (answered) {
       if (hearts === 0 || qIndex + 1 >= questions.length) {
         finishLesson();
@@ -61,10 +63,16 @@ export default function Lesson({ id }: { id: string }) {
     if (isCorrect) {
       newCorrect++;
       newConsecutive++;
-      if (newConsecutive >= 3) showToast(`🔥 ${newConsecutive} подряд!`, 'text-brand-amber');
+      if (newConsecutive >= 3) {
+        showToast(`🔥 ${newConsecutive} подряд!`, 'text-brand-amber');
+        setCurrentStreak(newConsecutive); // Обновляем состояние для отображения визуального уведомления
+      } else if (newConsecutive >= 1) {
+        setCurrentStreak(newConsecutive);
+      }
     } else {
       newHearts--;
       newConsecutive = 0;
+      setCurrentStreak(0); // Сбрасываем визуальное уведомление
     }
 
     setCorrect(newCorrect);
@@ -112,7 +120,7 @@ export default function Lesson({ id }: { id: string }) {
 
   if (!lesson || questions.length === 0) return null;
 
-  const q = questions[qIndex];
+  // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса
 
   if (finished) {
     const total = questions.length;
@@ -165,6 +173,7 @@ export default function Lesson({ id }: { id: string }) {
     );
   }
 
+  const q = questions[qIndex];
   const progress = (qIndex / questions.length) * 100;
   const isReady = q.type === 'choice' ? selected !== null : sortOrder.length === q.items?.length;
   const isCorrectAns = q.type === 'choice' ? selected === q.ans : JSON.stringify(sortOrder) === JSON.stringify(q.correct);
@@ -277,6 +286,12 @@ export default function Lesson({ id }: { id: string }) {
           </div>
         )}
 
+        {currentStreak >= 3 && (
+          <div className="mt-4 p-4 rounded-2xl text-[13px] leading-relaxed font-bold text-center text-brand-amber animate-pulse glass-panel backdrop-blur-xl border border-brand-amber/30">
+            🔥 {currentStreak} подряд!
+          </div>
+        )}
+
         <div className="mt-5">
           <button 
             disabled={!isReady} 
@@ -287,6 +302,8 @@ export default function Lesson({ id }: { id: string }) {
             {answered ? 'ДАЛЬШЕ →' : 'ПРОВЕРИТЬ'}
           </button>
         </div>
+
+
       </div>
     </div>
   );

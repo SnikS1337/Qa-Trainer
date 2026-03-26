@@ -8,7 +8,7 @@ export const initialState: AppState = {
   examBestScore: 0, examAttempts: 0,
   dailyStreak: 0, lastDailyDate: '',
   totalQuestionsAnswered: 0, totalCorrect: 0, completedPractice: [],
-  certName: '', lastActiveDate: '', isCheater: false
+  certName: '', lastActiveDate: '', isCheater: false, examPassed: false
 };
 
 export function useAppStoreInit() {

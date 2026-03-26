@@ -156,7 +156,7 @@ export function Certificate() {
     if (debugUnlocked) return;
     const timer = setTimeout(() => {
       setShowPassModal(true);
-    }, 5000);
+    }, 3000);
     setHoldTimer(timer);
   };
 
@@ -183,7 +183,7 @@ export function Certificate() {
     if (((allDone && !isCheater) || debugUnlocked) && canvasRef.current) {
       drawCertificate(name || 'Твоё имя');
     }
-  }, [name, allDone, isCheater, state, debugUnlocked]);
+  }, [name, allDone, isCheater, debugUnlocked]);
 
   const drawCertificate = (certName: string) => {
     const canvas = canvasRef.current;
@@ -302,6 +302,19 @@ export function Certificate() {
     ctx.textAlign='right'; ctx.fillText('ID: '+certId,W-60,452);
     ctx.textAlign='center'; ctx.fillStyle='#161e30'; ctx.font='10px monospace';
     ctx.fillText('qa-trainer  •  Школа ручного тестирования  •  Ручное тестирование ПО',W/2,485);
+    
+    // Watermark for debug mode
+    if (debugUnlocked && isCheater) {
+      ctx.save();
+      ctx.translate(W/2, H/2);
+      ctx.rotate(-Math.PI/6); // Rotate the watermark
+      ctx.font = 'bold 48px Arial';
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'; // Semi-transparent red
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('NOT VALID', 0, 0);
+      ctx.restore();
+    }
   };
 
   const handleDownload = () => {
@@ -320,7 +333,7 @@ export function Certificate() {
         <h2 className="text-[22px] font-extrabold text-white">🎓 Сертификат</h2>
       </div>
 
-      {!allDone || (isCheater && !debugUnlocked) ? (
+      {!(allDone || debugUnlocked) ? (
         <div className="text-center py-10 px-5 glass-panel border-dashed">
           <div 
             className="text-5xl mb-4 grayscale cursor-help select-none"
@@ -343,7 +356,7 @@ export function Certificate() {
           {showPassModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
               <div className="glass-panel p-6 max-w-[320px] w-full">
-                <h3 className="text-xl font-extrabold mb-4 text-white">Debug Access</h3>
+                 <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
                 <form onSubmit={handlePassSubmit}>
                   <input 
                     type="password" 
@@ -383,10 +396,13 @@ export function Certificate() {
               maxLength={40}
               value={name}
               onChange={e => {
-                setName(e.target.value);
-                updateState({ certName: e.target.value });
+                if (!isCheater && !debugUnlocked) {
+                  setName(e.target.value);
+                  updateState({ certName: e.target.value });
+                }
               }}
-              className="w-full glass-input p-3.5 text-white font-sans text-[15px] font-semibold"
+              disabled={isCheater || debugUnlocked}
+              className={`w-full glass-input p-3.5 text-white font-sans text-[15px] font-semibold ${(isCheater || debugUnlocked) ? 'bg-gray-700 cursor-not-allowed' : ''}`}
             />
           </div>
           
@@ -395,13 +411,13 @@ export function Certificate() {
             <canvas ref={canvasRef} width="800" height="560" className="w-full rounded-2xl border border-white/10 block shadow-xl"></canvas>
           </div>
           
-          <button 
-            disabled={isCheater}
-            className={`w-full font-bold py-4 rounded-xl text-[15px] transition-all backdrop-blur-md border ${isCheater ? 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed grayscale' : 'bg-brand-green/80 hover:bg-brand-green border-brand-green/50 text-white'}`}
-            onClick={handleDownload}
-          >
-            {isCheater ? '🚫 Скачивание заблокировано (читы)' : '⬇️ Скачать сертификат (PNG)'}
-          </button>
+           <button 
+              disabled={isCheater || debugUnlocked}
+              className={`w-full font-bold py-4 rounded-xl text-[15px] transition-all backdrop-blur-md border ${(isCheater || debugUnlocked) ? 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed grayscale' : 'bg-brand-green/80 hover:bg-brand-green border-brand-green/50 text-white'}`}
+              onClick={handleDownload}
+            >
+              {(isCheater || debugUnlocked) ? '🚫 Скачивание заблокировано (дебаг меню активировано)' : '⬇️ Скачать сертификат (PNG)'}
+            </button>
         </div>
       )}
     </div>

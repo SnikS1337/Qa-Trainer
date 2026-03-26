@@ -43,9 +43,9 @@ body {
 }
 
 .solid-header {
-  background-color: #0f111a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #0f111a 0%, #1a1f2e 20%, #252d42 40%, #2d3748 60%, #354052 80%, #3c485c 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(34, 211, 160, 0.1);
 }
 
 .glass-button {
