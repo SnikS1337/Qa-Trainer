@@ -515,13 +515,8 @@ export function Certificate() {
             </div>
           )}
         </div>
-      ) : (
-        <div>
-           {debugUnlocked && (
-             <div className="text-center mb-5 p-3.5 glass-panel border-brand-amber/30 bg-brand-amber/10 text-[13px] text-brand-amber">
-               ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
-             </div>
-           )}
+       ) : (
+         <div>
            {debugUnlocked && (
              <div className="text-center mb-5 p-3.5 glass-panel border-brand-amber/30 bg-brand-amber/10 text-[13px] text-brand-amber">
                ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано.
