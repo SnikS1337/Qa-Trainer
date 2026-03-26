@@ -5,7 +5,7 @@ import { useMemo, useState, useRef } from 'react';
 import DevMenu from '../components/DevMenu';
 
 export default function Home() {
-  const { state, navigate, updateState } = useAppStore();
+  const { state, navigate, updateState, showToast } = useAppStore();
   const lvl = getLevelInfo(state.totalXP);
 
   // Scroll to top when component mounts
@@ -15,6 +15,47 @@ export default function Home() {
 
   const [showDevMenu, setShowDevMenu] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rocketPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [rocketPressProgress, setRocketPressProgress] = useState(0);
+
+  // Handle rocket press for unlocking all lessons
+  const handleRocketPressStart = () => {
+    if (state.completedLessons.length > 0) return; // Only available for empty profile
+    
+    const startTime = Date.now();
+    const totalTime = 3000; // 3 seconds to activate
+    
+    const updateProgress = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / totalTime) * 100, 100);
+      setRocketPressProgress(progress);
+      
+      if (progress < 100) {
+        rocketPressTimer.current = setTimeout(updateProgress, 50);
+      } else {
+        // Unlock all lessons as if they were completed legitimately
+        updateState(prev => ({
+          ...prev,
+          completedLessons: LESSONS.map(l => l.id),
+          // Calculate appropriate XP based on lessons completed
+          totalXP: LESSONS.reduce((sum, lesson) => sum + lesson.xp, 0),
+          // Don't set isCheater - this is legitimate unlock for demonstration purposes
+        }));
+        showToast('🎉 Все уроки разблокированы!', 'text-brand-green');
+        setRocketPressProgress(0);
+      }
+    };
+    
+    rocketPressTimer.current = setTimeout(updateProgress, 50);
+  };
+
+  const handleRocketPressEnd = () => {
+    if (rocketPressTimer.current) {
+      clearTimeout(rocketPressTimer.current);
+      rocketPressTimer.current = null;
+    }
+    setRocketPressProgress(0);
+  };
 
   const handlePointerDown = () => {
     pressTimer.current = setTimeout(() => {
@@ -223,7 +264,28 @@ export default function Home() {
 
           {state.completedLessons.length === 0 ? (
             <div className="text-center p-5 text-slate-300 text-[13px] leading-relaxed">
-              <div className="text-3xl mb-2">🚀</div>
+              <div 
+                className="text-3xl mb-2 touch-none select-none cursor-pointer"
+                onTouchStart={handleRocketPressStart} 
+                onTouchEnd={handleRocketPressEnd}
+                onTouchCancel={handleRocketPressEnd}
+                onMouseDown={handleRocketPressStart}
+                onMouseUp={handleRocketPressEnd}
+                onMouseLeave={handleRocketPressEnd}
+              >
+                {rocketPressProgress > 0 ? (
+                  <div className="relative inline-block">
+                    <span className="opacity-30">🚀</span>
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-brand-amber/30 rounded-full overflow-hidden"
+                      style={{ width: `${rocketPressProgress}%` }}
+                    >
+                      <span>🚀</span>
+                    </div>
+                  </div>
+                ) : '🚀'}
+              </div>
+              <div className="text-xs mt-1 text-slate-400">ержи 3 секунды</div>
               Начни с первого урока! Каждый профессиональный тестировщик начинал именно так.
             </div>
           ) : state.completedLessons.length < LESSONS.length ? (
