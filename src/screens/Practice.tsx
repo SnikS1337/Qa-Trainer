@@ -4,11 +4,6 @@ import { PRACTICE_TASKS } from '../data';
 export default function Practice() {
   const { state, navigate } = useAppStore();
 
-  // Scroll to top when component mounts
-  if(typeof window !== 'undefined') {
-    window.scrollTo(0, 0);
-  }
-
   const typeLabels: Record<string, string> = { 
     triage: '🔴 Расстановка severity', 
     find_error: '🔍 Найди ошибки', 

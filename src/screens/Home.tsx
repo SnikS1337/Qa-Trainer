@@ -8,53 +8,65 @@ export default function Home() {
   const { state, navigate, updateState, showToast } = useAppStore();
   const lvl = getLevelInfo(state.totalXP);
 
-  // Scroll to top when component mounts
-  if(typeof window !== 'undefined') {
-    window.scrollTo(0, 0);
-  }
-
   const [showDevMenu, setShowDevMenu] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rocketPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [rocketPressProgress, setRocketPressProgress] = useState(0);
+  const rocketPressStartedAt = useRef<number | null>(null);
+  const rocketUnlockedRef = useRef(false);
 
   // Handle rocket press for unlocking all lessons
-  const handleRocketPressStart = () => {
-    if (state.completedLessons.length > 0) return; // Only available for empty profile
-    
-    const startTime = Date.now();
-    const totalTime = 3000; // 3 seconds to activate
-    
+  const handleRocketPressStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (state.completedLessons.length > 0 || rocketPressTimer.current) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    rocketUnlockedRef.current = false;
+    rocketPressStartedAt.current = Date.now();
+
+    const totalTime = 3000;
+
     const updateProgress = () => {
-      const elapsed = Date.now() - startTime;
+      if (!rocketPressStartedAt.current) return;
+
+      const elapsed = Date.now() - rocketPressStartedAt.current;
       const progress = Math.min((elapsed / totalTime) * 100, 100);
       setRocketPressProgress(progress);
-      
-      if (progress < 100) {
-        rocketPressTimer.current = setTimeout(updateProgress, 50);
-      } else {
-        // Unlock all lessons as if they were completed legitimately
+
+      if (progress >= 100) {
+        rocketUnlockedRef.current = true;
+        rocketPressTimer.current = null;
+        rocketPressStartedAt.current = null;
+        setRocketPressProgress(0);
         updateState(prev => ({
           ...prev,
           completedLessons: LESSONS.map(l => l.id),
-          // Calculate appropriate XP based on lessons completed
           totalXP: LESSONS.reduce((sum, lesson) => sum + lesson.xp, 0),
-          // Don't set isCheater - this is legitimate unlock for demonstration purposes
         }));
         showToast('🎉 Все уроки разблокированы!', 'text-brand-green');
-        setRocketPressProgress(0);
+        return;
       }
+
+      rocketPressTimer.current = setTimeout(updateProgress, 50);
     };
-    
+
     rocketPressTimer.current = setTimeout(updateProgress, 50);
   };
 
-  const handleRocketPressEnd = () => {
+  const handleRocketPressEnd = (e?: React.PointerEvent<HTMLDivElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+
     if (rocketPressTimer.current) {
       clearTimeout(rocketPressTimer.current);
       rocketPressTimer.current = null;
     }
-    setRocketPressProgress(0);
+
+    rocketPressStartedAt.current = null;
+
+    if (!rocketUnlockedRef.current) {
+      setRocketPressProgress(0);
+    }
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -268,12 +280,10 @@ export default function Home() {
             <div className="text-center p-5 text-slate-300 text-[13px] leading-relaxed">
               <div 
                 className="text-3xl mb-2 touch-none select-none cursor-pointer"
-                onTouchStart={(e) => { e.preventDefault(); handleRocketPressStart(); }}
-                onTouchEnd={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
-                onTouchCancel={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
-                onMouseDown={(e) => { e.preventDefault(); handleRocketPressStart(); }}
-                onMouseUp={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
-                onMouseLeave={(e) => { e.preventDefault(); handleRocketPressEnd(); }}
+                onPointerDown={handleRocketPressStart}
+                onPointerUp={handleRocketPressEnd}
+                onPointerCancel={handleRocketPressEnd}
+                onPointerLeave={handleRocketPressEnd}
               >
                 {rocketPressProgress > 0 ? (
                   <div className="relative inline-block">
