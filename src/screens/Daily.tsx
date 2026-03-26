@@ -194,7 +194,7 @@ export default function Daily() {
                  key={idx}
                  disabled={answered}
                  onClick={() => setSelectedOption(idx)}
-                 className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-220 backdrop-blur-md ${bgClass} ${borderClass} ${textClass} ${!answered ? 'hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.01] cursor-pointer' : 'cursor-default'}`}
+                 className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-220 backdrop-blur-md ${bgClass} ${borderClass} ${textClass} ${!answered ? 'hover:bg-white/8 hover:border-white/24 hover:shadow-[0_0_8px_rgba(255,255,255,0.06)] cursor-pointer' : 'cursor-default'}`}
                >
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${selectedOption === idx || (answered && idx === q.ans) ? borderClass : 'border-white/20'}`}>
@@ -220,7 +220,7 @@ export default function Daily() {
            <button 
              disabled={selectedOption === null} 
              onClick={handleAnswer} 
-             className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all duration-220 backdrop-blur-md border ${selectedOption !== null ? (answered ? 'bg-brand-amber/80 border-brand-amber/50 text-white hover:bg-brand-amber hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:scale-[1.01]' : 'bg-white/10 border-white/20 text-white hover:bg-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.01]') : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
+             className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all duration-220 backdrop-blur-md border ${selectedOption !== null ? (answered ? 'bg-brand-amber/80 border-brand-amber/50 text-white hover:bg-brand-amber hover:shadow-[0_0_12px_rgba(251,191,36,0.24)]' : 'bg-white/10 border-white/20 text-white hover:bg-white/14 hover:shadow-[0_0_10px_rgba(255,255,255,0.12)]') : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
            >
              {answered ? (currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ' : 'ДАЛЕЕ') : 'ПРОВЕРИТЬ'}
            </button>

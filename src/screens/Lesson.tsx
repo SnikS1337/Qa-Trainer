@@ -269,7 +269,7 @@ export default function Lesson({ id }: { id: string }) {
                 key={i} 
                 disabled={answered} 
                 onClick={() => setSelected(i)} 
-                className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all duration-200 backdrop-blur-md ${bg} ${border} ${text} ${!answered ? 'hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-[1.01] cursor-pointer' : 'cursor-default'}`} 
+                className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all duration-200 backdrop-blur-md ${bg} ${border} ${text} ${!answered ? 'hover:bg-white/8 hover:border-white/24 hover:shadow-[0_0_8px_rgba(255,255,255,0.06)] cursor-pointer' : 'cursor-default'}`} 
                 style={!answered && isSelected ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` } : undefined}
               >
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono shrink-0 ${answered && isCorrectOption ? 'bg-brand-green/20 text-brand-green' : isSelected && !answered ? 'bg-white/20 text-white' : 'bg-black/30 text-slate-300'}`} style={!answered && isSelected ? { backgroundColor: `${lesson.color}40`, color: lesson.color } : undefined}>
@@ -301,7 +301,7 @@ export default function Lesson({ id }: { id: string }) {
                     <button key={item} disabled={answered} onClick={() => {
                       if (isSelected) setSortOrder(sortOrder.filter(x => x !== item));
                       else setSortOrder([...sortOrder, item]);
-                    }} className={`w-full text-left p-3 rounded-xl border-[1.5px] font-semibold text-[13px] transition-all duration-200 backdrop-blur-md text-white ${isSelected ? 'opacity-35 border-white/5 bg-black/20' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.08)]'}`}>
+                    }} className={`w-full text-left p-3 rounded-xl border-[1.5px] font-semibold text-[13px] transition-all duration-200 backdrop-blur-md text-white ${isSelected ? 'opacity-35 border-white/5 bg-black/20' : 'border-white/10 bg-white/5 hover:bg-white/8 hover:border-white/24 hover:shadow-[0_0_8px_rgba(255,255,255,0.06)]'}`}>
                       {item}
                     </button>
                   );

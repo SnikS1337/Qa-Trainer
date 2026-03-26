@@ -79,8 +79,6 @@ export default function Practice() {
                         <div className="font-bold text-sm mb-0.5 text-white">{task.title}</div>
                         <div className="text-xs text-slate-300 mb-2 truncate">{task.desc}</div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-slate-300 font-mono">#{task.id.split('-')[1]}</span>
-                          <span className="text-slate-500">·</span>
                           <span className="text-[11px] text-slate-300 font-mono">Практика</span>
                           <span className="text-slate-500">·</span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full font-mono border" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}20` }}>
