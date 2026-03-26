@@ -194,7 +194,7 @@ export function Certificate() {
   };
 
   useEffect(() => {
-    if (((certType !== 'none' && !isCheater) || debugUnlocked) && canvasRef.current) {
+    if (((certType !== 'none' && !isCheater) || debugUnlocked || (certType !== 'none' && isCheater)) && canvasRef.current) {
       drawCertificate(name || 'Твоё имя');
     }
   }, [name, certType, isCheater, debugUnlocked]);
@@ -434,18 +434,17 @@ export function Certificate() {
     const ds = new Date().toLocaleDateString('ru-RU', {year:'numeric',month:'long',day:'numeric'});
     ctx.fillText('Дата: ' + ds, W/2, footerY);
 
-    // Watermark for debug mode
-    if (debugUnlocked && isCheater) {
-      ctx.save();
-      ctx.translate(W/2, H/2);
-      ctx.rotate(-Math.PI/6);
-      ctx.font = 'bold 48px Arial';
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 0);
-      ctx.restore();
-    }
+     // Watermark for cheaters
+     if (isCheater) {
+       ctx.save();
+       ctx.translate(W/2, H/2);
+       ctx.rotate(-Math.PI/6);
+       ctx.font = 'bold 48px Arial';
+       ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+       ctx.textAlign = 'center';
+       ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 0);
+       ctx.restore();
+     }
     } catch (error) {
       console.error('Ошибка при рисовании сертификата:', error);
       showToast('Ошибка при создании сертификата', 'text-brand-red');
@@ -525,7 +524,7 @@ export function Certificate() {
            {!debugUnlocked && (
              <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
                {isCheater 
-                 ? '⚠️ Доступ к сертификату заблокирован из-за использования читов.' 
+                 ? '⚠️ Доступ к сертификату разрешен, но он будет содержать водяной знак "НЕДЕЙСТВИТЕЛЬНЫЙ".' 
                  : (certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.')
                  || (certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.')
                  || (certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.')
