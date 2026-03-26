@@ -136,7 +136,7 @@ export function Achievements() {
   );
 }
 
-const FOUNDATION_LESSONS = ['pyramid','testcase','types','checklist','buglife','requirements','smoke_sanity','defect_types','equiv','boundary']; // Основы - 10 уроков
+const FOUNDATION_LESSONS = ['pyramid','testcase','states','checklist','types','buglife','requirements','smoke_sanity','defect_types']; // Основы - 9 уроков
 const DESIGN_TECHNIQUES_LESSONS = ['equiv','boundary']; // Техники тест-дизайна - 2 урока
 const CAREER_LESSON = ['interview']; // Карьера - 1 урок
 
@@ -151,10 +151,10 @@ export function Certificate() {
   const [certType, setCertType] = useState<'none'|'foundation'|'design'|'career'>('none');
 
   // Проверяем, какие сертификаты доступны
-  const coreFoundationDone = ['pyramid','testcase','types','checklist','buglife','requirements','smoke_sanity','defect_types'].every(id => state.completedLessons.includes(id)); // 8 основных уроков
+  const coreFoundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
   const designDone = coreFoundationDone && DESIGN_TECHNIQUES_LESSONS.every(id => state.completedLessons.includes(id)); // 2 урока техник дизайна
-  const foundationDone = designDone; // Для сертификата "Основы" теперь требуются все 10 уроков (8 основных + 2 техники)
-  const careerDone = designDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы + техники)
+  const foundationDone = coreFoundationDone; // Для сертификата "Основы" теперь требуются все 9 уроков основ
+  const careerDone = coreFoundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
 
   // Определяем тип доступного сертификата (наивысший из пройденных)
   useEffect(() => {
@@ -542,7 +542,7 @@ export function Certificate() {
                 <div><strong>• Техники тест-дизайна</strong>: {DESIGN_TECHNIQUES_LESSONS.length} урока ({DESIGN_TECHNIQUES_LESSONS.filter(id => state.completedLessons.includes(id)).length} / {DESIGN_TECHNIQUES_LESSONS.length} пройдено, требуется все из Основ)</div>
                 <div><strong>• Карьера</strong>: 1 урок + все из Основ</div>
               </div>
-              <div className="mt-4 text-[13px] text-brand-green font-mono">Прогресс: основы {['pyramid','testcase','types','checklist','buglife','requirements','smoke_sanity','defect_types'].filter(id => state.completedLessons.includes(id)).length} / 8 уроков</div>
+              <div className="mt-4 text-[13px] text-brand-green font-mono">Прогресс: основы {FOUNDATION_LESSONS.filter(id => state.completedLessons.includes(id)).length} / 9 уроков</div>
             </>
           )}
 
