@@ -20,6 +20,17 @@ export function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// Shuffle options and track correct answer index
+export function shuffleOptions(opts: string[], correctIndex: number): { shuffledOpts: string[], newCorrectIndex: number } {
+  const indexed = opts.map((opt, idx) => ({ opt, idx }));
+  const shuffled = shuffle(indexed);
+  const newCorrectIndex = shuffled.findIndex(item => item.idx === correctIndex);
+  return {
+    shuffledOpts: shuffled.map(item => item.opt),
+    newCorrectIndex
+  };
+}
+
 export function plural(n: number, a: string, b: string, c: string) {
   const m = n % 100, m10 = n % 10;
   if (m >= 11 && m <= 19) return c;

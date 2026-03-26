@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, ACHIEVEMENTS } from '../data';
-import { shuffle } from '../utils';
+import { shuffle, shuffleOptions } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -25,8 +25,11 @@ export default function Exam() {
       }
     });
     
-    // Select 20 random questions
-    const shuffled = shuffle(allQ).slice(0, 20);
+    // Select 20 random questions and shuffle their options
+    const shuffled = shuffle(allQ).slice(0, 20).map(q => {
+      const { shuffledOpts, newCorrectIndex } = shuffleOptions(q.opts, q.ans);
+      return { ...q, opts: shuffledOpts, ans: newCorrectIndex };
+    });
     setQuestions(shuffled);
   }, []);
 

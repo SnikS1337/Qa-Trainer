@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
 import { AppState } from '../types';
-import { shuffle } from '../utils';
+import { shuffle, shuffleOptions } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Lesson({ id }: { id: string }) {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -24,7 +25,15 @@ export default function Lesson({ id }: { id: string }) {
 
   useEffect(() => {
     if (lesson) {
-      setQuestions(shuffle(lesson.questions).slice(0, 6));
+      // Shuffle questions and shuffle options for choice questions
+      const shuffledQuestions = shuffle(lesson.questions).slice(0, 6).map(q => {
+        if (q.type === 'choice') {
+          const { shuffledOpts, newCorrectIndex } = shuffleOptions(q.opts, q.ans);
+          return { ...q, opts: shuffledOpts, ans: newCorrectIndex };
+        }
+        return q;
+      });
+      setQuestions(shuffledQuestions);
     }
   }, [lesson]);
 
