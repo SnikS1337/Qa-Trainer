@@ -34,8 +34,9 @@ export default function App() {
 
   useEffect(() => {
     // Scroll to top whenever screen changes
+    // Only scroll when actually navigating between screens, not for state updates
     window.scrollTo(0, 0);
-  }, [screen, currentId]);
+  }, [screen]);
 
   return (
     <AppContext.Provider value={{ ...store, navigate, showToast }}>
