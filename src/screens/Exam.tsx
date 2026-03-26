@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, ACHIEVEMENTS } from '../data';
 import { shuffle } from '../utils';
@@ -30,24 +30,7 @@ export default function Exam() {
     setQuestions(shuffled);
   }, []);
 
-  useEffect(() => {
-    if (finished || questions.length === 0) return;
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleFinish();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [finished, questions.length]);
-
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     setFinished(true);
     const passed = score >= 16; // 80% to pass
     
@@ -72,7 +55,24 @@ export default function Exam() {
     } else {
       showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
     }
-  };
+  }, [score, updateState, showToast]);
+
+  useEffect(() => {
+    if (finished || questions.length === 0) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleFinish();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [finished, questions.length, handleFinish]);
 
   const handleAnswer = () => {
     if (selectedOption === null) return;

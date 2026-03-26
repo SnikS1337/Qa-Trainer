@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS, ACHIEVEMENTS } from '../data';
 import { AppState } from '../types';
@@ -13,8 +13,28 @@ export default function PracticeTask({ id }: { id: string }) {
   const [selectedErrors, setSelectedErrors] = useState<Set<string>>(new Set());
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [correctCount, setCorrectCount] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!task) return null;
+
+  // Debounced toggle handler to prevent race conditions
+  const handleToggleError = useCallback((fieldId: string) => {
+    if (answered || isProcessing) return;
+    
+    setIsProcessing(true);
+    setTimeout(() => {
+      setSelectedErrors(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(fieldId)) {
+          newSet.delete(fieldId);
+        } else {
+          newSet.add(fieldId);
+        }
+        return newSet;
+      });
+      setIsProcessing(false);
+    }, 50); // 50ms debounce
+  }, [answered, isProcessing]);
 
   const checkAchievements = (newState: AppState) => {
     ACHIEVEMENTS.forEach(a => {
@@ -161,13 +181,7 @@ export default function PracticeTask({ id }: { id: string }) {
             }
 
             return (
-              <div key={field.id} onClick={() => {
-                if (answered) return;
-                const newSet = new Set(selectedErrors);
-                if (newSet.has(field.id)) newSet.delete(field.id);
-                else newSet.add(field.id);
-                setSelectedErrors(newSet);
-              }} className={`border-[1.5px] rounded-2xl p-3.5 cursor-pointer transition-all select-none backdrop-blur-md ${bg} ${border} ${!answered && !isSelected && 'hover:border-white/20 hover:bg-white/10'}`}>
+              <div key={field.id} onClick={() => handleToggleError(field.id)} className={`border-[1.5px] rounded-2xl p-3.5 cursor-pointer transition-all select-none backdrop-blur-md ${bg} ${border} ${!answered && !isSelected && 'hover:border-white/20 hover:bg-white/10'}`}>
                 <div className="text-[10px] text-slate-400 font-mono tracking-[1px] mb-1 uppercase">{field.label}</div>
                 <div className="text-[13px] font-semibold leading-relaxed whitespace-pre-line text-white">{field.value}</div>
                 

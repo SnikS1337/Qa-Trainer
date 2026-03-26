@@ -1,8 +1,8 @@
 import { AppState, Lesson, Quote, Achievement } from './types';
-import { LESSONS_PART_1 } from './data_lessons_1';
-import { LESSONS_PART_2 } from './data_lessons_2';
-import { LESSONS_PART_3 } from './data_lessons_3';
-import { LESSONS_PART_4 } from './data_lessons_4';
+import { LESSONS_PART_1 } from './data/lessons_part_1';
+import { LESSONS_PART_2 } from './data/lessons_part_2';
+import { LESSONS_PART_3 } from './data/lessons_part_3';
+import { LESSONS_PART_4 } from './data/lessons_part_4';
 
 const LOCAL_LESSONS_PART_1: Lesson[] = [
   {

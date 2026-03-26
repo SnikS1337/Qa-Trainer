@@ -160,9 +160,9 @@ export function Certificate() {
   useEffect(() => {
     if (careerDone) setCertType('career');
     else if (designDone) setCertType('design');
-    else if (coreFoundationDone) setCertType('foundation'); // Используем только 8 основных уроков для сертификата "Основы"
+    else if (foundationDone) setCertType('foundation'); // Исправлено: используем foundationDone вместо coreFoundationDone
     else setCertType('none');
-  }, [careerDone, designDone, coreFoundationDone]);
+  }, [careerDone, designDone, foundationDone]);
 
   const isCheater = state.isCheater;
 
@@ -222,9 +222,17 @@ export function Certificate() {
 
   const drawCertificate = (certName: string) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      showToast('Ошибка: Canvas не поддерживается', 'text-brand-red');
+      return;
+    }
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      showToast('Ошибка: Не удалось получить контекст Canvas', 'text-brand-red');
+      return;
+    }
+    
+    try {
     
     const W = 800, H = 560;
     ctx.clearRect(0, 0, W, H);
@@ -437,6 +445,10 @@ export function Certificate() {
       ctx.textBaseline = 'middle';
       ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 0);
       ctx.restore();
+    }
+    } catch (error) {
+      console.error('Ошибка при рисовании сертификата:', error);
+      showToast('Ошибка при создании сертификата', 'text-brand-red');
     }
   };
 

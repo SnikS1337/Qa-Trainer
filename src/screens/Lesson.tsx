@@ -38,19 +38,21 @@ export default function Lesson({ id }: { id: string }) {
   };
 
   const handleCheck = () => {
-    const q = questions[qIndex]; // Добавляем определение переменной q
+    // Защита от race condition: если уже обрабатывается, игнорируем
+    if (answered && (hearts === 0 || qIndex + 1 >= questions.length)) {
+      finishLesson();
+      return;
+    }
+    
     if (answered) {
-      if (hearts === 0 || qIndex + 1 >= questions.length) {
-        finishLesson();
-      } else {
-        setQIndex(qIndex + 1);
-        setAnswered(false);
-        setSelected(null);
-        setSortOrder([]);
-      }
+      setQIndex(qIndex + 1);
+      setAnswered(false);
+      setSelected(null);
+      setSortOrder([]);
       return;
     }
 
+    const q = questions[qIndex];
     let isCorrect = false;
     if (q.type === 'choice') isCorrect = selected === q.ans;
     if (q.type === 'sort') isCorrect = JSON.stringify(sortOrder) === JSON.stringify(q.correct);
@@ -65,12 +67,12 @@ export default function Lesson({ id }: { id: string }) {
       newCorrect++;
       newConsecutive++;
        if (newConsecutive >= 3) {
-        setCurrentStreak(newConsecutive); // Обновляем состояние для отображения визуального уведомления
+        setCurrentStreak(newConsecutive);
       }
     } else {
       newHearts--;
       newConsecutive = 0;
-      setCurrentStreak(0); // Сбрасываем визуальное уведомление
+      setCurrentStreak(0);
     }
 
     setCorrect(newCorrect);

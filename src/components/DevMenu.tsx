@@ -57,20 +57,57 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
         throw new Error('Invalid data structure');
       }
       
-      // Check for required AppState properties
-      const requiredFields = ['totalXP', 'completedLessons', 'streak', 'maxStreak', 'perfectLessons', 'retries', 'bestStreak', 'unlockedAchievements', 'lastQuoteIndex', 'dailyQuoteDate', 'examBestScore', 'examAttempts', 'dailyStreak', 'lastDailyDate', 'totalQuestionsAnswered', 'totalCorrect', 'completedPractice', 'certName', 'lastActiveDate'];
+      // Check for required AppState properties and their types
+      const requiredFields: Record<string, string> = {
+        totalXP: 'number',
+        completedLessons: 'object',
+        streak: 'number',
+        maxStreak: 'number',
+        perfectLessons: 'number',
+        retries: 'number',
+        bestStreak: 'number',
+        unlockedAchievements: 'object',
+        lastQuoteIndex: 'number',
+        dailyQuoteDate: 'string',
+        examBestScore: 'number',
+        examAttempts: 'number',
+        dailyStreak: 'number',
+        lastDailyDate: 'string',
+        totalQuestionsAnswered: 'number',
+        totalCorrect: 'number',
+        completedPractice: 'object',
+        certName: 'string',
+        lastActiveDate: 'string'
+      };
       
-      for (const field of requiredFields) {
+      for (const [field, expectedType] of Object.entries(requiredFields)) {
         if (!(field in parsed)) {
           throw new Error(`Missing field: ${field}`);
         }
+        
+        const actualType = Array.isArray(parsed[field]) ? 'object' : typeof parsed[field];
+        if (actualType !== expectedType) {
+          throw new Error(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`);
+        }
+      }
+      
+      // Additional validation for arrays
+      if (!Array.isArray(parsed.completedLessons)) {
+        throw new Error('completedLessons must be an array');
+      }
+      if (!Array.isArray(parsed.unlockedAchievements)) {
+        throw new Error('unlockedAchievements must be an array');
+      }
+      if (!Array.isArray(parsed.completedPractice)) {
+        throw new Error('completedPractice must be an array');
       }
       
       updateState({ ...parsed, isCheater: true });
       showToast('Прогресс загружен', 'text-brand-green');
       setImportData('');
     } catch (e) {
-      showToast('Ошибка импорта (неверный JSON)', 'text-brand-red');
+      const errorMsg = e instanceof Error ? e.message : 'Неверный JSON';
+      showToast(`Ошибка импорта: ${errorMsg}`, 'text-brand-red');
     }
   };
 

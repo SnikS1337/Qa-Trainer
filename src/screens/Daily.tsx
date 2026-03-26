@@ -17,9 +17,12 @@ export default function Daily() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    // Check if already played today
-    const today = new Date().toDateString();
-    if (state.lastDailyDate === today) {
+    // Check if already played today - fix: normalize date to midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toDateString();
+    
+    if (state.lastDailyDate === todayStr) {
       showToast('Ты уже прошел ежедневный квиз сегодня!', 'text-brand-amber');
       navigate('home');
       return;
@@ -50,17 +53,33 @@ export default function Daily() {
     updateState(prev => {
       const s = { ...prev };
       s.totalXP += xpEarned;
-      s.lastDailyDate = new Date().toDateString();
       
-      // Update streak if needed
-      const yesterday = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toDateString();
+      
+      s.lastDailyDate = todayStr;
+      
+      // Update streak if needed - fix: normalize dates to midnight for accurate comparison
+      const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      if (s.lastActiveDate === yesterday.toDateString()) {
-        s.dailyStreak += 1;
-      } else if (s.lastActiveDate !== new Date().toDateString()) {
+      const yesterdayStr = yesterday.toDateString();
+      
+      const lastActive = s.lastActiveDate ? new Date(s.lastActiveDate) : null;
+      if (lastActive) {
+        lastActive.setHours(0, 0, 0, 0);
+        const lastActiveStr = lastActive.toDateString();
+        
+        if (lastActiveStr === yesterdayStr) {
+          s.dailyStreak += 1;
+        } else if (lastActiveStr !== todayStr) {
+          s.dailyStreak = 1;
+        }
+      } else {
         s.dailyStreak = 1;
       }
-      s.lastActiveDate = new Date().toDateString();
+      
+      s.lastActiveDate = todayStr;
       
       return s;
     });

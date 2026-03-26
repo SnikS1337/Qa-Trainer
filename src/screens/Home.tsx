@@ -5,7 +5,7 @@ import { useMemo, useState, useRef } from 'react';
 import DevMenu from '../components/DevMenu';
 
 export default function Home() {
-  const { state, navigate } = useAppStore();
+  const { state, navigate, updateState } = useAppStore();
   const lvl = getLevelInfo(state.totalXP);
 
   const [showDevMenu, setShowDevMenu] = useState(false);
@@ -29,9 +29,11 @@ export default function Home() {
     let idx = state.lastQuoteIndex;
     if (state.dailyQuoteDate !== today) {
       idx = Math.floor(Math.random() * QUOTES.length);
+      // Update the quote index in state for consistency
+      updateState({ lastQuoteIndex: idx, dailyQuoteDate: today });
     }
     return QUOTES[idx % QUOTES.length];
-  }, [state.lastQuoteIndex, state.dailyQuoteDate]);
+  }, [state.lastQuoteIndex, state.dailyQuoteDate, updateState]);
 
   const categories = Array.from(new Set(LESSONS.map(l => l.category)));
   const today = new Date().toDateString();
