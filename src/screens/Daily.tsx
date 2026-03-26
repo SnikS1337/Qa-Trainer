@@ -218,15 +218,15 @@ export default function Daily() {
           </div>
         )}
 
-        <div className="mt-8">
-          <button 
-            disabled={selectedOption === null} 
-            onClick={handleAnswer} 
-            className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all backdrop-blur-md border ${selectedOption !== null ? (answered ? 'bg-brand-amber/80 border-brand-amber/50 text-white hover:bg-brand-amber' : 'bg-white/10 border-white/20 text-white hover:bg-white/20') : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
-          >
-            {answered ? (currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ' : 'ДАЛЕЕ') : 'ПРОВЕРИТЬ'}
-          </button>
-        </div>
+         <div className="mt-8">
+           <button 
+             disabled={selectedOption === null} 
+             onClick={handleAnswer} 
+             className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all duration-200 backdrop-blur-md border ${selectedOption !== null ? (answered ? 'bg-brand-amber/80 border-brand-amber/50 text-white hover:bg-brand-amber hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:scale-[1.02]' : 'bg-white/10 border-white/20 text-white hover:bg-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02]') : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
+           >
+             {answered ? (currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ' : 'ДАЛЕЕ') : 'ПРОВЕРИТЬ'}
+           </button>
+         </div>
       </div>
     </div>
   );

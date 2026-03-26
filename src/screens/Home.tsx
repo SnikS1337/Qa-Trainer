@@ -170,10 +170,10 @@ export default function Home() {
 
         {/* Extra Modes */}
         <div className="pb-10">
-          <div 
-            onClick={() => !dailyDone && navigate('daily')}
-            className={`glass-panel p-4 mb-3 transition-all duration-300 border-purple-400/30 bg-purple-400/5 ${dailyDone ? 'opacity-60 cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
-          >
+           <div 
+             onClick={() => !dailyDone && navigate('daily')}
+             className={`glass-panel p-4 mb-3 transition-all duration-300 border-purple-400/30 bg-purple-400/5 ${dailyDone ? 'opacity-60 cursor-default' : 'cursor-pointer hover:bg-purple-400/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:scale-[1.02]'}`}
+           >
             <div className="flex items-center gap-3">
               <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
               <div className="flex-1">
@@ -185,10 +185,10 @@ export default function Home() {
           </div>
 
           {state.completedLessons.length >= 4 && (
-            <div 
-              onClick={() => navigate('exam')}
-              className="glass-panel p-4 mb-3 cursor-pointer transition-all duration-300 border-red-400/30 bg-red-400/5 hover:bg-red-400/10"
-            >
+             <div 
+               onClick={() => navigate('exam')}
+               className="glass-panel p-4 mb-3 cursor-pointer transition-all duration-300 border-red-400/30 bg-red-400/5 hover:bg-red-400/10 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)] hover:scale-[1.02]"
+             >
               <div className="flex items-center gap-3">
                 <div className="text-3xl">🎯</div>
                 <div className="flex-1">
@@ -200,10 +200,10 @@ export default function Home() {
             </div>
           )}
 
-          <div 
-            onClick={() => navigate('practice')}
-            className="glass-panel p-4 mb-3 cursor-pointer transition-all duration-300 border-emerald-400/30 bg-emerald-400/5 hover:bg-emerald-400/10"
-          >
+           <div 
+             onClick={() => navigate('practice')}
+             className="glass-panel p-4 mb-3 cursor-pointer transition-all duration-300 border-blue-400/30 bg-blue-400/5 hover:bg-blue-400/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:scale-[1.02]"
+           >
             <div className="flex items-center gap-3">
               <div className="text-3xl">🛠️</div>
               <div className="flex-1">
