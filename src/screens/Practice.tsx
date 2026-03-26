@@ -5,6 +5,20 @@ import { PRACTICE_TASKS } from '../data';
 export default function Practice() {
   const { state, navigate } = useAppStore();
 
+  const typeIcons: Record<string, string> = {
+    triage: '🔴',
+    find_error: '🔍',
+    write_test: '✍️',
+    bug_report: '📝',
+  };
+
+  const typeColors: Record<string, string> = {
+    triage: '#f87171',
+    find_error: '#60a5fa',
+    write_test: '#a78bfa',
+    bug_report: '#34d399',
+  };
+
   const typeLabels: Record<string, string> = { 
     triage: '🔴 Расстановка severity', 
     find_error: '🔍 Найди ошибки', 
@@ -25,14 +39,22 @@ export default function Practice() {
         <h2 className="text-[22px] font-extrabold text-white">🛠️ Практика</h2>
       </div>
       
-      <div className="space-y-5">
+      <div className="space-y-6">
         {Object.entries(groupedTasks).map(([type, tasks]) => {
           const typedTasks = tasks as typeof PRACTICE_TASKS[number][];
+          const completedCount = typedTasks.filter(task => state.completedPractice.includes(task.id)).length;
+          const accent = typeColors[type] || '#94a3b8';
 
           return (
-          <div key={type} className="glass-panel p-5">
-            <div className="text-[15px] font-bold mb-4 text-white">{typeLabels[type]}</div>
-            <div className="grid grid-cols-2 gap-3">
+          <div key={type} className="mb-7">
+            <div className="font-mono text-[10px] text-white tracking-[3px] uppercase mb-3 flex items-center gap-2">
+              <span className="flex-1 h-[1px] bg-white/20"></span>
+              <span>{typeIcons[type]} {typeLabels[type]}</span>
+              <span className="text-[9px] text-slate-300 font-bold tracking-normal">{completedCount}/{typedTasks.length}</span>
+              <span className="flex-1 h-[1px] bg-white/20"></span>
+            </div>
+
+            <div className="space-y-3">
               {typedTasks.map(task => {
                 const done = state.completedPractice.includes(task.id);
                 return (
@@ -40,12 +62,34 @@ export default function Practice() {
                     key={task.id} 
                     onClick={() => navigate('practice_task', task.id)}
                     type="button"
-                    className={`interactive-card p-3.5 rounded-xl text-left duration-200 ${done ? 'bg-brand-green/10 border border-brand-green/30' : 'bg-white/5 hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] border border-white/10'} cursor-pointer`}
+                    className={`glass-panel soft-hover w-full p-4 relative overflow-hidden text-left cursor-pointer ${done ? 'border-opacity-60' : ''}`}
+                    style={{ borderColor: done ? `${accent}55` : 'rgba(255,255,255,0.12)' }}
                   >
-                    <div className="text-[13px] font-bold text-white mb-1">#{task.id.split('-')[1]}</div>
-                    <div className="text-[11px] text-slate-300 truncate">{task.title}</div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-1">{task.xp} XP</div>
-                    {done && <div className="text-[8px] text-brand-green font-bold mt-1">ГОТОВО ✓</div>}
+                    {done && (
+                      <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: accent }}>
+                        ГОТОВО ✓
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 bg-black/20" style={{ borderColor: `${accent}55` }}>
+                        {task.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-sm mb-0.5 text-white">{task.title}</div>
+                        <div className="text-xs text-slate-300 mb-2 truncate">{task.desc}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-300 font-mono">#{task.id.split('-')[1]}</span>
+                          <span className="text-slate-500">·</span>
+                          <span className="text-[11px] text-slate-300 font-mono">Практика</span>
+                          <span className="text-slate-500">·</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full font-mono border" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}20` }}>
+                            +{task.xp} XP
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-lg shrink-0" style={{ color: accent }}>›</div>
+                    </div>
                   </button>
                 );
               })}
