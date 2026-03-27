@@ -62,9 +62,10 @@ export default function Practice() {
                     key={task.id} 
                     onClick={() => navigate('practice_task', task.id)}
                     type="button"
-                    className={`glass-panel soft-hover w-full p-4 relative overflow-hidden text-left cursor-pointer ${done ? 'border-opacity-60' : ''}`}
+                    className={`glass-panel soft-hover w-full p-4 relative overflow-hidden text-left ${done ? 'border-opacity-60 cursor-pointer' : 'cursor-pointer'}`}
                     style={{ borderColor: done ? `${accent}55` : 'rgba(255,255,255,0.12)' }}
                   >
+                    <div className={`card-frame ${done ? 'is-active' : 'is-active'}`}></div>
                     {done && (
                       <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: accent }}>
                         ГОТОВО ✓
