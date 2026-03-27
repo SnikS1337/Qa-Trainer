@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store';
-import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
+import { LESSONS, MOTIVATIONAL_MESSAGES } from '../data';
 import { AppState } from '../types';
-import { shuffle, shuffleOptions } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { AnimatedProgressBar } from '../components/AnimatedProgressBar';
+import { awardNewAchievements, calculatePercent, prepareLessonQuestions, PreparedQuestion } from '../utils/quiz';
 
 export default function Lesson({ id }: { id: string }) {
   const { state, updateState, navigate, showToast } = useAppStore();
   const lesson = LESSONS.find(l => l.id === id);
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<PreparedQuestion[]>([]);
   const [qIndex, setQIndex] = useState(0);
   const [hearts, setHearts] = useState(3);
   const [correct, setCorrect] = useState(0);
@@ -23,33 +23,26 @@ export default function Lesson({ id }: { id: string }) {
   const [finished, setFinished] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
     if (lesson) {
-      // Shuffle questions and shuffle options for choice questions
-      const shuffledQuestions = shuffle(lesson.questions).slice(0, 6).map(q => {
-        if (q.type === 'choice') {
-          const { shuffledOpts, newCorrectIndex } = shuffleOptions(q.opts, q.ans);
-          return { ...q, opts: shuffledOpts, ans: newCorrectIndex };
-        }
-        return q;
-      });
-      setQuestions(shuffledQuestions);
+      setQuestions(prepareLessonQuestions(lesson.questions, 6));
     }
   }, [lesson]);
 
   const checkAchievements = (newState: AppState) => {
-    ACHIEVEMENTS.forEach(a => {
-      if (!newState.unlockedAchievements.includes(a.id) && a.check(newState)) {
-        newState.unlockedAchievements.push(a.id);
-        showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
-      }
+    awardNewAchievements(newState, title => {
+      showToast(`🏆 Достижение: ${title}!`, 'text-brand-amber');
     });
   };
 
   const handleCheck = () => {
-    // Защита от race condition: если уже обрабатывается, игнорируем
+    // Защита от race condition: если уже завершается урок, игнорируем
+    if (isFinishing) return;
+    
     if (answered && (hearts === 0 || qIndex + 1 >= questions.length)) {
+      setIsFinishing(true);
       finishLesson();
       return;
     }
@@ -101,7 +94,7 @@ export default function Lesson({ id }: { id: string }) {
   const finishLesson = () => {
     setFinished(true);
     const total = questions.length;
-    const pct = Math.round((correct / total) * 100);
+    const pct = calculatePercent(correct, total);
     const passed = pct >= 60 && hearts > 0;
     const perfect = correct === total && hearts === 3;
     const gainedXP = passed ? (perfect ? Math.round(lesson!.xp * 1.5) : lesson!.xp) : Math.round(lesson!.xp * 0.2);
@@ -118,12 +111,6 @@ export default function Lesson({ id }: { id: string }) {
       if (perfect) s.perfectLessons++;
       if (!passed) s.retries++;
       
-      // Сбрасываем счетчик провалов при любом завершении урока
-      if (s.lessonFailCount[lesson!.id]) {
-        s.lessonFailCount = { ...s.lessonFailCount };
-        delete s.lessonFailCount[lesson!.id];
-      }
-      
       checkAchievements(s);
       return s;
     });
@@ -134,18 +121,20 @@ export default function Lesson({ id }: { id: string }) {
     }
   };
 
-  if (!lesson || questions.length === 0) return null;
+  const motivMsg = useMemo(() => {
+    const total = questions.length || 1;
+    const pct = calculatePercent(correct, total);
+    return MOTIVATIONAL_MESSAGES.find(m => pct >= m.pct) ?? MOTIVATIONAL_MESSAGES[MOTIVATIONAL_MESSAGES.length - 1];
+  }, [correct, questions.length]);
 
-  // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса
+  if (!lesson || questions.length === 0) return null;
 
   if (finished) {
     const total = questions.length;
-    const pct = Math.round((correct / total) * 100);
+    const pct = calculatePercent(correct, total);
     const passed = pct >= 60 && hearts > 0;
     const perfect = correct === total && hearts === 3;
     const gainedXP = passed ? (perfect ? Math.round(lesson.xp * 1.5) : lesson.xp) : Math.round(lesson.xp * 0.2);
-    const motivMsg = MOTIVATIONAL_MESSAGES.find(m => pct >= m.pct)!;
-
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center w-full">
         <div className="max-w-[400px] w-full glass-panel p-8">
@@ -178,7 +167,8 @@ export default function Lesson({ id }: { id: string }) {
             {(!passed || perfect) && (
               <button className="w-full glass-button text-white font-bold py-4 uppercase tracking-wide" onClick={() => {
                 setQIndex(0); setHearts(3); setCorrect(0); setAnswered(false); setSelected(null); setSortOrder([]); setConsecutiveCorrect(0); setFinished(false);
-                setQuestions(shuffle(lesson.questions).slice(0, 6));
+                setCurrentStreak(0);
+                setQuestions(prepareLessonQuestions(lesson.questions, 6));
               }}>
                 🔄 Повторить урок
               </button>

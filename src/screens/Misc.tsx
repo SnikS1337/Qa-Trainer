@@ -1,8 +1,13 @@
-import { useAppStore, initialState } from '../store';
+import { useAppStore, initialState, STORAGE_KEY } from '../store';
 import { QUOTES, LESSONS, ACHIEVEMENTS } from '../data';
 import { getLevelInfo } from '../utils';
 import { useMemo, useRef, useEffect, useState, FormEvent } from 'react';
 import ConfirmModal from '../components/ConfirmModal';
+
+// Certificate lesson requirements - synced with lesson categories
+const FOUNDATION_LESSONS = ['pyramid','testcase','states','checklist','types','buglife','requirements','smoke_sanity','defect_types'];
+const DESIGN_TECHNIQUES_LESSONS = ['equiv','boundary'];
+const CAREER_LESSON = ['interview'];
 
 export function Splash() {
   const { navigate } = useAppStore();
@@ -41,7 +46,7 @@ export function Stats() {
         title="Сбросить прогресс?" 
         message="Это действие нельзя отменить. Вы уверены?" 
         onConfirm={() => {
-          localStorage.removeItem('qa_trainer_v2');
+          localStorage.removeItem(STORAGE_KEY);
           updateState(initialState);
           setShowConfirm(false);
           navigate('splash');
@@ -136,10 +141,6 @@ export function Achievements() {
   );
 }
 
-const FOUNDATION_LESSONS = ['pyramid','testcase','states','checklist','types','buglife','requirements','smoke_sanity','defect_types']; // Основы - 9 уроков
-const DESIGN_TECHNIQUES_LESSONS = ['equiv','boundary']; // Техники тест-дизайна - 2 урока
-const CAREER_LESSON = ['interview']; // Карьера - 1 урок
-
 export function Certificate() {
   const { state, updateState, navigate, showToast } = useAppStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -151,16 +152,15 @@ export function Certificate() {
   const [certType, setCertType] = useState<'none'|'foundation'|'design'|'career'>('none');
 
   // Проверяем, какие сертификаты доступны
-  const coreFoundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
-  const designDone = coreFoundationDone && DESIGN_TECHNIQUES_LESSONS.every(id => state.completedLessons.includes(id)); // 2 урока техник дизайна
-  const foundationDone = coreFoundationDone; // Для сертификата "Основы" теперь требуются все 9 уроков основ
-  const careerDone = coreFoundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
+  const foundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
+  const designDone = foundationDone && DESIGN_TECHNIQUES_LESSONS.every(id => state.completedLessons.includes(id)); // 2 урока техник дизайна
+  const careerDone = foundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
 
   // Определяем тип доступного сертификата (наивысший из пройденных)
   useEffect(() => {
     if (careerDone) setCertType('career');
     else if (designDone) setCertType('design');
-    else if (foundationDone) setCertType('foundation'); // Исправлено: используем foundationDone вместо coreFoundationDone
+    else if (foundationDone) setCertType('foundation');
     else setCertType('none');
   }, [careerDone, designDone, foundationDone]);
 
@@ -194,7 +194,7 @@ export function Certificate() {
   };
 
   useEffect(() => {
-    if (((certType !== 'none' && !isCheater) || debugUnlocked || (certType !== 'none' && isCheater)) && canvasRef.current) {
+    if ((certType !== 'none' || debugUnlocked) && canvasRef.current) {
       drawCertificate(name || 'Твоё имя');
     }
   }, [name, certType, isCheater, debugUnlocked]);

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS } from '../data';
-import { shuffle, shuffleOptions } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
+import { calculatePercent, prepareChoiceQuestions, PreparedChoiceQuestion } from '../utils/quiz';
 
 export default function Daily() {
   const { state, updateState, navigate, showToast } = useAppStore();
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<PreparedChoiceQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -28,25 +28,14 @@ export default function Daily() {
       return;
     }
 
-    // Gather all choice questions from all lessons
-    let allQ: any[] = [];
-    LESSONS.forEach(l => {
-      if (l.questions) {
-        allQ = [...allQ, ...l.questions.filter(q => q.type === 'choice')];
-      }
-    });
-    
-    // Select 5 random questions and shuffle their options
-    const shuffled = shuffle(allQ).slice(0, 5).map(q => {
-      const { shuffledOpts, newCorrectIndex } = shuffleOptions(q.opts, q.ans);
-      return { ...q, opts: shuffledOpts, ans: newCorrectIndex };
-    });
-    setQuestions(shuffled);
-  }, []);
+    const allQuestions = LESSONS.flatMap(lesson => lesson.questions);
+    setQuestions(prepareChoiceQuestions(allQuestions, 5));
+  }, [state.lastDailyDate, showToast, navigate]);
 
   const handleFinish = () => {
     setFinished(true);
-    const passed = score >= 3; // 60% to pass
+    const percent = calculatePercent(score, questions.length);
+    const passed = percent >= 60;
     const xpEarned = score * 10;
     
     if (passed) {
@@ -113,7 +102,7 @@ export default function Daily() {
   if (questions.length === 0) return <div className="p-10 text-center text-slate-400">Загрузка квиза...</div>;
 
   if (finished) {
-    const passed = score >= 3;
+    const passed = calculatePercent(score, questions.length) >= 60;
     return (
       <div className="max-w-[500px] mx-auto p-6 pt-20 text-center w-full">
         <div className="text-6xl mb-6">{passed ? '🌟' : '👍'}</div>

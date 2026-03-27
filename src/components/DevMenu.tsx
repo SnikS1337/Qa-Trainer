@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppStore, initialState } from '../store';
+import { useAppStore, initialState, STORAGE_KEY } from '../store';
 import { LESSONS } from '../data';
 import ConfirmModal from './ConfirmModal';
 
@@ -34,7 +34,7 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   };
 
   const handleConfirmReset = () => {
-    localStorage.removeItem('qa_trainer_v2');
+    localStorage.removeItem(STORAGE_KEY);
     updateState(initialState);
     setShowConfirm(false);
     onClose();

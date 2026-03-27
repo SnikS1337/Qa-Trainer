@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { AppState } from './types';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { AppState, Screen } from './types';
+
+export const STORAGE_KEY = 'qa_trainer_v2';
 
 export const initialState: AppState = {
   totalXP: 0, 
@@ -21,7 +23,6 @@ export const initialState: AppState = {
   completedPractice: [],
   certName: '', 
   lastActiveDate: '', 
-  lessonFailCount: {},
   isCheater: false, 
   examPassed: false
 };
@@ -29,7 +30,7 @@ export const initialState: AppState = {
 export function useAppStoreInit() {
   const [state, setState] = useState<AppState>(() => {
     try {
-      const s = localStorage.getItem('qa_trainer_v2');
+      const s = localStorage.getItem(STORAGE_KEY);
       return s ? { ...initialState, ...JSON.parse(s) } : initialState;
     } catch {
       return initialState;
@@ -38,7 +39,11 @@ export function useAppStoreInit() {
 
   // Auto-save on every state change
   useEffect(() => {
-    localStorage.setItem('qa_trainer_v2', JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // Ignore storage failures to keep the app usable.
+    }
   }, [state]);
 
   const updateState = (updates: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
@@ -51,7 +56,12 @@ export function useAppStoreInit() {
   return { state, updateState };
 }
 
-export const AppContext = createContext<ReturnType<typeof useAppStoreInit> & { navigate: (s: string, id?: string) => void, showToast: (msg: string, color?: string) => void }>({
+type AppContextValue = ReturnType<typeof useAppStoreInit> & {
+  navigate: (screen: Screen, id?: string) => void;
+  showToast: (msg: string, color?: string) => void;
+};
+
+export const AppContext = createContext<AppContextValue>({
   state: initialState,
   updateState: () => {},
   navigate: () => {},

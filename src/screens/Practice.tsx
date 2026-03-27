@@ -1,25 +1,26 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS } from '../data';
+import { PracticeTaskType } from '../types';
 
 export default function Practice() {
   const { state, navigate } = useAppStore();
 
-  const typeIcons: Record<string, string> = {
+  const typeIcons: Record<PracticeTaskType, string> = {
     triage: '🔴',
     find_error: '🔍',
     write_test: '✍️',
     bug_report: '📝',
   };
 
-  const typeColors: Record<string, string> = {
+  const typeColors: Record<PracticeTaskType, string> = {
     triage: '#f87171',
     find_error: '#60a5fa',
     write_test: '#a78bfa',
     bug_report: '#34d399',
   };
 
-  const typeLabels: Record<string, string> = { 
+  const typeLabels: Record<PracticeTaskType, string> = {
     triage: '🔴 Расстановка severity', 
     find_error: '🔍 Найди ошибки', 
     write_test: '✍️ Напиши тест-кейс', 
@@ -30,7 +31,7 @@ export default function Practice() {
     if (!acc[task.type]) acc[task.type] = [];
     acc[task.type].push(task);
     return acc;
-  }, {} as Record<string, typeof PRACTICE_TASKS[number][]>), []);
+  }, {} as Record<PracticeTaskType, typeof PRACTICE_TASKS>), []);
 
   return (
     <div className="max-w-[600px] mx-auto p-6 pb-10 w-full">
@@ -40,22 +41,22 @@ export default function Practice() {
       </div>
       
       <div className="space-y-6">
-        {Object.entries(groupedTasks).map(([type, tasks]) => {
-          const typedTasks = tasks as typeof PRACTICE_TASKS[number][];
-          const completedCount = typedTasks.filter(task => state.completedPractice.includes(task.id)).length;
-          const accent = typeColors[type] || '#94a3b8';
+        {Object.entries(groupedTasks).map(([rawType, tasks]) => {
+          const type = rawType as PracticeTaskType;
+          const completedCount = tasks.filter(task => state.completedPractice.includes(task.id)).length;
+          const accent = typeColors[type];
 
           return (
           <div key={type} className="mb-7">
             <div className="font-mono text-[10px] text-white tracking-[3px] uppercase mb-3 flex items-center gap-2">
               <span className="flex-1 h-[1px] bg-white/20"></span>
               <span>{typeIcons[type]} {typeLabels[type]}</span>
-              <span className="text-[9px] text-slate-300 font-bold tracking-normal">{completedCount}/{typedTasks.length}</span>
+              <span className="text-[9px] text-slate-300 font-bold tracking-normal">{completedCount}/{tasks.length}</span>
               <span className="flex-1 h-[1px] bg-white/20"></span>
             </div>
 
             <div className="space-y-3">
-              {typedTasks.map(task => {
+              {tasks.map(task => {
                 const done = state.completedPractice.includes(task.id);
                 return (
                   <button 

@@ -1,64 +1,62 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store';
-import { LESSONS, ACHIEVEMENTS } from '../data';
-import { shuffle, shuffleOptions } from '../utils';
+import { LESSONS } from '../data';
+import { QuestionChoice } from '../types';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
+import { awardNewAchievements, calculatePercent, prepareChoiceQuestions } from '../utils/quiz';
 
 export default function Exam() {
   const { state, updateState, navigate, showToast } = useAppStore();
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<QuestionChoice[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
   const [finished, setFinished] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const scoreRef = useRef(0);
 
   useEffect(() => {
-    // Gather all choice questions from all lessons
-    let allQ: any[] = [];
-    LESSONS.forEach(l => {
-      if (l.questions) {
-        allQ = [...allQ, ...l.questions.filter(q => q.type === 'choice')];
-      }
-    });
-    
-    // Select 20 random questions and shuffle their options
-    const shuffled = shuffle(allQ).slice(0, 20).map(q => {
-      const { shuffledOpts, newCorrectIndex } = shuffleOptions(q.opts, q.ans);
-      return { ...q, opts: shuffledOpts, ans: newCorrectIndex };
-    });
-    setQuestions(shuffled);
+    const allQuestions = LESSONS.flatMap(lesson => lesson.questions);
+    setQuestions(prepareChoiceQuestions(allQuestions, 20));
   }, []);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   const handleFinish = useCallback(() => {
     setFinished(true);
-    const passed = score >= 16; // 80% to pass
+    const finalScore = scoreRef.current;
+    const percent = calculatePercent(finalScore, questions.length);
+    const passed = finalScore >= 16; // 80% to pass
     
-    if (passed) {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      updateState(prev => {
-        const s = { ...prev };
+    updateState(prev => {
+      const s = { ...prev };
+      s.examAttempts += 1;
+      s.examBestScore = Math.max(s.examBestScore, percent);
+
+      if (passed) {
         s.totalXP += 500;
         if (!s.examPassed) s.examPassed = true;
-        
-        // Check achievements
-        ACHIEVEMENTS.forEach(a => {
-          if (!s.unlockedAchievements.includes(a.id) && a.check(s)) {
-            s.unlockedAchievements.push(a.id);
-            showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
-          }
-        });
-        
-        return s;
+      }
+
+      awardNewAchievements(s, title => {
+        showToast(`🏆 Достижение: ${title}!`, 'text-brand-amber');
       });
+
+      return s;
+    });
+
+    if (passed) {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       showToast('🎓 Экзамен сдан! +500 XP', 'text-brand-green');
     } else {
       showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
     }
-  }, [score, updateState, showToast]);
+  }, [questions.length, showToast, updateState]);
 
   useEffect(() => {
     if (finished || questions.length === 0) return;

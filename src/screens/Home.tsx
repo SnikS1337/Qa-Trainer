@@ -1,8 +1,11 @@
 import { useAppStore } from '../store';
 import { LESSONS, QUOTES, PRACTICE_TASKS } from '../data';
 import { getLevelInfo, plural } from '../utils';
-import { useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DevMenu from '../components/DevMenu';
+
+const EXAM_QUESTIONS_COUNT = 20;
+const EXAM_DURATION_MINUTES = 10;
 
 export default function Home() {
   const { state, navigate, updateState, showToast } = useAppStore();
@@ -71,6 +74,9 @@ export default function Home() {
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault(); // Prevent scroll when pressing anywhere
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+    }
     pressTimer.current = setTimeout(() => {
       setShowDevMenu(true);
     }, 1000);
@@ -84,16 +90,34 @@ export default function Home() {
     }
   };
 
-  const quote = useMemo(() => {
+  useEffect(() => {
+    return () => {
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+      }
+      if (rocketPressTimer.current) {
+        clearTimeout(rocketPressTimer.current);
+        rocketPressTimer.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const today = new Date().toDateString();
-    let idx = state.lastQuoteIndex;
-    if (state.dailyQuoteDate !== today) {
-      idx = Math.floor(Math.random() * QUOTES.length);
-      // Update the quote index in state for consistency
-      updateState({ lastQuoteIndex: idx, dailyQuoteDate: today });
+    if (state.dailyQuoteDate === today) {
+      return;
     }
-    return QUOTES[idx % QUOTES.length];
-  }, [state.lastQuoteIndex, state.dailyQuoteDate, updateState]);
+
+    updateState({
+      lastQuoteIndex: Math.floor(Math.random() * QUOTES.length),
+      dailyQuoteDate: today,
+    });
+  }, [state.dailyQuoteDate, updateState]);
+
+  const quote = useMemo(() => {
+    return QUOTES[state.lastQuoteIndex % QUOTES.length];
+  }, [state.lastQuoteIndex]);
 
   const categories = ['Основы', 'Техники тест-дизайна', 'Продвинутый уровень', 'Процессы', 'Карьера'];
 
@@ -258,7 +282,7 @@ export default function Home() {
                 <div className="text-3xl">🎯</div>
                 <div className="flex-1">
                   <div className="font-extrabold text-sm mb-1 text-white">Режим экзамена</div>
-                  <div className="text-xs text-slate-300">20 вопросов · 2 минуты · Без подсказок {state.examBestScore > 0 && <span>· Рекорд: <span className="text-brand-red font-extrabold">{state.examBestScore}%</span></span>}</div>
+                  <div className="text-xs text-slate-300">{EXAM_QUESTIONS_COUNT} вопросов · {EXAM_DURATION_MINUTES} минут · Без подсказок {state.examBestScore > 0 && <span>· Рекорд: <span className="text-brand-red font-extrabold">{state.examBestScore}%</span></span>}</div>
                 </div>
                 <div className="text-brand-red text-lg">›</div>
               </div>
