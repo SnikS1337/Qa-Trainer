@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
-import { AppState } from '../types';
+import { AppState, Question } from '../types';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
@@ -10,7 +10,7 @@ export default function Lesson({ id }: { id: string }) {
   const { state, updateState, navigate, showToast } = useAppStore();
   const lesson = LESSONS.find(l => l.id === id);
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [qIndex, setQIndex] = useState(0);
   const [hearts, setHearts] = useState(3);
   const [correct, setCorrect] = useState(0);
@@ -119,8 +119,6 @@ export default function Lesson({ id }: { id: string }) {
   };
 
   if (!lesson || questions.length === 0) return null;
-
-  // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса
 
   if (finished) {
     const total = questions.length;

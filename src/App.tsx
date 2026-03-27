@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppContext, useAppStoreInit } from './store';
 import { motion, AnimatePresence } from 'motion/react';
 import Home from './screens/Home';
@@ -19,6 +19,7 @@ export default function App() {
   const [screen, setScreen] = useState('splash');
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [toast, setToast] = useState<{msg: string, color: string} | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const navigate = (s: string, id?: string) => {
     setScreen(s);
@@ -26,8 +27,13 @@ export default function App() {
   };
 
   const showToast = (msg: string, color: string = 'text-brand-green') => {
+    // Очищаем предыдущий таймер если есть
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    
     setToast({ msg, color });
-    setTimeout(() => setToast(null), 2500);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
   };
 
   const state = store.state;
@@ -35,6 +41,15 @@ export default function App() {
   useEffect(() => {
     // No automatic redirect, wait for user to click start
   }, [screen]);
+
+  // Cleanup toast timer on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <AppContext.Provider value={{ ...store, navigate, showToast }}>

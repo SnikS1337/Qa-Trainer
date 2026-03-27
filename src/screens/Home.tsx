@@ -1,7 +1,7 @@
 import { useAppStore } from '../store';
 import { LESSONS, QUOTES, PRACTICE_TASKS } from '../data';
 import { getLevelInfo, plural } from '../utils';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import DevMenu from '../components/DevMenu';
 
 export default function Home() {
@@ -12,6 +12,9 @@ export default function Home() {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePointerDown = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+    }
     pressTimer.current = setTimeout(() => {
       setShowDevMenu(true);
     }, 1000);
@@ -23,6 +26,16 @@ export default function Home() {
       pressTimer.current = null;
     }
   };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+      }
+    };
+  }, []);
 
   const quote = useMemo(() => {
     const today = new Date().toDateString();

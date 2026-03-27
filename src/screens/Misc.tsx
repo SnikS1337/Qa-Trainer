@@ -463,6 +463,29 @@ export function Certificate() {
 
   return (
     <div className="max-w-[600px] mx-auto p-6 pb-10 w-full">
+      {/* Modal вынесен наружу, чтобы не ограничивался размером родителя */}
+      {showPassModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-panel p-6 w-full max-w-2xl mx-auto">
+             <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
+            <form onSubmit={handlePassSubmit}>
+              <input 
+                type="password" 
+                value={passInput}
+                onChange={e => setPassInput(e.target.value)}
+                placeholder="Пароль"
+                className="glass-input w-full p-3 mb-4"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowPassModal(false)} className="flex-1 glass-button py-3 text-xs">ОТМЕНА</button>
+                <button type="submit" className="flex-1 bg-brand-blue/80 text-white font-bold py-3 rounded-xl text-xs">ОК</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-6">
         <button className="glass-button px-3.5 py-2 text-[13px]" onClick={() => navigate('home')}>← Назад</button>
         <h2 className="text-[22px] font-extrabold text-white">🎓 Сертификат</h2>
@@ -491,28 +514,6 @@ export function Certificate() {
               </div>
               <div className="mt-4 text-[13px] text-brand-green font-mono">Прогресс: основы {FOUNDATION_LESSONS.filter(id => state.completedLessons.includes(id)).length} / 9 уроков</div>
             </>
-          )}
-
-          {showPassModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="glass-panel p-6 max-w-[320px] w-full">
-                 <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
-                <form onSubmit={handlePassSubmit}>
-                  <input 
-                    type="password" 
-                    value={passInput}
-                    onChange={e => setPassInput(e.target.value)}
-                    placeholder="Пароль"
-                    className="glass-input w-full p-3 mb-4"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => setShowPassModal(false)} className="flex-1 glass-button py-3 text-xs">ОТМЕНА</button>
-                    <button type="submit" className="flex-1 bg-brand-blue/80 text-white font-bold py-3 rounded-xl text-xs">ОК</button>
-                  </div>
-                </form>
-              </div>
-            </div>
           )}
         </div>
       ) : (

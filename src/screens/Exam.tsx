@@ -4,11 +4,12 @@ import { LESSONS, ACHIEVEMENTS } from '../data';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
+import { QuestionChoice } from '../types';
 
 export default function Exam() {
   const { state, updateState, navigate, showToast } = useAppStore();
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<QuestionChoice[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
@@ -18,10 +19,10 @@ export default function Exam() {
 
   useEffect(() => {
     // Gather all choice questions from all lessons
-    let allQ: any[] = [];
+    const allQ: QuestionChoice[] = [];
     LESSONS.forEach(l => {
       if (l.questions) {
-        allQ = [...allQ, ...l.questions.filter(q => q.type === 'choice')];
+        allQ.push(...l.questions.filter((q): q is QuestionChoice => q.type === 'choice'));
       }
     });
     

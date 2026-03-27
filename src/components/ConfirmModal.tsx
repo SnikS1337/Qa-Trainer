@@ -25,7 +25,7 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
             initial={{ opacity: 0, scale: 0.95, y: 10 }} 
             animate={{ opacity: 1, scale: 1, y: 0 }} 
             exit={{ opacity: 0, scale: 0.95, y: 10 }} 
-            className="relative glass-panel p-6 max-w-[340px] w-full"
+            className="relative glass-panel p-6 w-full max-w-md mx-auto"
           >
             <h3 className="text-xl font-extrabold mb-2 text-white">{title}</h3>
             <p className="text-slate-300 text-[14px] leading-relaxed mb-6">{message}</p>

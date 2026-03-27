@@ -23,7 +23,12 @@ export function useAppStoreInit() {
 
   // Auto-save on every state change
   useEffect(() => {
-    localStorage.setItem('qa_trainer_v2', JSON.stringify(state));
+    try {
+      localStorage.setItem('qa_trainer_v2', JSON.stringify(state));
+    } catch (error) {
+      console.error('Failed to save state to localStorage:', error);
+      // Silently fail - user can continue using the app
+    }
   }, [state]);
 
   const updateState = (updates: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
