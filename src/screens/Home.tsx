@@ -1,7 +1,7 @@
 import { useAppStore } from '../store';
 import { LESSONS, QUOTES, PRACTICE_TASKS } from '../data';
 import { getLevelInfo, plural } from '../utils';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import DevMenu from '../components/DevMenu';
 
 export default function Home() {
@@ -37,16 +37,18 @@ export default function Home() {
     };
   }, []);
 
-  const quote = useMemo(() => {
+  useEffect(() => {
     const today = new Date().toDateString();
-    let idx = state.lastQuoteIndex;
+
     if (state.dailyQuoteDate !== today) {
-      idx = Math.floor(Math.random() * QUOTES.length);
-      // Update the quote index in state for consistency
-      updateState({ lastQuoteIndex: idx, dailyQuoteDate: today });
+      updateState({
+        lastQuoteIndex: Math.floor(Math.random() * QUOTES.length),
+        dailyQuoteDate: today,
+      });
     }
-    return QUOTES[idx % QUOTES.length];
   }, [state.lastQuoteIndex, state.dailyQuoteDate, updateState]);
+
+  const quote = QUOTES[state.lastQuoteIndex % QUOTES.length];
 
   const categories = Array.from(new Set(LESSONS.map(l => l.category)));
   const today = new Date().toDateString();

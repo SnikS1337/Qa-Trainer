@@ -31,14 +31,18 @@ export default function Exam() {
     setQuestions(shuffled);
   }, []);
 
-  const handleFinish = useCallback(() => {
+  const handleFinish = useCallback((finalScore: number = score) => {
+    if (finished) return;
+
     setFinished(true);
-    const passed = score >= 16; // 80% to pass
+    const passed = finalScore >= 16; // 80% to pass
     
-    if (passed) {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      updateState(prev => {
-        const s = { ...prev };
+    updateState(prev => {
+      const s = { ...prev };
+      s.examAttempts += 1;
+      s.examBestScore = Math.max(s.examBestScore, Math.round((finalScore / 20) * 100));
+
+      if (passed) {
         s.totalXP += 500;
         if (!s.examPassed) s.examPassed = true;
         
@@ -49,14 +53,18 @@ export default function Exam() {
             showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
           }
         });
-        
-        return s;
-      });
+      }
+
+      return s;
+    });
+
+    if (passed) {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       showToast('🎓 Экзамен сдан! +500 XP', 'text-brand-green');
     } else {
       showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
     }
-  }, [score, updateState, showToast]);
+  }, [finished, score, updateState, showToast]);
 
   useEffect(() => {
     if (finished || questions.length === 0) return;
@@ -79,15 +87,18 @@ export default function Exam() {
     if (selectedOption === null) return;
     
     const q = questions[currentIdx];
-    if (selectedOption === q.ans) {
-      setScore(prev => prev + 1);
+    const isCorrect = selectedOption === q.ans;
+    const finalScore = isCorrect ? score + 1 : score;
+
+    if (isCorrect) {
+      setScore(finalScore);
     }
     
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
       setSelectedOption(null);
     } else {
-      handleFinish();
+      handleFinish(finalScore);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS, ACHIEVEMENTS } from '../data';
 import { AppState } from '../types';
@@ -14,9 +14,17 @@ export default function PracticeTask({ id }: { id: string }) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [correctCount, setCorrectCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const toggleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+
+    return () => {
+      if (toggleTimerRef.current) {
+        clearTimeout(toggleTimerRef.current);
+        toggleTimerRef.current = null;
+      }
+    };
   }, []);
 
   if (!task) return null;
@@ -24,9 +32,13 @@ export default function PracticeTask({ id }: { id: string }) {
   // Debounced toggle handler to prevent race conditions
   const handleToggleError = useCallback((fieldId: string) => {
     if (answered || isProcessing) return;
-    
+
+    if (toggleTimerRef.current) {
+      clearTimeout(toggleTimerRef.current);
+    }
+
     setIsProcessing(true);
-    setTimeout(() => {
+    toggleTimerRef.current = setTimeout(() => {
       setSelectedErrors(prev => {
         const newSet = new Set(prev);
         if (newSet.has(fieldId)) {
@@ -37,6 +49,7 @@ export default function PracticeTask({ id }: { id: string }) {
         return newSet;
       });
       setIsProcessing(false);
+      toggleTimerRef.current = null;
     }, 50); // 50ms debounce
   }, [answered, isProcessing]);
 

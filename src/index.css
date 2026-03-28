@@ -25,6 +25,13 @@ body {
   color: var(--color-text-main);
   font-family: var(--font-sans);
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+html,
+#root {
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 /* Liquid Glass Utilities */

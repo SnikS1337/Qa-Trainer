@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
 import { AppState, Question } from '../types';
@@ -21,11 +21,18 @@ export default function Lesson({ id }: { id: string }) {
   const [finished, setFinished] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const perfectToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (lesson) {
       setQuestions(shuffle(lesson.questions).slice(0, 6));
     }
+
+    return () => {
+      if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
+      if (perfectToastTimerRef.current) clearTimeout(perfectToastTimerRef.current);
+    };
   }, [lesson]);
 
   const checkAchievements = (newState: AppState) => {
@@ -113,8 +120,10 @@ export default function Lesson({ id }: { id: string }) {
     });
 
     if (passed) {
-      setTimeout(() => confetti(), 200);
-      if (perfect) setTimeout(() => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'), 1000);
+      confettiTimerRef.current = setTimeout(() => confetti(), 200);
+      if (perfect) {
+        perfectToastTimerRef.current = setTimeout(() => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'), 1000);
+      }
     }
   };
 

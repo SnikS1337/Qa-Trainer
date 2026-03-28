@@ -272,7 +272,7 @@ export const PRACTICE_TASKS: any[] = [
       { label: "Заголовок содержит 'Crash' или 'Вылет'", check: (v:any) => v.title?.toLowerCase().includes('crash') || v.title?.toLowerCase().includes('вылет') },
       { label: "В шагах указана корзина", check: (v:any) => v.steps?.toLowerCase().includes('корзин') },
       { label: "Указан конкретный товар", check: (v:any) => v.steps?.toLowerCase().includes('iphone') },
-      { label: "Severity указан как Critical/Blocker", check: (v:any) => v.title?.toLowerCase().includes('critical') || v.title?.toLowerCase().includes('blocker') || true }, // severity field is not in form but checked in solution
+      { label: "В заголовке указана критичность бага", check: (v:any) => v.title?.toLowerCase().includes('critical') || v.title?.toLowerCase().includes('blocker') || v.title?.toLowerCase().includes('крит') },
     ],
     solution: {
       title: "[Checkout] Crash при нажатии 'Оформить заказ' с iPhone 15 в корзине",

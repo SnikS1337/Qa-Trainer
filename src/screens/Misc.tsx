@@ -147,8 +147,8 @@ export function Certificate() {
   const [debugUnlocked, setDebugUnlocked] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [passInput, setPassInput] = useState('');
-  const [holdTimer, setHoldTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [certType, setCertType] = useState<'none'|'foundation'|'design'|'career'>('none');
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Проверяем, какие сертификаты доступны
   const coreFoundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
@@ -168,18 +168,26 @@ export function Certificate() {
 
   const handlePointerDown = () => {
     if (debugUnlocked) return;
-    const timer = setTimeout(() => {
+    holdTimerRef.current = setTimeout(() => {
       setShowPassModal(true);
     }, 3000);
-    setHoldTimer(timer);
   };
 
   const handlePointerUp = () => {
-    if (holdTimer) {
-      clearTimeout(holdTimer);
-      setHoldTimer(null);
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handlePassSubmit = (e: FormEvent) => {
     e.preventDefault();

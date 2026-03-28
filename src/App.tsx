@@ -39,6 +39,14 @@ export default function App() {
     toastTimerRef.current = setTimeout(() => setToast(null), 2500);
   };
 
+  const pageTransition = { duration: 0.26, ease: 'easeInOut' as const };
+  const pageMotion = {
+    initial: { opacity: 0, filter: 'blur(3px)' },
+    animate: { opacity: 1, filter: 'blur(0px)' },
+    exit: { opacity: 0, filter: 'blur(3px)' },
+    transition: pageTransition,
+  };
+
   useEffect(() => {
     // No automatic redirect, wait for user to click start
   }, [screen]);
@@ -69,7 +77,7 @@ export default function App() {
 
   return (
     <AppContext.Provider value={{ ...store, navigate, showToast }}>
-      <div className="min-h-screen text-white font-sans selection:bg-brand-purple/30 relative">
+      <div className="min-h-screen overflow-x-hidden text-white font-sans selection:bg-brand-purple/30 relative">
         <div
           className="fixed inset-0"
           style={{
@@ -98,18 +106,18 @@ export default function App() {
         
         <div className="noise-overlay pointer-events-none z-0"></div>
         
-        <div className="relative z-10 min-h-screen flex flex-col">
+        <div className="relative z-10 min-h-screen flex flex-col overflow-x-hidden">
           <AnimatePresence mode="wait">
-            {screen === 'splash' && <motion.div key="splash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex"><Splash /></motion.div>}
-            {screen === 'home' && <motion.div key="home" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Home /></motion.div>}
-            {screen === 'lesson' && <motion.div key="lesson" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex"><Lesson id={currentId!} /></motion.div>}
-            {screen === 'practice' && <motion.div key="practice" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Practice /></motion.div>}
-            {screen === 'practice-task' && <motion.div key="practice-task" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex"><PracticeTask id={currentId!} /></motion.div>}
-            {screen === 'exam' && <motion.div key="exam" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="flex-1 flex"><Exam /></motion.div>}
-            {screen === 'daily' && <motion.div key="daily" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 flex"><Daily /></motion.div>}
-            {screen === 'stats' && <motion.div key="stats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Stats /></motion.div>}
-            {screen === 'achievements' && <motion.div key="achievements" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex"><Achievements /></motion.div>}
-            {screen === 'certificate' && <motion.div key="certificate" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="flex-1 flex"><Certificate /></motion.div>}
+            {screen === 'splash' && <motion.div key="splash" {...pageMotion} className="flex-1 flex w-full"><Splash /></motion.div>}
+            {screen === 'home' && <motion.div key="home" {...pageMotion} className="flex-1 flex w-full"><Home /></motion.div>}
+            {screen === 'lesson' && <motion.div key="lesson" {...pageMotion} className="flex-1 flex w-full"><Lesson id={currentId!} /></motion.div>}
+            {screen === 'practice' && <motion.div key="practice" {...pageMotion} className="flex-1 flex w-full"><Practice /></motion.div>}
+            {screen === 'practice-task' && <motion.div key="practice-task" {...pageMotion} className="flex-1 flex w-full"><PracticeTask id={currentId!} /></motion.div>}
+            {screen === 'exam' && <motion.div key="exam" {...pageMotion} className="flex-1 flex w-full"><Exam /></motion.div>}
+            {screen === 'daily' && <motion.div key="daily" {...pageMotion} className="flex-1 flex w-full"><Daily /></motion.div>}
+            {screen === 'stats' && <motion.div key="stats" {...pageMotion} className="flex-1 flex w-full"><Stats /></motion.div>}
+            {screen === 'achievements' && <motion.div key="achievements" {...pageMotion} className="flex-1 flex w-full"><Achievements /></motion.div>}
+            {screen === 'certificate' && <motion.div key="certificate" {...pageMotion} className="flex-1 flex w-full"><Certificate /></motion.div>}
           </AnimatePresence>
         </div>
 
