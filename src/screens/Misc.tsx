@@ -243,6 +243,21 @@ export function Certificate() {
     return lines;
   };
 
+  const traceRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
+
   const drawCertificate = (certName: string) => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -260,143 +275,217 @@ export function Certificate() {
     const W = 800, H = 560;
     ctx.clearRect(0, 0, W, H);
 
-    // Professional cream background
-    ctx.fillStyle = '#FEFCF7';
+    const paperGradient = ctx.createLinearGradient(0, 0, 0, H);
+    paperGradient.addColorStop(0, '#FFFDF8');
+    paperGradient.addColorStop(0.55, '#FEFCF7');
+    paperGradient.addColorStop(1, '#F8F4EC');
+    ctx.fillStyle = paperGradient;
     ctx.fillRect(0, 0, W, H);
 
-    // Soft border
-    ctx.strokeStyle = '#8B5CF6';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(20, 20, W-40, H-40);
+    const ambientGlow = ctx.createRadialGradient(W / 2, 30, 40, W / 2, 30, 360);
+    ambientGlow.addColorStop(0, 'rgba(139, 92, 246, 0.12)');
+    ambientGlow.addColorStop(0.45, 'rgba(139, 92, 246, 0.04)');
+    ambientGlow.addColorStop(1, 'rgba(139, 92, 246, 0)');
+    ctx.fillStyle = ambientGlow;
+    ctx.fillRect(0, 0, W, H);
 
-    // Decorative elements
-    ctx.fillStyle = 'rgba(139, 92, 246, 0.05)';
+    traceRoundedRect(ctx, 18, 18, W - 36, H - 36, 8);
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    traceRoundedRect(ctx, 34, 34, W - 68, H - 68, 4);
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.28)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.035)';
     for (const circle of decorativeCircles) {
       ctx.beginPath();
       ctx.arc(circle.x, circle.y, circle.size, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Central decorative circle
-    ctx.strokeStyle = 'rgba(139, 92, 246, 0.2)';
-    ctx.lineWidth = 2;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.12)';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([8, 10]);
     ctx.beginPath();
-    ctx.arc(W/2, H/2, 200, 0, Math.PI * 2);
+    ctx.arc(W/2, H/2 + 12, 165, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.arc(W/2, H/2 + 12, 132, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Main title
-    ctx.font = 'bold 28px Arial, sans-serif';
-    ctx.fillStyle = '#4C1D95';
     ctx.textAlign = 'center';
-    ctx.fillText('QA TRAINER BY SNIKS1337', W/2, 80);
+    ctx.fillStyle = '#5B21B6';
+    ctx.font = 'bold 15px Arial, sans-serif';
+    ctx.fillText('QA TRAINER BY SNIKS1337', W/2, 68);
 
-    // Certificate type heading
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.24)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(130, 82);
+    ctx.lineTo(670, 82);
+    ctx.stroke();
+
+    ctx.font = 'bold 34px Georgia, serif';
+    ctx.fillStyle = '#4C1D95';
+    ctx.fillText('СЕРТИФИКАТ', W/2, 120);
+
     let headingText = '';
     switch(certType) {
       case 'foundation':
-        headingText = 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ КУРСА ПО ОСНОВАМ ТЕСТИРОВАНИЯ';
+        headingText = 'о прохождении курса по основам ручного тестирования';
         break;
       case 'design':
-        headingText = 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ КУРСА ПО ТЕХНИКАМ ТЕСТ-ДИЗАЙНА';
+        headingText = 'о прохождении курса по ручному тестированию и тест-дизайну';
         break;
       case 'career':
-        headingText = 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ КУРСА ПО КАРЬЕРНОМУ РОСТУ В QA';
+        headingText = 'о прохождении полного курса ручного тестировщика';
         break;
       default:
-        headingText = 'СЕРТИФИКАТ ОБ УСПЕШНОМ ОКОНЧАНИИ ОБУЧЕНИЯ';
+        headingText = 'об успешном окончании курса ручного тестирования';
     }
-    
-    ctx.font = 'italic 20px Georgia, serif';
+
+    ctx.font = '16px Arial, sans-serif';
     ctx.fillStyle = '#5B21B6';
-    
-    // Wrap text to multiple lines if needed
-    const maxWidth = W - 100;
-    const lineHeight = 25;
-    const textLines = wrapText(ctx, headingText, maxWidth, 20);
-    const startY = 120;
-    
+    const maxWidth = W - 180;
+    const lineHeight = 20;
+    const textLines = wrapText(ctx, headingText, maxWidth, 16);
+    const startY = 148;
+
     textLines.forEach((line, index) => {
       ctx.fillText(line, W/2, startY + index * lineHeight);
     });
 
-    // Certificate recipient name
-    ctx.font = `bold 36px Georgia, serif`;
+    ctx.font = 'bold 42px Georgia, serif';
     ctx.fillStyle = '#1F2937';
     const nameY = startY + textLines.length * lineHeight + 40;
     ctx.fillText(certName, W/2, nameY);
 
-    // Elegant underline for name
     const nameWidth = ctx.measureText(certName).width;
     ctx.strokeStyle = '#8B5CF6';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(W/2 - nameWidth/2, nameY + 15);
     ctx.lineTo(W/2 + nameWidth/2, nameY + 15);
     ctx.stroke();
 
-    // Description based on certificate type
-    ctx.font = 'italic 16px Georgia, serif';
+    ctx.beginPath();
+    ctx.moveTo(W/2 - nameWidth/2 - 26, nameY + 15);
+    ctx.lineTo(W/2 - nameWidth/2 - 8, nameY + 15);
+    ctx.moveTo(W/2 + nameWidth/2 + 8, nameY + 15);
+    ctx.lineTo(W/2 + nameWidth/2 + 26, nameY + 15);
+    ctx.stroke();
+
+    ctx.font = 'italic 18px Georgia, serif';
     ctx.fillStyle = '#4B5563';
     let description = '';
     switch(certType) {
       case 'foundation':
-        description = 'успешно завершил(а) курс по основам ручного тестирования';
+        description = 'подтвердил(а) базовые навыки ручного тестирования';
         break;
       case 'design':
-        description = 'успешно завершил(а) курс по техникам тест-дизайна';
+        description = 'подтвердил(а) навыки ручного тестирования и тест-дизайна';
         break;
       case 'career':
-        description = 'успешно завершил(а) курс по карьерному росту в QA';
+        description = 'успешно завершил(а) полный курс ручного тестировщика';
         break;
       default:
-        description = 'успешно завершил(а) базовый курс ручного тестирования';
+        description = 'успешно завершил(а) курс ручного тестирования';
     }
     const descY = nameY + 40;
     ctx.fillText(description, W/2, descY);
 
-    // Skills section with horizontal layout
     let skills: string[] = [];
     switch(certType) {
       case 'foundation':
-        skills = ['Тест-дизайн','Пирамида тестов','Граничные значения','Баг-репорты','Agile QA'];
+        skills = ['Тест-кейсы', 'Чек-листы', 'Типы тестирования', 'Баг-репорты', 'Жизненный цикл бага'];
         break;
       case 'design':
-        skills = ['Классы эквивалентности','Граничные значения','Таблицы решений','Тест-кейсы','Исследовательское тестирование'];
+        skills = ['Классы эквивалентности', 'Граничные значения', 'Таблицы решений', 'Переходы состояний', 'Приоритизация тестов'];
         break;
       case 'career':
-        skills = ['Собеседования','CV и портфолио','Карьерный рост','Презентация навыков','Работа в команде'];
+        skills = ['Ручное тестирование', 'Тест-дизайн', 'Баг-репорты', 'Smoke и Regression', 'Анализ требований'];
         break;
       default:
-        skills = ['Тест-дизайн','Пирамида тестов','Граничные значения','Баг-репорты','Agile QA'];
+        skills = ['Тест-кейсы', 'Тест-дизайн', 'Баг-репорты', 'Smoke и Regression', 'Анализ требований'];
     }
 
-    const skillsY = descY + 50;
-    const skillBoxWidth = 120;
-    const totalSkillsWidth = skills.length * skillBoxWidth + (skills.length - 1) * 20;
-    const startX = (W - totalSkillsWidth) / 2;
+    ctx.font = 'bold 12px Arial, sans-serif';
+    ctx.fillStyle = '#6B21A8';
+    ctx.fillText('ПОДТВЕРЖДЕННЫЕ НАВЫКИ', W / 2, descY + 34);
 
-    for (let i = 0; i < skills.length; i++) {
-      const x = startX + i * (skillBoxWidth + 20);
-      const y = skillsY;
+    ctx.font = 'bold 12px Arial, sans-serif';
+    const chipPaddingX = 16;
+    const chipHeight = 34;
+    const chipGap = 12;
+    const chipRowGap = 12;
+    const maxRowWidth = W - 120;
+    const skillRows: Array<Array<{ label: string; width: number }>> = [];
+    let currentRow: Array<{ label: string; width: number }> = [];
+    let currentRowWidth = 0;
 
-      // Skill box
-      ctx.fillStyle = '#F3F4F6';
-      ctx.fillRect(x, y, skillBoxWidth, 40);
+    skills.forEach((skill) => {
+      const chipWidth = Math.min(180, Math.max(104, ctx.measureText(skill).width + chipPaddingX * 2));
 
-      // Skill box border
-      ctx.strokeStyle = '#8B5CF6';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x, y, skillBoxWidth, 40);
+      if (currentRow.length > 0 && currentRowWidth + chipGap + chipWidth > maxRowWidth) {
+        skillRows.push(currentRow);
+        currentRow = [];
+        currentRowWidth = 0;
+      }
 
-      // Skill text
-      ctx.fillStyle = '#4C1D95';
-      ctx.font = 'bold 12px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(skills[i], x + skillBoxWidth/2, y + 25);
+      currentRow.push({ label: skill, width: chipWidth });
+      currentRowWidth += currentRow.length > 1 ? chipGap + chipWidth : chipWidth;
+    });
+
+    if (currentRow.length > 0) {
+      skillRows.push(currentRow);
     }
 
-    // Stats section
-    const statsY = skillsY + 70;
+    const chipsStartY = descY + 54;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    skillRows.forEach((row, rowIndex) => {
+      const totalWidth = row.reduce((sum, chip) => sum + chip.width, 0) + chipGap * (row.length - 1);
+      let x = (W - totalWidth) / 2;
+      const y = chipsStartY + rowIndex * (chipHeight + chipRowGap);
+
+      row.forEach((chip) => {
+        traceRoundedRect(ctx, x, y, chip.width, chipHeight, 17);
+        ctx.fillStyle = '#F5F3FF';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.36)';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#4C1D95';
+        ctx.font = 'bold 12px Arial, sans-serif';
+        ctx.fillText(chip.label, x + chip.width / 2, y + chipHeight / 2 + 1);
+        x += chip.width + chipGap;
+      });
+    });
+
+    ctx.textBaseline = 'alphabetic';
+
+    const statsPanelY = chipsStartY + skillRows.length * (chipHeight + chipRowGap) + 18;
+    const statsPanelX = 74;
+    const statsPanelWidth = W - 148;
+    const statsPanelHeight = 78;
+
+    traceRoundedRect(ctx, statsPanelX, statsPanelY, statsPanelWidth, statsPanelHeight, 24);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.68)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.20)';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+
     const lvl=getLevelInfo(state.totalXP);
     const statsData = [
       {l:'Уровень', v:lvl.name},
@@ -404,66 +493,58 @@ export function Certificate() {
       {l:'Достижений', v:state.unlockedAchievements.length.toString()},
       {l:'Уроков', v:state.completedLessons.length+'/'+LESSONS.length},
     ];
-    
-    ctx.font = '14px Arial, sans-serif';
+
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#374151';
-    
     for (let i = 0; i < statsData.length; i++) {
-      const x = 100 + i * (W - 200) / statsData.length;
-      ctx.font = 'bold 14px Arial, sans-serif';
-      ctx.fillText(statsData[i].v, x, statsY);
-      ctx.font = '10px Arial, sans-serif';
+      const sectionWidth = statsPanelWidth / statsData.length;
+      const x = statsPanelX + sectionWidth * i + sectionWidth / 2;
+
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.14)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(statsPanelX + sectionWidth * i, statsPanelY + 16);
+        ctx.lineTo(statsPanelX + sectionWidth * i, statsPanelY + statsPanelHeight - 16);
+        ctx.stroke();
+      }
+
+      ctx.font = 'bold 20px Arial, sans-serif';
+      ctx.fillStyle = '#312E81';
+      ctx.fillText(statsData[i].v, x, statsPanelY + 33);
+      ctx.font = '11px Arial, sans-serif';
       ctx.fillStyle = '#6B7280';
-      ctx.fillText(statsData[i].l, x, statsY + 18);
-      ctx.fillStyle = '#374151';
+      ctx.fillText(statsData[i].l, x, statsPanelY + 54);
     }
 
-    // Signature lines
-    const sigY = statsY + 50;
-    ctx.strokeStyle = '#8B5CF6';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(100, sigY);
-    ctx.lineTo(250, sigY);
-    ctx.stroke();
-    
-    ctx.fillStyle = '#4B5563';
-    ctx.font = 'bold 12px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Руководитель курса', 175, sigY + 20);
-    
-    ctx.beginPath();
-    ctx.moveTo(W - 100, sigY);
-    ctx.lineTo(W - 250, sigY);
-    ctx.stroke();
-    ctx.fillText('Ученик', W - 175, sigY + 20);
-
     // Footer with date
-    const footerY = H - 30;
-    ctx.strokeStyle = '#E5E7EB';
+    const footerY = H - 42;
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.14)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(60, footerY - 10);
     ctx.lineTo(W - 60, footerY - 10);
     ctx.stroke();
-    
-    ctx.font = '10px Arial, sans-serif';
+
     ctx.fillStyle = '#6B7280';
-    ctx.textAlign = 'center';
+    ctx.font = '11px Arial, sans-serif';
     const ds = new Date().toLocaleDateString('ru-RU', {year:'numeric',month:'long',day:'numeric'});
-    ctx.fillText('Дата: ' + ds, W/2, footerY);
+    ctx.textAlign = 'center';
+    ctx.fillText(`Дата выдачи: ${ds}`, W / 2, footerY);
 
     // Watermark for debug mode
     if (isCheater) {
       ctx.save();
-      ctx.translate(W/2, H/2);
-      ctx.rotate(-Math.PI/6);
-      ctx.font = 'bold 48px Arial';
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+      ctx.translate(W / 2, H / 2 + 8);
+      ctx.rotate(-Math.PI / 7);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 0);
+      traceRoundedRect(ctx, -245, -48, 490, 96, 18);
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.22)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.font = 'bold 42px Arial, sans-serif';
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+      ctx.fillText('НЕДЕЙСТВИТЕЛЬНЫЙ', 0, 4);
       ctx.restore();
     }
     } catch (error) {
