@@ -1,8 +1,13 @@
+import { useEffect } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS } from '../data';
 
 export default function Practice() {
   const { state, navigate } = useAppStore();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   const typeLabels: Record<string, string> = { 
     triage: '🔴 Расстановка severity', 
@@ -20,7 +25,7 @@ export default function Practice() {
       <p className="text-[13px] text-slate-300 mb-5 leading-relaxed">Реальные сценарии из работы тестировщика. Применяй знания на практике.</p>
 
       <div className="flex flex-col gap-3">
-        {PRACTICE_TASKS.map((task, idx) => {
+        {PRACTICE_TASKS.map((task) => {
           const done = state.completedPractice?.includes(task.id);
           
           return (

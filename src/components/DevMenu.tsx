@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore, initialState } from '../store';
 import { LESSONS } from '../data';
 import ConfirmModal from './ConfirmModal';
+import ModalShell from './ModalShell';
 
 export default function DevMenu({ onClose }: { onClose: () => void }) {
   const { state, updateState, showToast, navigate } = useAppStore();
@@ -51,16 +52,68 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   const importProgress = () => {
     try {
       const parsed = JSON.parse(importData);
+      
+      // Validate that parsed data has the expected structure of AppState
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('Invalid data structure');
+      }
+      
+      // Check for required AppState properties and their types
+      const requiredFields: Record<string, string> = {
+        totalXP: 'number',
+        completedLessons: 'object',
+        streak: 'number',
+        maxStreak: 'number',
+        perfectLessons: 'number',
+        retries: 'number',
+        bestStreak: 'number',
+        unlockedAchievements: 'object',
+        lastQuoteIndex: 'number',
+        dailyQuoteDate: 'string',
+        examBestScore: 'number',
+        examAttempts: 'number',
+        dailyStreak: 'number',
+        lastDailyDate: 'string',
+        totalQuestionsAnswered: 'number',
+        totalCorrect: 'number',
+        completedPractice: 'object',
+        certName: 'string',
+        lastActiveDate: 'string'
+      };
+      
+      for (const [field, expectedType] of Object.entries(requiredFields)) {
+        if (!(field in parsed)) {
+          throw new Error(`Missing field: ${field}`);
+        }
+        
+        const actualType = Array.isArray(parsed[field]) ? 'object' : typeof parsed[field];
+        if (actualType !== expectedType) {
+          throw new Error(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`);
+        }
+      }
+      
+      // Additional validation for arrays
+      if (!Array.isArray(parsed.completedLessons)) {
+        throw new Error('completedLessons must be an array');
+      }
+      if (!Array.isArray(parsed.unlockedAchievements)) {
+        throw new Error('unlockedAchievements must be an array');
+      }
+      if (!Array.isArray(parsed.completedPractice)) {
+        throw new Error('completedPractice must be an array');
+      }
+      
       updateState({ ...parsed, isCheater: true });
       showToast('Прогресс загружен', 'text-brand-green');
       setImportData('');
     } catch (e) {
-      showToast('Ошибка импорта (неверный JSON)', 'text-brand-red');
+      const errorMsg = e instanceof Error ? e.message : 'Неверный JSON';
+      showToast(`Ошибка импорта: ${errorMsg}`, 'text-brand-red');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
+    <ModalShell isOpen={true} onClose={onClose} size="wide" showCloseButton>
       <ConfirmModal 
         isOpen={showConfirm} 
         title="Сбросить прогресс?" 
@@ -68,61 +121,56 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
         onConfirm={handleConfirmReset} 
         onCancel={() => setShowConfirm(false)} 
       />
-      <div className="glass-panel w-full max-w-sm p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl transition-colors">✕</button>
-        
-        <h2 className="text-xl font-bold mb-4 font-mono text-brand-green">DEV MENU</h2>
+      <h2 className="text-xl font-bold mb-4 font-mono text-brand-green">DEV MENU</h2>
 
-        {!authenticated ? (
-          <form onSubmit={handleLogin} className="flex flex-col gap-3">
+      {!authenticated ? (
+        <form onSubmit={handleLogin} className="flex flex-col gap-3">
+          <input 
+            type="password" 
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Пароль"
+            className="glass-input px-4 py-3"
+          />
+          <button type="submit" className="glass-button bg-brand-green/20 border-brand-green/30 text-brand-green font-bold py-3">Войти</button>
+        </form>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => addXP(100)} className="glass-button py-2 text-sm">+100 XP</button>
+            <button onClick={() => addXP(1000)} className="glass-button py-2 text-sm">+1000 XP</button>
+          </div>
+          
+          <button onClick={unlockAll} className="glass-button bg-brand-blue/10 border-brand-blue/30 text-brand-blue py-2 text-sm">
+            Открыть все уроки
+          </button>
+          
+          <div className="h-[1px] bg-white/10 my-1"></div>
+
+          <button onClick={exportProgress} className="glass-button py-2 text-sm">
+            Копировать сохранение
+          </button>
+
+          <div className="flex gap-2">
             <input 
-              type="password" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Пароль"
-              className="glass-input px-4 py-3"
-              autoFocus
+              type="text" 
+              value={importData}
+              onChange={e => setImportData(e.target.value)}
+              placeholder="Вставить JSON..."
+              className="glass-input px-3 py-2 text-xs flex-1 min-w-0"
             />
-            <button type="submit" className="glass-button bg-brand-green/20 border-brand-green/30 text-brand-green font-bold py-3">Войти</button>
-          </form>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => addXP(100)} className="glass-button py-2 text-sm">+100 XP</button>
-              <button onClick={() => addXP(1000)} className="glass-button py-2 text-sm">+1000 XP</button>
-            </div>
-            
-            <button onClick={unlockAll} className="glass-button bg-brand-blue/10 border-brand-blue/30 text-brand-blue py-2 text-sm">
-              Открыть все уроки
-            </button>
-            
-            <div className="h-[1px] bg-white/10 my-1"></div>
-
-            <button onClick={exportProgress} className="glass-button py-2 text-sm">
-              Копировать сохранение
-            </button>
-
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                value={importData}
-                onChange={e => setImportData(e.target.value)}
-                placeholder="Вставить JSON..."
-                className="glass-input px-3 py-2 text-xs flex-1 min-w-0"
-              />
-              <button onClick={importProgress} className="glass-button px-4 py-2 text-xs shrink-0">
-                Загрузить
-              </button>
-            </div>
-
-            <div className="h-[1px] bg-white/10 my-1"></div>
-
-            <button onClick={resetProgress} className="glass-button bg-brand-red/10 border-brand-red/30 text-brand-red py-2 text-sm">
-              Сбросить весь прогресс
+            <button onClick={importProgress} className="glass-button px-4 py-2 text-xs shrink-0">
+              Загрузить
             </button>
           </div>
-        )}
-      </div>
-    </div>
+
+          <div className="h-[1px] bg-white/10 my-1"></div>
+
+          <button onClick={resetProgress} className="glass-button bg-brand-red/10 border-brand-red/30 text-brand-red py-2 text-sm">
+            Сбросить весь прогресс
+          </button>
+        </div>
+      )}
+    </ModalShell>
   );
 }

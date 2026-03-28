@@ -1,8 +1,7 @@
-import { AppState, Lesson, Quote, Achievement } from './types';
-import { LESSONS_PART_1 } from './data_lessons_1';
-import { LESSONS_PART_2 } from './data_lessons_2';
-import { LESSONS_PART_3 } from './data_lessons_3';
-import { LESSONS_PART_4 } from './data_lessons_4';
+import { Lesson, Quote, Achievement, PracticeTask, PracticeCheckValues } from './types';
+import { LESSONS_PART_2 } from './data/lessons_part_2';
+import { LESSONS_PART_3 } from './data/lessons_part_3';
+import { LESSONS_PART_4 } from './data/lessons_part_4';
 
 const LOCAL_LESSONS_PART_1: Lesson[] = [
   {
@@ -105,19 +104,7 @@ const LOCAL_LESSONS_PART_1: Lesson[] = [
       { type:"choice", q: "Что такое 'Decision Table' (Таблица принятия решений) и когда она лучше тест-кейсов?", opts: ["Это список всех сотрудников QA", "Это таблица, описывающая сложные комбинации входных условий и действий. Лучше, когда много зависимых правил", "Это таблица с зарплатами", "Это просто список багов"], ans: 1, exp: "Если у вас 5 условий (скидка, статус, регион и т.д.), тест-кейсы запутают. Таблица покажет все комбинации на одном листе." },
     ]
   },
-  {
-    id: "api", title: "Тестирование API", icon: "🔌", color: "#38bdf8",
-    category: "Продвинутый уровень", xp: 35,
-    desc: "REST, HTTP, Postman и основы API QA",
-    questions: [
-      { type:"choice", q:"Что такое API в контексте веб-тестирования?", opts:["Визуальный интерфейс пользователя","Программный интерфейс для взаимодействия систем","Реляционная база данных","Изолированная среда выполнения"], ans:1, exp:"API — способ взаимодействия систем через HTTP запросы и ответы." },
-      { type:"choice", q:"Какую информацию несет HTTP-статус 200 OK?", opts:["Ошибка на стороне клиента","Внутренняя ошибка сервера","Запрос успешно обработан сервером","Перенаправление на другой URL"], ans:2, exp:"200 OK — запрос выполнен успешно." },
-      { type:"choice", q:"Для какой CRUD-операции используется HTTP метод POST?", opts:["Получение данных","Создание новых ресурсов","Удаление ресурсов","Обновление отдельного поля"], ans:1, exp:"POST — создание. GET — получение. PUT/PATCH — обновление. DELETE — удаление." },
-      { type:"choice", q:"О чем сигнализирует HTTP-статус 404 Not Found?", opts:["Ошибка авторизации","Ресурс не существует по указанному URL","Сервер перегружен","Запрос принят, но не готов"], ans:1, exp:"404 Not Found — запрошенный ресурс не существует." },
-      { type:"choice", q:"Что необходимо проверить при тестировании API /login?", opts:["Только успешный вход","Позитивные/негативные сценарии, безопасность и таймауты","Только верстку формы","Только время ответа"], ans:1, exp:"Нужно проверить валидные/невалидные данные, безопасность и производительность." },
-      { type:"choice", q:"Что представляет собой Request Body?", opts:["Заголовки запроса","Полезные данные запроса (обычно JSON)","Параметры в URL","Версия протокола"], ans:1, exp:"Body — тело запроса с данными." },
-    ]
-  },
+
   {
     id: "types", title: "Виды тестирования", icon: "🗂️", color: "#fb923c",
     category: "Основы", xp: 25,
@@ -132,18 +119,7 @@ const LOCAL_LESSONS_PART_1: Lesson[] = [
       { type:"choice", q:"Кто обычно проводит Acceptance testing (Приёмочное тестирование)?", opts:["Команда разработчиков перед слиянием веток кода в основной репозиторий","Заказчик или конечные пользователи для проверки соответствия бизнес-требованиям","Исключительно автоматизированные скрипты на выделенном CI/CD сервере","QA Lead или тест-менеджер проекта перед началом регрессионного тестирования"], ans:1, exp:"Приёмочное тестирование проводит заказчик или представитель бизнеса — проверяет, что система соответствует требованиям и готова к релизу." },
     ]
   },
-  {
-    id: "checklist", title: "Чек-листы и тест-кейсы", icon: "✅", color: "#38bdf8",
-    category: "Основы", xp: 20,
-    desc: "Когда что использовать",
-    questions: [
-      { type:"choice", q:"В чём заключается главное отличие чек-листа от тест-кейса?", opts:["Чек-лист применяется исключительно для ручного исследовательского тестирования","Чек-лист — это краткий список того, ЧТО проверить, а тест-кейс содержит детальные шаги КАК проверить и ЧТО ожидать","Тест-кейс является менее формальным и детальным документом, чем чек-лист","Между ними нет никакой практической разницы в современной разработке"], ans:1, exp:"Чек-лист = 'что проверить' (без деталей), тест-кейс = 'как проверить + что ожидать'. Чек-листы быстрее писать, тест-кейсы легче воспроизвести." },
-      { type:"choice", q:"В какой ситуации предпочтительнее использовать чек-листы, а не подробные тест-кейсы?", opts:["При тестировании критически важного программного обеспечения (медицина, авиация)","В гибких Agile-командах для быстрых проверок и исследовательского тестирования, когда время ограничено","Только при проведении полного регрессионного тестирования перед крупным релизом","Когда требуется предоставить максимально детальный отчет для внешнего аудита"], ans:1, exp:"Чек-листы хороши в agile: быстро, гибко, не теряем время на документацию. Но для банков/медицины нужна детальная документация (тест-кейсы)." },
-      { type:"choice", q:"В тест-кейсе указано только: 'Проверить авторизацию'. Какая критическая ошибка здесь допущена?", opts:["Не добавлена иконка или визуальный тег для удобства поиска в системе управления тестами","Отсутствуют конкретные шаги воспроизведения, тестовые данные и четкий ожидаемый результат","Не указана точная дата создания и автор данного конкретного тест-кейса","Не проставлен приоритет выполнения теста для планирования релизного цикла"], ans:1, exp:"Тест-кейс должен быть однозначным. 'Проверить авторизацию' — слишком абстрактно. Нужны конкретные шаги и ожидаемый результат." },
-      { type:"choice", q:"Что означает термин 'Test Suite' (Тестовый набор)?", opts:["Один отдельно взятый сложный тест-кейс, покрывающий множество сценариев","Логически сгруппированный набор связанных тест-кейсов (например, все тесты модуля корзины)","Детальный отчет о найденных дефектах (баг-репорт) после прохождения регрессии","Изолированная среда (тестовый стенд) для безопасного проведения тестирования"], ans:1, exp:"Test Suite — коллекция тест-кейсов, объединённых по функциональности или цели. Например, 'Suite: Авторизация' включает все тесты входа." },
-      { type:"choice", q:"Что описывает раздел 'Precondition' (Предусловие) в структуре тест-кейса?", opts:["Самый первый шаг выполнения теста, с которого начинается проверка функционала","Состояние системы и данные, которые должны быть подготовлены ДО начала выполнения шагов теста","Ожидаемый результат после успешного выполнения всех описанных шагов","Подробное описание найденного дефекта и шагов для его воспроизведения разработчиком"], ans:1, exp:"Предусловие — то, что должно быть настроено/сделано до старта теста. Например: 'Пользователь зарегистрирован' или 'Открыта страница логина'." },
-    ]
-  },
+
   {
     id: "api", title: "Тестирование API", icon: "🔌", color: "#38bdf8",
     category: "Продвинутый уровень", xp: 35,
@@ -195,11 +171,11 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "all", icon: "🏆", title: "QA Чемпион", desc: "Пройди все базовые уроки", check: s => ['pyramid','equiv','boundary','decision','testcase','states','types','checklist'].every(id => s.completedLessons.includes(id)) },
   { id: "retry", icon: "🔄", title: "Упорный", desc: "Повтори урок после неудачи", check: s => s.retries >= 1 },
   { id: "speed", icon: "⚡", title: "Быстрый разум", desc: "5 правильных ответов подряд", check: s => s.bestStreak >= 5 },
-  { id: "exam_pass", icon: "🎯", title: "Экзамен сдан!", desc: "Пройди экзамен с результатом 70%+", check: s => s.examBestScore >= 70 },
+  { id: "exam_pass", icon: "🎯", title: "Экзамен сдан!", desc: "Пройди экзамен с результатом 80%+", check: s => s.examBestScore >= 80 },
   { id: "daily7", icon: "📅", title: "Недельная серия", desc: "Пройди ежедневный квиз 7 дней подряд", check: s => s.dailyStreak >= 7 },
 ];
 
-export const PRACTICE_TASKS: any[] = [
+export const PRACTICE_TASKS: PracticeTask[] = [
   {
     id: "triage1", type: "triage", icon: "🔴", xp: 20, color: "#f87171",
     title: "Расставь severity",
@@ -269,10 +245,10 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Составь грамотный тест-кейс на основе требования. Проверяется структура и конкретика.",
     requirement: "Система восстановления пароля: пользователь вводит email, получает ссылку на почту. Ссылка должна быть одноразовой и действовать 24 часа.",
     checkItems: [
-      { label: "Название содержит 'Восстановление пароля'", check: (v:any) => v.title?.toLowerCase().includes('восстановление пароля') },
-      { label: "В шагах указан ввод email", check: (v:any) => v.steps?.toLowerCase().includes('email') || v.steps?.toLowerCase().includes('почт') },
-      { label: "В ожидаемом результате есть проверка ссылки", check: (v:any) => v.expected?.toLowerCase().includes('ссылк') },
-      { label: "Указано предусловие (наличие аккаунта)", check: (v:any) => v.precond?.toLowerCase().includes('зарегистрирован') || v.precond?.toLowerCase().includes('аккаунт') },
+      { label: "Название содержит 'Восстановление пароля'", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('восстановление пароля') },
+      { label: "В шагах указан ввод email", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('email') || v.steps?.toLowerCase().includes('почт') },
+      { label: "В ожидаемом результате есть проверка ссылки", check: (v: PracticeCheckValues) => v.expected?.toLowerCase().includes('ссылк') },
+      { label: "Указано предусловие (наличие аккаунта)", check: (v: PracticeCheckValues) => v.precond?.toLowerCase().includes('зарегистрирован') || v.precond?.toLowerCase().includes('аккаунт') },
     ],
     solution: {
       title: "Восстановление пароля через валидный email",
@@ -292,10 +268,10 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Опиши найденный баг максимально профессионально.",
     scenario: "Ты нажал кнопку 'Оформить заказ' в корзине, и приложение просто закрылось (вылетело на рабочий стол). В корзине был один товар: 'iPhone 15'.",
     checkItems: [
-      { label: "Заголовок содержит 'Crash' или 'Вылет'", check: (v:any) => v.title?.toLowerCase().includes('crash') || v.title?.toLowerCase().includes('вылет') },
-      { label: "В шагах указана корзина", check: (v:any) => v.steps?.toLowerCase().includes('корзин') },
-      { label: "Указан конкретный товар", check: (v:any) => v.steps?.toLowerCase().includes('iphone') },
-      { label: "Severity указан как Critical/Blocker", check: (v:any) => v.title?.toLowerCase().includes('critical') || v.title?.toLowerCase().includes('blocker') || true }, // severity field is not in form but checked in solution
+      { label: "Заголовок содержит 'Crash' или 'Вылет'", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('crash') || v.title?.toLowerCase().includes('вылет') },
+      { label: "В шагах указана корзина", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('корзин') },
+      { label: "Указан конкретный товар", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('iphone') },
+      { label: "В заголовке указана критичность бага", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('critical') || v.title?.toLowerCase().includes('blocker') || v.title?.toLowerCase().includes('крит') },
     ],
     solution: {
       title: "[Checkout] Crash при нажатии 'Оформить заказ' с iPhone 15 в корзине",
@@ -375,9 +351,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши тест-кейсы для виджета выбора даты (Date Picker).",
     requirement: "Поле 'Дата рождения'. Должно принимать даты от 01.01.1900 до текущей даты. Учитывать високосные годы.",
     checkItems: [
-      { label: "Проверка 29 февраля в високосный год", check: (v:any) => v.steps?.toLowerCase().includes('29') && v.steps?.toLowerCase().includes('феврал') },
-      { label: "Проверка будущего времени (невалидно)", check: (v:any) => v.expected?.toLowerCase().includes('ошибк') || v.expected?.toLowerCase().includes('нельзя') },
-      { label: "Проверка нижней границы (1900 год)", check: (v:any) => v.steps?.includes('1900') },
+      { label: "Проверка 29 февраля в високосный год", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('29') && v.steps?.toLowerCase().includes('феврал') },
+      { label: "Проверка будущего времени (невалидно)", check: (v: PracticeCheckValues) => v.expected?.toLowerCase().includes('ошибк') || v.expected?.toLowerCase().includes('нельзя') },
+      { label: "Проверка нижней границы (1900 год)", check: (v: PracticeCheckValues) => v.steps?.includes('1900') },
     ],
     solution: {
       title: "Валидация граничных дат в календаре",
@@ -396,9 +372,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Опиши 'плавающий' баг (Race Condition).",
     scenario: "В чате при одновременной отправке сообщения двумя пользователями, сообщения иногда меняются местами или одно из них пропадает. Воспроизводится примерно 2 раза из 10.",
     checkItems: [
-      { label: "Указана частота воспроизведения (2/10)", check: (v:any) => v.steps?.includes('2/10') || v.steps?.toLowerCase().includes('иногда') },
-      { label: "Заголовок содержит 'Race Condition' или 'Порядок'", check: (v:any) => v.title?.toLowerCase().includes('race') || v.title?.toLowerCase().includes('порядок') },
-      { label: "Описаны действия двух пользователей", check: (v:any) => v.steps?.toLowerCase().includes('дву') || v.steps?.toLowerCase().includes('одновремен') },
+      { label: "Указана частота воспроизведения (2/10)", check: (v: PracticeCheckValues) => v.steps?.includes('2/10') || v.steps?.toLowerCase().includes('иногда') },
+      { label: "Заголовок содержит 'Race Condition' или 'Порядок'", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('race') || v.title?.toLowerCase().includes('порядок') },
+      { label: "Описаны действия двух пользователей", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('дву') || v.steps?.toLowerCase().includes('одновремен') },
     ],
     solution: {
       title: "[Chat] Race condition: нарушение порядка сообщений при одновременной отправке",
@@ -418,9 +394,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши негативные тест-кейсы для корзины интернет-магазина.",
     requirement: "Корзина должна позволять добавлять товары, изменять количество (1-99) и применять один промокод.",
     checkItems: [
-      { label: "Проверка ввода 0 или отрицательного количества", check: (v:any) => v.steps?.includes('0') || v.steps?.includes('-') },
-      { label: "Проверка ввода букв в поле количества", check: (v:any) => v.steps?.toLowerCase().includes('букв') || v.steps?.toLowerCase().includes('текст') },
-      { label: "Проверка применения двух промокодов", check: (v:any) => v.steps?.toLowerCase().includes('два') || v.steps?.toLowerCase().includes('второй') },
+      { label: "Проверка ввода 0 или отрицательного количества", check: (v: PracticeCheckValues) => v.steps?.includes('0') || v.steps?.includes('-') },
+      { label: "Проверка ввода букв в поле количества", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('букв') || v.steps?.toLowerCase().includes('текст') },
+      { label: "Проверка применения двух промокодов", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('два') || v.steps?.toLowerCase().includes('второй') },
     ],
     solution: {
       title: "Негативные сценарии работы с корзиной",
@@ -462,9 +438,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши тест-кейсы для компонента загрузки аватара.",
     requirement: "Принимаются файлы: JPG, PNG. Макс размер: 2МБ. Миниатюра должна отображаться сразу после выбора.",
     checkItems: [
-      { label: "Проверка загрузки файла .exe или .pdf", check: (v:any) => v.steps?.toLowerCase().includes('exe') || v.steps?.toLowerCase().includes('pdf') },
-      { label: "Проверка файла размером 3МБ", check: (v:any) => v.steps?.includes('3') || v.steps?.toLowerCase().includes('больше') },
-      { label: "Проверка отображения превью", check: (v:any) => v.expected?.toLowerCase().includes('превью') || v.expected?.toLowerCase().includes('миниатюр') },
+      { label: "Проверка загрузки файла .exe или .pdf", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('exe') || v.steps?.toLowerCase().includes('pdf') },
+      { label: "Проверка файла размером 3МБ", check: (v: PracticeCheckValues) => v.steps?.includes('3') || v.steps?.toLowerCase().includes('больше') },
+      { label: "Проверка отображения превью", check: (v: PracticeCheckValues) => v.expected?.toLowerCase().includes('превью') || v.expected?.toLowerCase().includes('миниатюр') },
     ],
     solution: {
       title: "Тестирование валидации загрузки аватара",
@@ -512,9 +488,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши тест-кейсы для фильтра поиска авиабилетов.",
     requirement: "Фильтры: Город (откуда/куда), Дата, Количество пассажиров (1-9), Класс (Эконом/Бизнес).",
     checkItems: [
-      { label: "Проверка 10 пассажиров (граничное значение)", check: (v:any) => v.steps?.includes('10') || v.steps?.toLowerCase().includes('гранич') },
-      { label: "Проверка даты в прошлом", check: (v:any) => v.steps?.toLowerCase().includes('прошл') || v.steps?.toLowerCase().includes('вчера') },
-      { label: "Проверка одинаковых городов (откуда = куда)", check: (v:any) => v.steps?.toLowerCase().includes('одинак') || v.steps?.toLowerCase().includes('тот же') },
+      { label: "Проверка 10 пассажиров (граничное значение)", check: (v: PracticeCheckValues) => v.steps?.includes('10') || v.steps?.toLowerCase().includes('гранич') },
+      { label: "Проверка даты в прошлом", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('прошл') || v.steps?.toLowerCase().includes('вчера') },
+      { label: "Проверка одинаковых городов (откуда = куда)", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('одинак') || v.steps?.toLowerCase().includes('тот же') },
     ],
     solution: {
       title: "Тестирование фильтров поиска билетов",
@@ -549,9 +525,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Опиши баг, позволяющий видеть чужие заказы через смену ID в URL.",
     requirement: "URL заказа: /orders/123. Если сменить 123 на 124, открывается заказ другого пользователя.",
     checkItems: [
-      { label: "Указание уязвимости IDOR", check: (v:any) => v.title?.toLowerCase().includes('idor') || v.desc?.toLowerCase().includes('доступ к чужим') },
-      { label: "Шаги со сменой ID в URL", check: (v:any) => v.steps?.includes('URL') || v.steps?.includes('ID') },
-      { label: "Ожидаемый результат: 403 Forbidden", check: (v:any) => v.expected?.includes('403') || v.expected?.toLowerCase().includes('запрещен') },
+      { label: "Указание уязвимости IDOR", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('idor') || v.desc?.toLowerCase().includes('доступ к чужим') },
+      { label: "Шаги со сменой ID в URL", check: (v: PracticeCheckValues) => v.steps?.includes('URL') || v.steps?.includes('ID') },
+      { label: "Ожидаемый результат: 403 Forbidden", check: (v: PracticeCheckValues) => v.expected?.includes('403') || v.expected?.toLowerCase().includes('запрещен') },
     ],
     solution: {
       title: "[Security] IDOR: Доступ к чужим заказам через URL",

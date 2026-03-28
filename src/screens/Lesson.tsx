@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
+import { AppState, Question } from '../types';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function Lesson({ id }: { id: string }) {
-  const { state, updateState, navigate, showToast } = useAppStore();
+  const { updateState, navigate, showToast } = useAppStore();
   const lesson = LESSONS.find(l => l.id === id);
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [qIndex, setQIndex] = useState(0);
   const [hearts, setHearts] = useState(3);
   const [correct, setCorrect] = useState(0);
@@ -20,14 +21,21 @@ export default function Lesson({ id }: { id: string }) {
   const [finished, setFinished] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const perfectToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (lesson) {
       setQuestions(shuffle(lesson.questions).slice(0, 6));
     }
+
+    return () => {
+      if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
+      if (perfectToastTimerRef.current) clearTimeout(perfectToastTimerRef.current);
+    };
   }, [lesson]);
 
-  const checkAchievements = (newState: any) => {
+  const checkAchievements = (newState: AppState) => {
     ACHIEVEMENTS.forEach(a => {
       if (!newState.unlockedAchievements.includes(a.id) && a.check(newState)) {
         newState.unlockedAchievements.push(a.id);
@@ -37,19 +45,21 @@ export default function Lesson({ id }: { id: string }) {
   };
 
   const handleCheck = () => {
-    // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса // Добавляем определение переменной q
+    // Защита от race condition: если уже обрабатывается, игнорируем
+    if (answered && (hearts === 0 || qIndex + 1 >= questions.length)) {
+      finishLesson();
+      return;
+    }
+    
     if (answered) {
-      if (hearts === 0 || qIndex + 1 >= questions.length) {
-        finishLesson();
-      } else {
-        setQIndex(qIndex + 1);
-        setAnswered(false);
-        setSelected(null);
-        setSortOrder([]);
-      }
+      setQIndex(qIndex + 1);
+      setAnswered(false);
+      setSelected(null);
+      setSortOrder([]);
       return;
     }
 
+    const q = questions[qIndex];
     let isCorrect = false;
     if (q.type === 'choice') isCorrect = selected === q.ans;
     if (q.type === 'sort') isCorrect = JSON.stringify(sortOrder) === JSON.stringify(q.correct);
@@ -63,16 +73,13 @@ export default function Lesson({ id }: { id: string }) {
     if (isCorrect) {
       newCorrect++;
       newConsecutive++;
-      if (newConsecutive >= 3) {
-        showToast(`🔥 ${newConsecutive} подряд!`, 'text-brand-amber');
-        setCurrentStreak(newConsecutive); // Обновляем состояние для отображения визуального уведомления
-      } else if (newConsecutive >= 1) {
+       if (newConsecutive >= 3) {
         setCurrentStreak(newConsecutive);
       }
     } else {
       newHearts--;
       newConsecutive = 0;
-      setCurrentStreak(0); // Сбрасываем визуальное уведомление
+      setCurrentStreak(0);
     }
 
     setCorrect(newCorrect);
@@ -113,14 +120,14 @@ export default function Lesson({ id }: { id: string }) {
     });
 
     if (passed) {
-      setTimeout(() => confetti(), 200);
-      if (perfect) setTimeout(() => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'), 1000);
+      confettiTimerRef.current = setTimeout(() => confetti(), 200);
+      if (perfect) {
+        perfectToastTimerRef.current = setTimeout(() => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'), 1000);
+      }
     }
   };
 
   if (!lesson || questions.length === 0) return null;
-
-  // Переменная q определена в области видимости компонента, но не используется в функциях, где нужна текущая версия вопроса
 
   if (finished) {
     const total = questions.length;
@@ -286,7 +293,7 @@ export default function Lesson({ id }: { id: string }) {
           </div>
         )}
 
-        {currentStreak >= 3 && (
+        {answered && currentStreak >= 3 && (
           <div className="mt-4 p-4 rounded-2xl text-[13px] leading-relaxed font-bold text-center text-brand-amber animate-pulse glass-panel backdrop-blur-xl border border-brand-amber/30">
             🔥 {currentStreak} подряд!
           </div>

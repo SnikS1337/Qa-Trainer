@@ -23,7 +23,12 @@ export function useAppStoreInit() {
 
   // Auto-save on every state change
   useEffect(() => {
-    localStorage.setItem('qa_trainer_v2', JSON.stringify(state));
+    try {
+      localStorage.setItem('qa_trainer_v2', JSON.stringify(state));
+    } catch (error) {
+      console.error('Failed to save state to localStorage:', error);
+      // Silently fail - user can continue using the app
+    }
   }, [state]);
 
   const updateState = (updates: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
@@ -36,7 +41,7 @@ export function useAppStoreInit() {
   return { state, updateState };
 }
 
-export const AppContext = createContext<ReturnType<typeof useAppStoreInit> & { navigate: (s: string, id?: string) => void, showToast: (msg: string, color?: string) => void }>({
+export const AppContext = createContext<ReturnType<typeof useAppStoreInit> & { navigate: (s: 'splash' | 'home' | 'lesson' | 'practice' | 'practice-task' | 'exam' | 'daily' | 'stats' | 'achievements' | 'certificate', id?: string) => void, showToast: (msg: string, color?: string) => void }>({
   state: initialState,
   updateState: () => {},
   navigate: () => {},

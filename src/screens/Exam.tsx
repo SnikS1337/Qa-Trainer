@@ -1,27 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { LESSONS, ACHIEVEMENTS } from '../data';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
+import { QuestionChoice } from '../types';
 
 export default function Exam() {
-  const { state, updateState, navigate, showToast } = useAppStore();
+  const { updateState, navigate, showToast } = useAppStore();
   
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<QuestionChoice[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
   const [finished, setFinished] = useState(false);
+  const [finalScore, setFinalScore] = useState<number | null>(null);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     // Gather all choice questions from all lessons
-    let allQ: any[] = [];
+    const allQ: QuestionChoice[] = [];
     LESSONS.forEach(l => {
       if (l.questions) {
-        allQ = [...allQ, ...l.questions.filter(q => q.type === 'choice')];
+        allQ.push(...l.questions.filter((q): q is QuestionChoice => q.type === 'choice'));
       }
     });
     
@@ -29,6 +31,42 @@ export default function Exam() {
     const shuffled = shuffle(allQ).slice(0, 20);
     setQuestions(shuffled);
   }, []);
+
+  const handleFinish = useCallback((resultScore: number = score) => {
+    if (finished) return;
+
+    setFinished(true);
+    setFinalScore(resultScore);
+    const passed = resultScore >= 16; // 80% to pass
+    
+    updateState(prev => {
+      const s = { ...prev };
+      s.examAttempts += 1;
+      s.examBestScore = Math.max(s.examBestScore, Math.round((resultScore / 20) * 100));
+
+      if (passed) {
+        s.totalXP += 500;
+        if (!s.examPassed) s.examPassed = true;
+        
+        // Check achievements
+        ACHIEVEMENTS.forEach(a => {
+          if (!s.unlockedAchievements.includes(a.id) && a.check(s)) {
+            s.unlockedAchievements.push(a.id);
+            showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
+          }
+        });
+      }
+
+      return s;
+    });
+
+    if (passed) {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      showToast('🎓 Экзамен сдан! +500 XP', 'text-brand-green');
+    } else {
+      showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
+    }
+  }, [finished, score, updateState, showToast]);
 
   useEffect(() => {
     if (finished || questions.length === 0) return;
@@ -45,48 +83,24 @@ export default function Exam() {
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [finished, questions.length]);
-
-  const handleFinish = () => {
-    setFinished(true);
-    const passed = score >= 16; // 80% to pass
-    
-    if (passed) {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      updateState(prev => {
-        const s = { ...prev };
-        s.totalXP += 500;
-        if (!s.examPassed) s.examPassed = true;
-        
-        // Check achievements
-        ACHIEVEMENTS.forEach(a => {
-          if (!s.unlockedAchievements.includes(a.id) && a.check(s)) {
-            s.unlockedAchievements.push(a.id);
-            showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
-          }
-        });
-        
-        return s;
-      });
-      showToast('🎓 Экзамен сдан! +500 XP', 'text-brand-green');
-    } else {
-      showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
-    }
-  };
+  }, [finished, questions.length, handleFinish]);
 
   const handleAnswer = () => {
     if (selectedOption === null) return;
     
     const q = questions[currentIdx];
-    if (selectedOption === q.ans) {
-      setScore(prev => prev + 1);
+    const isCorrect = selectedOption === q.ans;
+    const finalScore = isCorrect ? score + 1 : score;
+
+    if (isCorrect) {
+      setScore(finalScore);
     }
     
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
       setSelectedOption(null);
     } else {
-      handleFinish();
+      handleFinish(finalScore);
     }
   };
 
@@ -99,12 +113,13 @@ export default function Exam() {
   if (questions.length === 0) return <div className="p-10 text-center text-slate-400">Загрузка экзамена...</div>;
 
   if (finished) {
-    const passed = score >= 16;
+    const resolvedScore = finalScore ?? score;
+    const passed = resolvedScore >= 16;
     return (
       <div className="max-w-[500px] mx-auto p-6 pt-20 text-center w-full">
         <div className="text-6xl mb-6">{passed ? '🎓' : '💔'}</div>
         <h2 className="text-3xl font-extrabold mb-2 text-white">{passed ? 'Экзамен сдан!' : 'Экзамен провален'}</h2>
-        <p className="text-slate-400 mb-8">Твой результат: <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>{score} / 20</span></p>
+        <p className="text-slate-400 mb-8">Твой результат: <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>{resolvedScore} / 20</span></p>
         
         <div className="glass-panel p-6 mb-8 text-left">
           <div className="text-sm text-slate-300 mb-4">
