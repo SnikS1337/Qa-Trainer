@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS, ACHIEVEMENTS } from '../data';
 import { AppState } from '../types';
@@ -14,6 +14,10 @@ export default function PracticeTask({ id }: { id: string }) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [correctCount, setCorrectCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   if (!task) return null;
 

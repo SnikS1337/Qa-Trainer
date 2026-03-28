@@ -1,8 +1,13 @@
+import { useEffect } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS } from '../data';
 
 export default function Practice() {
   const { state, navigate } = useAppStore();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   const typeLabels: Record<string, string> = { 
     triage: '🔴 Расстановка severity', 

@@ -13,6 +13,7 @@ import PracticeTask from './screens/PracticeTask';
 import Exam from './screens/Exam';
 import Daily from './screens/Daily';
 import { Splash, Stats, Achievements, Certificate } from './screens/Misc';
+import { getBackgroundGradient } from './utils';
 
 export default function App() {
   const store = useAppStoreInit();
@@ -20,6 +21,8 @@ export default function App() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [toast, setToast] = useState<{msg: string, color: string} | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [baseGradient, setBaseGradient] = useState(() => getBackgroundGradient('splash'));
+  const [overlayGradient, setOverlayGradient] = useState<string | null>(null);
 
   const navigate = (s: string, id?: string) => {
     setScreen(s);
@@ -36,11 +39,24 @@ export default function App() {
     toastTimerRef.current = setTimeout(() => setToast(null), 2500);
   };
 
-  const state = store.state;
-
   useEffect(() => {
     // No automatic redirect, wait for user to click start
   }, [screen]);
+
+  useEffect(() => {
+    const nextGradient = getBackgroundGradient(screen);
+
+    if (nextGradient === baseGradient) return;
+
+    setOverlayGradient(nextGradient);
+
+    const timer = setTimeout(() => {
+      setBaseGradient(nextGradient);
+      setOverlayGradient(null);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [screen, baseGradient]);
 
   // Cleanup toast timer on unmount
   useEffect(() => {
@@ -54,6 +70,32 @@ export default function App() {
   return (
     <AppContext.Provider value={{ ...store, navigate, showToast }}>
       <div className="min-h-screen text-white font-sans selection:bg-brand-purple/30 relative">
+        <div
+          className="fixed inset-0"
+          style={{
+            backgroundColor: '#0f111a',
+            backgroundImage: baseGradient,
+            backgroundAttachment: 'fixed'
+          }}
+        />
+        <AnimatePresence>
+          {overlayGradient && (
+            <motion.div
+              key={screen}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 1 }}
+              transition={{ duration: 1.5, ease: 'easeInOut' }}
+              className="fixed inset-0"
+              style={{
+                backgroundColor: '#0f111a',
+                backgroundImage: overlayGradient,
+                backgroundAttachment: 'fixed'
+              }}
+            />
+          )}
+        </AnimatePresence>
+        
         <div className="noise-overlay pointer-events-none z-0"></div>
         
         <div className="relative z-10 min-h-screen flex flex-col">
