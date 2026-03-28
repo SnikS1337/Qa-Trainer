@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { loadPracticeTaskById } from '../data/content_loaders';
 import {
@@ -24,8 +24,6 @@ export default function PracticeTask({ id }: { id: string }) {
   const [selectedErrors, setSelectedErrors] = useState<Set<string>>(new Set());
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [correctCount, setCorrectCount] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const toggleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -35,7 +33,6 @@ export default function PracticeTask({ id }: { id: string }) {
     setSelectedErrors(new Set());
     setFormValues({});
     setCorrectCount(0);
-    setIsProcessing(false);
 
     let isMounted = true;
 
@@ -47,39 +44,22 @@ export default function PracticeTask({ id }: { id: string }) {
 
     return () => {
       isMounted = false;
-      if (toggleTimerRef.current) {
-        clearTimeout(toggleTimerRef.current);
-        toggleTimerRef.current = null;
-      }
     };
   }, [id]);
 
-  // Debounced toggle handler to prevent race conditions
-  const handleToggleError = useCallback(
-    (fieldId: string) => {
-      if (answered || isProcessing) return;
+  const handleToggleError = (fieldId: string) => {
+    if (answered) return;
 
-      if (toggleTimerRef.current) {
-        clearTimeout(toggleTimerRef.current);
+    setSelectedErrors((prev) => {
+      const next = new Set(prev);
+      if (next.has(fieldId)) {
+        next.delete(fieldId);
+      } else {
+        next.add(fieldId);
       }
-
-      setIsProcessing(true);
-      toggleTimerRef.current = setTimeout(() => {
-        setSelectedErrors((prev) => {
-          const newSet = new Set(prev);
-          if (newSet.has(fieldId)) {
-            newSet.delete(fieldId);
-          } else {
-            newSet.add(fieldId);
-          }
-          return newSet;
-        });
-        setIsProcessing(false);
-        toggleTimerRef.current = null;
-      }, 50); // 50ms debounce
-    },
-    [answered, isProcessing]
-  );
+      return next;
+    });
+  };
 
   if (!task) {
     return (

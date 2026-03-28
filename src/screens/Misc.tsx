@@ -1,4 +1,4 @@
-import { useAppStore, initialState } from '../store';
+import { APP_STATE_STORAGE_KEY, useAppStore, initialState } from '../store';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { LESSON_META } from '../data/lesson_meta';
 import { QUOTES } from '../data/quotes';
@@ -7,7 +7,6 @@ import { useMemo, useRef, useEffect, useState, useCallback, FormEvent } from 're
 import ConfirmModal from '../components/ConfirmModal';
 import ModalShell from '../components/ModalShell';
 import {
-  CAREER_LESSON_IDS,
   DESIGN_TECHNIQUES_LESSON_IDS,
   FOUNDATION_LESSON_IDS,
   getCertificateProgress,
@@ -61,7 +60,7 @@ export function Stats() {
         title="Сбросить прогресс?"
         message="Это действие нельзя отменить. Вы уверены?"
         onConfirm={() => {
-          localStorage.removeItem('qa_trainer_v2');
+          localStorage.removeItem(APP_STATE_STORAGE_KEY);
           updateState(initialState);
           setShowConfirm(false);
           navigate('splash');
@@ -226,7 +225,6 @@ export function Achievements() {
 
 const FOUNDATION_LESSONS = FOUNDATION_LESSON_IDS;
 const DESIGN_TECHNIQUES_LESSONS = DESIGN_TECHNIQUES_LESSON_IDS;
-const CAREER_LESSONS = CAREER_LESSON_IDS;
 
 export function Certificate() {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -247,19 +245,16 @@ export function Certificate() {
     []
   );
 
-  const { certType } = useMemo(
+  const {
+    certType,
+    foundationCompletedCount,
+    designCompletedCount,
+    totalCompletedCount,
+    totalRequiredCount,
+  } = useMemo(
     () => getCertificateProgress(state.completedLessons),
     [state.completedLessons]
   );
-  const foundationCompletedCount = FOUNDATION_LESSONS.filter((id) =>
-    state.completedLessons.includes(id)
-  ).length;
-  const designCompletedCount = DESIGN_TECHNIQUES_LESSONS.filter((id) =>
-    state.completedLessons.includes(id)
-  ).length;
-  const careerCompletedCount = CAREER_LESSONS.filter((id) =>
-    state.completedLessons.includes(id)
-  ).length;
 
   const isCheater = state.isCheater;
 
@@ -792,9 +787,7 @@ export function Certificate() {
                 </div>
               </div>
               <div className="text-brand-green mt-4 font-mono text-[13px]">
-                Прогресс: основы{' '}
-                {foundationCompletedCount + designCompletedCount + careerCompletedCount} /{' '}
-                {FOUNDATION_LESSONS.length} уроков
+                Прогресс цепочки: {totalCompletedCount} / {totalRequiredCount} уроков
               </div>
             </>
           )}
@@ -809,13 +802,14 @@ export function Certificate() {
           )}
           {!isCheater && !debugUnlocked && (
             <div className="glass-panel border-brand-green/30 bg-brand-green/10 text-brand-green mb-5 p-3.5 text-center text-[13px]">
-              {certType === 'foundation' &&
-                '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.'}
-              {certType === 'design' &&
-                '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.'}
-              {certType === 'career' && <div className="mb-2">✅ Вся цепочка уроков завершена: Основы, Техники тест-дизайна и Карьера.</div>}
-              {certType === 'career' &&
-                '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.'}
+              {certType === 'career' && (
+                <>
+                  <div className="mb-2">
+                    ✅ Вся цепочка уроков завершена: Основы, Техники тест-дизайна и Карьера.
+                  </div>
+                  {'✅ Введи своё имя и скачай сертификат.'}
+                </>
+              )}
             </div>
           )}
 

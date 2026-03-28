@@ -6,7 +6,12 @@ let choiceQuestionsPromise: Promise<QuestionChoice[]> | null = null;
 
 export function loadLessonsContent() {
   if (!lessonsPromise) {
-    lessonsPromise = import('./lessons').then((module) => module.LESSONS);
+    lessonsPromise = import('./lessons')
+      .then((module) => module.LESSONS)
+      .catch((error) => {
+        lessonsPromise = null;
+        throw error;
+      });
   }
 
   return lessonsPromise;
@@ -14,7 +19,12 @@ export function loadLessonsContent() {
 
 export function loadPracticeTasksContent() {
   if (!practiceTasksPromise) {
-    practiceTasksPromise = import('./practice_tasks').then((module) => module.PRACTICE_TASKS);
+    practiceTasksPromise = import('./practice_tasks')
+      .then((module) => module.PRACTICE_TASKS)
+      .catch((error) => {
+        practiceTasksPromise = null;
+        throw error;
+      });
   }
 
   return practiceTasksPromise;
@@ -28,7 +38,10 @@ export function loadChoiceQuestions() {
           (question): question is QuestionChoice => question.type === 'choice'
         )
       )
-    );
+    ).catch((error) => {
+      choiceQuestionsPromise = null;
+      throw error;
+    });
   }
 
   return choiceQuestionsPromise;

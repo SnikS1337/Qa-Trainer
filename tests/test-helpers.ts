@@ -1,7 +1,7 @@
 import type { AppState } from '../src/types';
 
 export function createAppState(overrides: Partial<AppState> = {}): AppState {
-  return {
+  const nextState: AppState = {
     totalXP: 0,
     completedLessons: [],
     streak: 0,
@@ -24,8 +24,13 @@ export function createAppState(overrides: Partial<AppState> = {}): AppState {
     isCheater: false,
     examPassed: false,
     ...overrides,
-    completedLessons: [...(overrides.completedLessons ?? [])],
-    unlockedAchievements: [...(overrides.unlockedAchievements ?? [])],
-    completedPractice: [...(overrides.completedPractice ?? [])],
   };
+
+  nextState.completedLessons = [...(overrides.completedLessons ?? nextState.completedLessons)];
+  nextState.unlockedAchievements = [
+    ...(overrides.unlockedAchievements ?? nextState.unlockedAchievements),
+  ];
+  nextState.completedPractice = [...(overrides.completedPractice ?? nextState.completedPractice)];
+
+  return nextState;
 }

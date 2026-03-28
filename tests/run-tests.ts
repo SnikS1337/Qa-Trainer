@@ -1,16 +1,20 @@
+import { readdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
 type TestCase = {
   name: string;
   run: () => void | Promise<void>;
 };
 
-const modules = [
-  await import('./dates.test.ts'),
-  await import('./progression.test.ts'),
-  await import('./course.test.ts'),
-  await import('./content.test.ts'),
-  await import('./choice-display.test.ts'),
-  await import('./question-preparation.test.ts'),
-];
+const testDir = dirname(fileURLToPath(import.meta.url));
+const testFiles = (await readdir(testDir))
+  .filter((fileName) => fileName.endsWith('.test.ts'))
+  .sort();
+
+const modules = await Promise.all(
+  testFiles.map((fileName) => import(pathToFileURL(join(testDir, fileName)).href))
+);
 
 const cases = modules.flatMap((module) => module.tests as TestCase[]);
 let passed = 0;

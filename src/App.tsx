@@ -80,7 +80,7 @@ export default function App() {
   }, []);
 
   const showToast = useCallback((msg: string, color: string = 'text-brand-green') => {
-    if (/подряд/i.test(msg)) {
+    if (/^🔥\s*\d+\s+подряд!?$/i.test(msg.trim())) {
       return;
     }
 

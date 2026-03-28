@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAppStore, initialState } from '../store';
+import { APP_STATE_STORAGE_KEY, useAppStore, initialState } from '../store';
 import { LESSON_META } from '../data/lesson_meta';
+import { hydrateAppState } from '../domain/persistence';
 import ConfirmModal from './ConfirmModal';
 import ModalShell from './ModalShell';
 
@@ -35,7 +36,7 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   };
 
   const handleConfirmReset = () => {
-    localStorage.removeItem('qa_trainer_v2');
+    localStorage.removeItem(APP_STATE_STORAGE_KEY);
     updateState(initialState);
     setShowConfirm(false);
     onClose();
@@ -52,58 +53,12 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
   const importProgress = () => {
     try {
       const parsed = JSON.parse(importData);
-
-      // Validate that parsed data has the expected structure of AppState
       if (typeof parsed !== 'object' || parsed === null) {
         throw new Error('Invalid data structure');
       }
 
-      // Check for required AppState properties and their types
-      const requiredFields: Record<string, string> = {
-        totalXP: 'number',
-        completedLessons: 'object',
-        streak: 'number',
-        maxStreak: 'number',
-        perfectLessons: 'number',
-        retries: 'number',
-        bestStreak: 'number',
-        unlockedAchievements: 'object',
-        lastQuoteIndex: 'number',
-        dailyQuoteDate: 'string',
-        examBestScore: 'number',
-        examAttempts: 'number',
-        dailyStreak: 'number',
-        lastDailyDate: 'string',
-        totalQuestionsAnswered: 'number',
-        totalCorrect: 'number',
-        completedPractice: 'object',
-        certName: 'string',
-        lastActiveDate: 'string',
-      };
-
-      for (const [field, expectedType] of Object.entries(requiredFields)) {
-        if (!(field in parsed)) {
-          throw new Error(`Missing field: ${field}`);
-        }
-
-        const actualType = Array.isArray(parsed[field]) ? 'object' : typeof parsed[field];
-        if (actualType !== expectedType) {
-          throw new Error(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`);
-        }
-      }
-
-      // Additional validation for arrays
-      if (!Array.isArray(parsed.completedLessons)) {
-        throw new Error('completedLessons must be an array');
-      }
-      if (!Array.isArray(parsed.unlockedAchievements)) {
-        throw new Error('unlockedAchievements must be an array');
-      }
-      if (!Array.isArray(parsed.completedPractice)) {
-        throw new Error('completedPractice must be an array');
-      }
-
-      updateState({ ...parsed, isCheater: true });
+      const hydratedState = hydrateAppState(parsed, initialState);
+      updateState({ ...hydratedState, isCheater: true });
       showToast('Прогресс загружен', 'text-brand-green');
       setImportData('');
     } catch (e) {

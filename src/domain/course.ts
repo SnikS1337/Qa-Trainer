@@ -12,6 +12,11 @@ export const DESIGN_TECHNIQUES_LESSON_IDS = LESSON_META.filter(
 ).map((lesson) => lesson.id);
 
 export const CAREER_LESSON_IDS = ['interview'] as const;
+export const CERTIFICATE_REQUIRED_LESSON_IDS = [
+  ...FOUNDATION_LESSON_IDS,
+  ...DESIGN_TECHNIQUES_LESSON_IDS,
+  ...CAREER_LESSON_IDS,
+] as const;
 
 export type CertificateType = 'none' | 'foundation' | 'design' | 'career';
 
@@ -25,11 +30,29 @@ export function getCertificateProgress(completedLessons: string[]): {
   designDone: boolean;
   careerDone: boolean;
   fullCourseDone: boolean;
+  foundationCompletedCount: number;
+  designCompletedCount: number;
+  careerCompletedCount: number;
+  totalCompletedCount: number;
+  totalRequiredCount: number;
 } {
+  const foundationCompletedCount = FOUNDATION_LESSON_IDS.filter((lessonId) =>
+    completedLessons.includes(lessonId)
+  ).length;
+  const designCompletedCount = DESIGN_TECHNIQUES_LESSON_IDS.filter((lessonId) =>
+    completedLessons.includes(lessonId)
+  ).length;
+  const careerCompletedCount = CAREER_LESSON_IDS.filter((lessonId) =>
+    completedLessons.includes(lessonId)
+  ).length;
   const foundationDone = hasAllLessons(completedLessons, FOUNDATION_LESSON_IDS);
-  const designDone = foundationDone && hasAllLessons(completedLessons, DESIGN_TECHNIQUES_LESSON_IDS);
+  const designDone =
+    foundationDone && hasAllLessons(completedLessons, DESIGN_TECHNIQUES_LESSON_IDS);
   const careerDone = foundationDone && hasAllLessons(completedLessons, CAREER_LESSON_IDS);
   const fullCourseDone = foundationDone && designDone && careerDone;
+  const totalRequiredCount = CERTIFICATE_REQUIRED_LESSON_IDS.length;
+  const totalCompletedCount =
+    foundationCompletedCount + designCompletedCount + careerCompletedCount;
 
   let certType: CertificateType = 'none';
 
@@ -43,5 +66,10 @@ export function getCertificateProgress(completedLessons: string[]): {
     designDone,
     careerDone,
     fullCourseDone,
+    foundationCompletedCount,
+    designCompletedCount,
+    careerCompletedCount,
+    totalCompletedCount,
+    totalRequiredCount,
   };
 }

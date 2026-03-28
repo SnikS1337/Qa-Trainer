@@ -1,9 +1,18 @@
 import type { LessonMeta } from '../types';
 import { LESSON_EXPANSIONS } from './lesson_expansions';
+import { LESSON_EXPANSIONS_BONUS } from './lesson_expansions_bonus';
+import { LESSON_EXPANSIONS_BONUS_2 } from './lesson_expansions_bonus_2';
 
-const QUESTION_COUNT_INCREMENTS = new Map(
-  Object.entries(LESSON_EXPANSIONS).map(([lessonId, questions]) => [lessonId, questions.length])
-);
+const QUESTION_COUNT_INCREMENTS = new Map<string, number>();
+
+for (const expansionSet of [LESSON_EXPANSIONS, LESSON_EXPANSIONS_BONUS, LESSON_EXPANSIONS_BONUS_2]) {
+  for (const [lessonId, questions] of Object.entries(expansionSet)) {
+    QUESTION_COUNT_INCREMENTS.set(
+      lessonId,
+      (QUESTION_COUNT_INCREMENTS.get(lessonId) ?? 0) + questions.length
+    );
+  }
+}
 
 const BASE_LESSON_META: LessonMeta[] = [
   {

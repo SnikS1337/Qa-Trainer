@@ -61,7 +61,7 @@ export function finalizeLessonResult(
   }
 
   if (perfect) {
-    nextState.perfectLessons += 1;
+    nextState.perfectLessons = Math.max(nextState.perfectLessons, 1);
   }
 
   const achievementResult = unlockAchievements(nextState);

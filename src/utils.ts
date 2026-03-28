@@ -14,6 +14,24 @@ export function getLevelInfo(xp: number) {
   return { level, name, curr, next, pct, xpInLevel: xp - curr, xpToNext: next - curr };
 }
 
+export function getTimeOfDayGreeting(date: Date = new Date()) {
+  const hour = date.getHours();
+
+  if (hour >= 5 && hour < 12) {
+    return 'Доброе утро';
+  }
+
+  if (hour >= 12 && hour < 18) {
+    return 'Добрый день';
+  }
+
+  if (hour >= 18 && hour < 23) {
+    return 'Добрый вечер';
+  }
+
+  return 'Доброй ночи';
+}
+
 export function getBackgroundGradient(screen: string): string {
   const gradients: Record<string, string> = {
     splash:

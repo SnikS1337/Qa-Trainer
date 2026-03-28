@@ -5,6 +5,7 @@ import { LESSONS } from '../src/data/lessons';
 import { PRACTICE_TASK_META } from '../src/data/practice_task_meta';
 import { PRACTICE_TASKS } from '../src/data/practice_tasks';
 import { FOUNDATION_LESSON_IDS } from '../src/domain/course';
+import { LESSON_SESSION_QUESTION_LIMIT } from '../src/domain/lesson_session';
 import { createAppState } from './test-helpers';
 
 function expectUnique(ids: string[], label: string) {
@@ -45,12 +46,12 @@ export const tests = [
     },
   },
   {
-    name: 'each lesson has at least ten questions',
+    name: 'each lesson has at least fifteen questions in its full bank',
     run: () => {
       for (const lesson of LESSONS) {
         assert.ok(
-          lesson.questions.length >= 10,
-          `Lesson ${lesson.id} should have at least 10 questions`
+          lesson.questions.length >= Math.max(15, LESSON_SESSION_QUESTION_LIMIT + 1),
+          `Lesson ${lesson.id} should have at least 15 questions`
         );
       }
     },

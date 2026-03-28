@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { AppState } from './types';
 import { hydrateAppState } from './domain/persistence';
 
+export const APP_STATE_STORAGE_KEY = 'qa_trainer_v2';
+
 export const initialState: AppState = {
   totalXP: 0,
   completedLessons: [],
@@ -29,7 +31,7 @@ export const initialState: AppState = {
 export function useAppStoreInit() {
   const [state, setState] = useState<AppState>(() => {
     try {
-      const s = localStorage.getItem('qa_trainer_v2');
+      const s = localStorage.getItem(APP_STATE_STORAGE_KEY);
       return s ? hydrateAppState(JSON.parse(s), initialState) : initialState;
     } catch {
       return initialState;
@@ -39,7 +41,7 @@ export function useAppStoreInit() {
   // Auto-save on every state change
   useEffect(() => {
     try {
-      localStorage.setItem('qa_trainer_v2', JSON.stringify(state));
+      localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(state));
     } catch (error) {
       console.error('Failed to save state to localStorage:', error);
       // Silently fail - user can continue using the app

@@ -4,7 +4,7 @@ import { LESSON_META } from '../data/lesson_meta';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
 import { getLessonSessionQuestionCount } from '../domain/lesson_session';
-import { getLevelInfo, plural } from '../utils';
+import { getLevelInfo, getTimeOfDayGreeting, plural } from '../utils';
 import { useState, useRef, useEffect } from 'react';
 import DevMenu from '../components/DevMenu';
 import { getLocalDateKey } from '../domain/dates';
@@ -44,11 +44,13 @@ function CardOutline({
   hovered = false,
   opening = false,
   variant = 'interactive',
+  pulseMode = 'default',
 }: {
   color: string;
   hovered?: boolean;
   opening?: boolean;
   variant?: 'interactive' | 'ambient';
+  pulseMode?: 'default' | 'soft';
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -91,14 +93,20 @@ function CardOutline({
     { id: 'right', d: rightPath },
   ];
   const isActive = isAmbient || opening || hovered;
-  const glowOpacity = isAmbient ? 0.22 : 0.5;
-  const lineOpacity = isAmbient ? 0.48 : 1;
+  const isSoftPulse = isAmbient && pulseMode === 'soft';
+  const glowOpacity = isAmbient ? (isSoftPulse ? 0.16 : 0.22) : 0.5;
+  const lineOpacity = isAmbient ? (isSoftPulse ? 0.38 : 0.5) : 1;
   const glowFilter = isAmbient
-    ? `blur(2px) drop-shadow(0 0 8px ${color}40) drop-shadow(0 0 16px ${color}20)`
+    ? `blur(2px) drop-shadow(0 0 ${isSoftPulse ? '7px' : '9px'} ${color}38) drop-shadow(0 0 ${isSoftPulse ? '12px' : '16px'} ${color}18)`
     : `blur(3px) drop-shadow(0 0 10px ${color}88) drop-shadow(0 0 24px ${color}55)`;
   const lineFilter = isAmbient
-    ? `drop-shadow(0 0 4px ${color}50) drop-shadow(0 0 10px ${color}28)`
+    ? `drop-shadow(0 0 ${isSoftPulse ? '4px' : '5px'} ${color}44) drop-shadow(0 0 ${isSoftPulse ? '8px' : '11px'} ${color}1c)`
     : `drop-shadow(0 0 6px ${color}aa) drop-shadow(0 0 18px ${color}55)`;
+  const pulseClassName = isAmbient
+    ? isSoftPulse
+      ? 'ambient-card-outline-pulse-soft'
+      : 'ambient-card-outline-pulse'
+    : undefined;
 
   return (
     <svg
@@ -109,7 +117,7 @@ function CardOutline({
     >
       {hasSize &&
         paths.map((path) => (
-          <g key={path.id} className={isAmbient ? 'ambient-card-outline-pulse' : undefined}>
+          <g key={path.id} className={pulseClassName}>
             <path
               d={path.d}
               pathLength={1}
@@ -152,6 +160,7 @@ export default function Home() {
   const { state, navigate, updateState } = useAppStore();
   const lvl = getLevelInfo(state.totalXP);
 
+  const [now, setNow] = useState(() => new Date());
   const [showDevMenu, setShowDevMenu] = useState(false);
   const [openingLessonId, setOpeningLessonId] = useState<string | null>(null);
   const [hoveredLessonId, setHoveredLessonId] = useState<string | null>(null);
@@ -199,6 +208,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const greetingTimer = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => clearInterval(greetingTimer);
+  }, []);
+
+  useEffect(() => {
     preloadLessonsContent();
     preloadPracticeTasksContent();
 
@@ -213,6 +230,7 @@ export default function Home() {
   }, [state.dailyQuoteDate, updateState]);
 
   const quote = QUOTES[state.lastQuoteIndex % QUOTES.length];
+  const greeting = getTimeOfDayGreeting(now);
 
   const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
   const today = getLocalDateKey();
@@ -238,7 +256,7 @@ export default function Home() {
                 <div className="text-brand-green font-mono text-[10px] tracking-[3px]">
                   QA TRAINER
                 </div>
-                <div className="text-lg font-extrabold text-white">Привет, тестировщик!</div>
+                <div className="text-lg font-extrabold text-white">{greeting}, тестировщик!</div>
               </div>
             </div>
             <div className="flex gap-2">
@@ -303,15 +321,18 @@ export default function Home() {
 
       <div className="mx-auto max-w-[600px] px-5 pt-5">
         {/* Quote */}
-        <div className="glass-panel border-brand-green/30 bg-brand-green/5 mb-6 flex items-start gap-3 p-4">
-          <span className="mt-0.5 shrink-0 text-xl">💬</span>
-          <div>
-            <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
-              ЦИТАТА ДНЯ
-            </div>
-            <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
-            <div className="mt-1 text-[11px] text-slate-300">
-              — {quote.author}, "{quote.book}"
+        <div className="relative mb-6">
+          <CardOutline color="#34d399" variant="ambient" pulseMode="soft" />
+          <div className="glass-panel liquid-accent-surface quote-liquid-surface border-brand-green/30 bg-brand-green/5 relative flex items-start gap-3 p-4">
+            <span className="relative z-[1] mt-0.5 shrink-0 text-xl">💬</span>
+            <div className="relative z-[1]">
+              <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
+                ЦИТАТА ДНЯ
+              </div>
+              <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
+              <div className="mt-1 text-[11px] text-slate-300">
+                — {quote.author}, "{quote.book}"
+              </div>
             </div>
           </div>
         </div>
@@ -434,7 +455,7 @@ export default function Home() {
             <CardOutline color="#a78bfa" variant="ambient" />
             <div
               onClick={() => !dailyDone && navigate('daily')}
-              className={`glass-panel border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
+              className={`glass-panel liquid-accent-surface border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
@@ -458,7 +479,7 @@ export default function Home() {
               <CardOutline color="#f87171" variant="ambient" />
               <div
                 onClick={() => navigate('exam')}
-                className="glass-panel cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
+                className="glass-panel liquid-accent-surface cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
               >
                 <div className="relative z-[1] flex items-center gap-3">
                   <div className="text-3xl">🎯</div>
@@ -486,7 +507,7 @@ export default function Home() {
             <CardOutline color="#34d399" variant="ambient" />
             <div
               onClick={() => navigate('practice')}
-              className="glass-panel cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
+              className="glass-panel liquid-accent-surface cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">🛠️</div>

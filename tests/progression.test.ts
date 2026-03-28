@@ -74,6 +74,36 @@ export const tests = [
     },
   },
   {
+    name: 'finalizeLessonResult unlocks perfect completion on replay without farming the counter',
+    run: () => {
+      const replayPerfect = finalizeLessonResult(
+        createAppState({
+          completedLessons: ['pyramid'],
+          perfectLessons: 0,
+        }),
+        {
+          lessonId: 'pyramid',
+          lessonXP: 20,
+          correctAnswers: 6,
+          totalQuestions: 6,
+          heartsLeft: 3,
+        }
+      );
+
+      const repeatedReplayPerfect = finalizeLessonResult(replayPerfect.nextState, {
+        lessonId: 'pyramid',
+        lessonXP: 20,
+        correctAnswers: 6,
+        totalQuestions: 6,
+        heartsLeft: 3,
+      });
+
+      assert.equal(replayPerfect.perfect, true);
+      assert.equal(replayPerfect.nextState.perfectLessons, 1);
+      assert.equal(repeatedReplayPerfect.nextState.perfectLessons, 1);
+    },
+  },
+  {
     name: 'finalizePracticeTaskResult awards practice XP only once',
     run: () => {
       const firstPass = finalizePracticeTaskResult(createAppState(), {
