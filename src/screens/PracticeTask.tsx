@@ -1,9 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { ACHIEVEMENTS } from '../data/achievements';
 import { loadPracticeTaskById } from '../data/content_loaders';
 import {
-  type AppState,
   PracticeBug,
   PracticeCheckItem,
   PracticeField,
@@ -11,9 +9,14 @@ import {
   type PracticeTask as PracticeTaskType,
 } from '../types';
 import confetti from 'canvas-confetti';
+import {
+  finalizePracticeTaskResult,
+  getAchievementUnlockTitles,
+  getPracticeCriteriaCount,
+} from '../domain/progression';
 
 export default function PracticeTask({ id }: { id: string }) {
-  const { updateState, navigate, showToast } = useAppStore();
+  const { state, updateState, navigate, showToast } = useAppStore();
 
   const [task, setTask] = useState<PracticeTaskType | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -84,49 +87,36 @@ export default function PracticeTask({ id }: { id: string }) {
     );
   }
 
-  const checkAchievements = (newState: AppState) => {
-    ACHIEVEMENTS.forEach((a) => {
-      if (!newState.unlockedAchievements.includes(a.id) && a.check(newState)) {
-        newState.unlockedAchievements.push(a.id);
-        showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
-      }
-    });
-  };
+  const alreadyCompleted = state.completedPractice?.includes(task.id) ?? false;
 
-  const finishTask = (passed: boolean, xp: number) => {
-    updateState((prev) => {
-      const s = { ...prev };
-      s.totalXP += xp;
-      if (!s.completedPractice) s.completedPractice = [];
-      if (passed && !s.completedPractice.includes(task.id)) s.completedPractice.push(task.id);
-      checkAchievements(s);
-      return s;
+  const finishTask = (passed: boolean) => {
+    const result = finalizePracticeTaskResult(state, {
+      taskId: task.id,
+      taskXP: task.xp,
+      passed,
     });
-    showToast(
-      passed ? `🛠️ Задание выполнено! +${xp} XP` : '📖 Попробуй ещё раз!',
-      passed ? 'text-brand-green' : 'text-brand-amber'
-    );
-    navigate('practice');
-  };
 
-  const getCriteriaCount = (practiceTask: PracticeTaskType) => {
-    switch (practiceTask.type) {
-      case 'triage':
-        return practiceTask.bugs.length;
-      case 'find_error':
-        return practiceTask.fields.length;
-      case 'write_test':
-      case 'bug_report':
-        return practiceTask.checkItems.length;
+    updateState(result.nextState);
+
+    for (const title of getAchievementUnlockTitles(result.unlockedAchievements)) {
+      showToast(`🏆 Достижение: ${title}!`, 'text-brand-amber');
     }
+
+    if (passed && result.awardedXP > 0) {
+      showToast(`Задание выполнено! +${result.awardedXP} XP`, 'text-brand-green');
+    } else if (passed) {
+      showToast('Задание уже было зачтено ранее. XP больше не начисляется.', 'text-brand-amber');
+    } else {
+      showToast('Попробуй ещё раз!', 'text-brand-amber');
+    }
+    navigate('practice');
   };
 
   const handleCheck = () => {
     if (answered) {
-      const pct = Math.round((correctCount / getCriteriaCount(task)) * 100);
+      const pct = Math.round((correctCount / getPracticeCriteriaCount(task)) * 100);
       const passed = pct >= 60;
-      const xp = passed ? task.xp : Math.round(task.xp * 0.3);
-      finishTask(passed, xp);
+      finishTask(passed);
       return;
     }
 
@@ -152,7 +142,7 @@ export default function PracticeTask({ id }: { id: string }) {
     setCorrectCount(correct);
     setAnswered(true);
 
-    const pct = Math.round((correct / getCriteriaCount(task)) * 100);
+    const pct = Math.round((correct / getPracticeCriteriaCount(task)) * 100);
     if (pct >= 60) confetti();
   };
 
@@ -229,7 +219,9 @@ export default function PracticeTask({ id }: { id: string }) {
               className={`mb-1 font-extrabold ${passed ? 'text-brand-green' : 'text-brand-red'}`}
             >
               {passed
-                ? `🎯 ${correctCount}/${task.bugs.length} верно! +${task.xp} XP`
+                ? alreadyCompleted
+                  ? `🎯 ${correctCount}/${task.bugs.length} верно! Задание уже было зачтено ранее.`
+                  : `🎯 ${correctCount}/${task.bugs.length} верно! +${task.xp} XP`
                 : `💪 ${correctCount}/${task.bugs.length} верно. Повтори урок о severity!`}
             </div>
             <div className="text-slate-300">
@@ -336,7 +328,9 @@ export default function PracticeTask({ id }: { id: string }) {
           >
             <div className={`font-extrabold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>
               {passed
-                ? `🔍 Молодец! Нашёл ${correctCount}/${errorCount} ошибок. +${task.xp} XP`
+                ? alreadyCompleted
+                  ? `🔍 Молодец! Нашёл ${correctCount}/${errorCount} ошибок. Задание уже было зачтено ранее.`
+                  : `🔍 Молодец! Нашёл ${correctCount}/${errorCount} ошибок. +${task.xp} XP`
                 : `💪 Найдено ${correctCount}/${errorCount}. Читай объяснения выше!`}
             </div>
           </div>
@@ -542,7 +536,9 @@ export default function PracticeTask({ id }: { id: string }) {
             >
               <div className={`font-extrabold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>
                 {passed
-                  ? `✅ Отлично! ${correctCount}/${task.checkItems.length} критериев выполнено. +${task.xp} XP`
+                  ? alreadyCompleted
+                    ? `✅ Отлично! ${correctCount}/${task.checkItems.length} критериев выполнено. Задание уже было зачтено ранее.`
+                    : `✅ Отлично! ${correctCount}/${task.checkItems.length} критериев выполнено. +${task.xp} XP`
                   : `💪 ${correctCount}/${task.checkItems.length} критериев. Сравни с эталоном ↑`}
               </div>
             </div>

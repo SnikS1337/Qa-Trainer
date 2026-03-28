@@ -6,6 +6,12 @@ import { getLevelInfo } from '../utils';
 import { useMemo, useRef, useEffect, useState, useCallback, FormEvent } from 'react';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalShell from '../components/ModalShell';
+import {
+  CAREER_LESSON_IDS,
+  DESIGN_TECHNIQUES_LESSON_IDS,
+  FOUNDATION_LESSON_IDS,
+  getCertificateProgress,
+} from '../domain/course';
 
 export function Splash() {
   const { navigate } = useAppStore();
@@ -218,19 +224,9 @@ export function Achievements() {
   );
 }
 
-const FOUNDATION_LESSONS = [
-  'pyramid',
-  'testcase',
-  'states',
-  'checklist',
-  'types',
-  'buglife',
-  'requirements',
-  'smoke_sanity',
-  'defect_types',
-]; // Основы - 9 уроков
-const DESIGN_TECHNIQUES_LESSONS = ['equiv', 'boundary']; // Техники тест-дизайна - 2 урока
-const CAREER_LESSON = ['interview']; // Карьера - 1 урок
+const FOUNDATION_LESSONS = FOUNDATION_LESSON_IDS;
+const DESIGN_TECHNIQUES_LESSONS = DESIGN_TECHNIQUES_LESSON_IDS;
+const CAREER_LESSONS = CAREER_LESSON_IDS;
 
 export function Certificate() {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -239,7 +235,6 @@ export function Certificate() {
   const [debugUnlocked, setDebugUnlocked] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [passInput, setPassInput] = useState('');
-  const [certType, setCertType] = useState<'none' | 'foundation' | 'design' | 'career'>('none');
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const passInputRef = useRef<HTMLInputElement | null>(null);
   const decorativeCircles = useMemo(
@@ -252,19 +247,19 @@ export function Certificate() {
     []
   );
 
-  // Проверяем, какие сертификаты доступны
-  const foundationDone = FOUNDATION_LESSONS.every((id) => state.completedLessons.includes(id)); // 9 уроков основ
-  const designDone =
-    foundationDone && DESIGN_TECHNIQUES_LESSONS.every((id) => state.completedLessons.includes(id)); // 2 урока техник дизайна
-  const careerDone = foundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
-
-  // Определяем тип доступного сертификата (наивысший из пройденных)
-  useEffect(() => {
-    if (careerDone) setCertType('career');
-    else if (designDone) setCertType('design');
-    else if (foundationDone) setCertType('foundation');
-    else setCertType('none');
-  }, [careerDone, designDone, foundationDone]);
+  const { certType } = useMemo(
+    () => getCertificateProgress(state.completedLessons),
+    [state.completedLessons]
+  );
+  const foundationCompletedCount = FOUNDATION_LESSONS.filter((id) =>
+    state.completedLessons.includes(id)
+  ).length;
+  const designCompletedCount = DESIGN_TECHNIQUES_LESSONS.filter((id) =>
+    state.completedLessons.includes(id)
+  ).length;
+  const careerCompletedCount = CAREER_LESSONS.filter((id) =>
+    state.completedLessons.includes(id)
+  ).length;
 
   const isCheater = state.isCheater;
 
@@ -783,16 +778,13 @@ export function Certificate() {
               <div className="mt-2 text-[13px] leading-relaxed text-slate-300">
                 <div>
                   <strong>• Основы</strong>: {FOUNDATION_LESSONS.length} уроков (
-                  {FOUNDATION_LESSONS.filter((id) => state.completedLessons.includes(id)).length} /{' '}
+                  {foundationCompletedCount} /{' '}
                   {FOUNDATION_LESSONS.length} пройдено)
                 </div>
                 <div>
                   <strong>• Техники тест-дизайна</strong>: {DESIGN_TECHNIQUES_LESSONS.length} урока
                   (
-                  {
-                    DESIGN_TECHNIQUES_LESSONS.filter((id) => state.completedLessons.includes(id))
-                      .length
-                  }{' '}
+                  {designCompletedCount}{' '}
                   / {DESIGN_TECHNIQUES_LESSONS.length} пройдено, требуется все из Основ)
                 </div>
                 <div>
@@ -801,8 +793,8 @@ export function Certificate() {
               </div>
               <div className="text-brand-green mt-4 font-mono text-[13px]">
                 Прогресс: основы{' '}
-                {FOUNDATION_LESSONS.filter((id) => state.completedLessons.includes(id)).length} / 9
-                уроков
+                {foundationCompletedCount + designCompletedCount + careerCompletedCount} /{' '}
+                {FOUNDATION_LESSONS.length} уроков
               </div>
             </>
           )}
@@ -821,6 +813,7 @@ export function Certificate() {
                 '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.'}
               {certType === 'design' &&
                 '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.'}
+              {certType === 'career' && <div className="mb-2">✅ Вся цепочка уроков завершена: Основы, Техники тест-дизайна и Карьера.</div>}
               {certType === 'career' &&
                 '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.'}
             </div>

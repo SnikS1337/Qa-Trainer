@@ -3,9 +3,11 @@ import { preloadLessonsContent, preloadPracticeTasksContent } from '../data/cont
 import { LESSON_META } from '../data/lesson_meta';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
+import { getLessonSessionQuestionCount } from '../domain/lesson_session';
 import { getLevelInfo, plural } from '../utils';
 import { useState, useRef, useEffect } from 'react';
 import DevMenu from '../components/DevMenu';
+import { getLocalDateKey } from '../domain/dates';
 
 function buildLessonOutlinePaths(width: number, height: number) {
   const inset = 1.5;
@@ -200,7 +202,7 @@ export default function Home() {
     preloadLessonsContent();
     preloadPracticeTasksContent();
 
-    const today = new Date().toDateString();
+    const today = getLocalDateKey();
 
     if (state.dailyQuoteDate !== today) {
       updateState({
@@ -213,7 +215,7 @@ export default function Home() {
   const quote = QUOTES[state.lastQuoteIndex % QUOTES.length];
 
   const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
-  const today = new Date().toDateString();
+  const today = getLocalDateKey();
   const dailyDone = state.lastDailyDate === today;
   const practDone = state.completedPractice?.length || 0;
 
@@ -352,6 +354,11 @@ export default function Home() {
                 }
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
+                const lessonRunQuestionCount = getLessonSessionQuestionCount(lesson.questionCount);
+                const questionCountLabel =
+                  lesson.questionCount > lessonRunQuestionCount
+                    ? `${lessonRunQuestionCount} из ${lesson.questionCount} вопросов`
+                    : `${lesson.questionCount} вопросов`;
 
                 return (
                   <div
@@ -394,11 +401,11 @@ export default function Home() {
                           <div className="mb-2 truncate text-xs text-slate-300">{lesson.desc}</div>
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-[11px] text-slate-300">
-                              {lesson.questionCount} вопросов
+                              {questionCountLabel}
                             </span>
                             <span className="text-slate-500">·</span>
                             <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
-                              +{lesson.xp} XP
+                              До {Math.round(lesson.xp * 1.5)} XP
                             </span>
                           </div>
                         </div>

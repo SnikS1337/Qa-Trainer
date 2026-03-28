@@ -1,32 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAppStore } from '../store';
-import { ACHIEVEMENTS } from '../data/achievements';
+import { useCallback, useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
+import ConfirmModal from '../components/ConfirmModal';
 import { loadChoiceQuestions } from '../data/content_loaders';
+import { finalizeExamResult, getAchievementUnlockTitles } from '../domain/progression';
+import { useQuestionTransition } from '../hooks/useQuestionTransition';
+import { useAppStore } from '../store';
+import type { QuestionChoice } from '../types';
 import {
-  compactChoiceOptionText,
   compactQuestionText,
+  getChoiceOptionDisplayTexts,
   prepareQuestionsWithShuffledChoices,
   shuffle,
 } from '../utils';
-import confetti from 'canvas-confetti';
-import ConfirmModal from '../components/ConfirmModal';
-import { QuestionChoice } from '../types';
 
 function buildExamQuestions(questions: QuestionChoice[]) {
   return prepareQuestionsWithShuffledChoices(shuffle(questions).slice(0, 20));
 }
 
 export default function Exam() {
-  const { updateState, navigate, showToast } = useAppStore();
+  const { state, updateState, navigate, showToast } = useAppStore();
 
   const [questions, setQuestions] = useState<QuestionChoice[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
+  const [timeLeft, setTimeLeft] = useState(600);
   const [finished, setFinished] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [earnedXP, setEarnedXP] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { isTransitioning, runQuestionTransition } = useQuestionTransition();
 
   useEffect(() => {
     let isMounted = true;
@@ -46,45 +49,43 @@ export default function Exam() {
 
   const handleFinish = useCallback(
     (resultScore: number = score) => {
-      if (finished) return;
+      if (finished) {
+        return;
+      }
 
       setFinished(true);
       setFinalScore(resultScore);
-      const passed = resultScore >= 16; // 80% to pass
 
-      updateState((prev) => {
-        const s = { ...prev };
-        s.examAttempts += 1;
-        s.examBestScore = Math.max(s.examBestScore, Math.round((resultScore / 20) * 100));
+      const result = finalizeExamResult(state, { score: resultScore });
+      setEarnedXP(result.awardedXP);
+      updateState(result.nextState);
 
-        if (passed) {
-          s.totalXP += 500;
-          if (!s.examPassed) s.examPassed = true;
+      for (const title of getAchievementUnlockTitles(result.unlockedAchievements)) {
+        showToast(`🏆 Достижение: ${title}!`, 'text-brand-amber');
+      }
 
-          // Check achievements
-          ACHIEVEMENTS.forEach((a) => {
-            if (!s.unlockedAchievements.includes(a.id) && a.check(s)) {
-              s.unlockedAchievements.push(a.id);
-              showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
-            }
-          });
-        }
-
-        return s;
-      });
-
-      if (passed) {
+      if (result.passed) {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        showToast('🎓 Экзамен сдан! +500 XP', 'text-brand-green');
+
+        if (result.awardedXP > 0) {
+          showToast('Экзамен сдан! +500 XP', 'text-brand-green');
+        } else {
+          showToast(
+            'Экзамен сдан повторно. XP за него начисляется только один раз.',
+            'text-brand-amber'
+          );
+        }
       } else {
-        showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
+        showToast('Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
       }
     },
-    [finished, score, updateState, showToast]
+    [finished, score, showToast, state, updateState]
   );
 
   useEffect(() => {
-    if (finished || questions.length === 0) return;
+    if (finished || questions.length === 0) {
+      return;
+    }
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -93,6 +94,7 @@ export default function Exam() {
           handleFinish();
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
@@ -101,36 +103,43 @@ export default function Exam() {
   }, [finished, questions.length, handleFinish]);
 
   const handleAnswer = () => {
-    if (selectedOption === null) return;
+    if (selectedOption === null || isTransitioning) {
+      return;
+    }
 
-    const q = questions[currentIdx];
-    const isCorrect = selectedOption === q.ans;
-    const finalScore = isCorrect ? score + 1 : score;
+    const question = questions[currentIdx];
+    const isCorrect = selectedOption === question.ans;
+    const nextScore = isCorrect ? score + 1 : score;
 
     if (isCorrect) {
-      setScore(finalScore);
+      setScore(nextScore);
     }
 
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx((prev) => prev + 1);
-      setSelectedOption(null);
-    } else {
-      handleFinish(finalScore);
-    }
+    runQuestionTransition(() => {
+      if (currentIdx < questions.length - 1) {
+        setCurrentIdx((prev) => prev + 1);
+        setSelectedOption(null);
+        return;
+      }
+
+      handleFinish(nextScore);
+    });
   };
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return `${minutes}:${remainder < 10 ? '0' : ''}${remainder}`;
   };
 
-  if (questions.length === 0)
+  if (questions.length === 0) {
     return <div className="p-10 text-center text-slate-400">Загрузка экзамена...</div>;
+  }
 
   if (finished) {
     const resolvedScore = finalScore ?? score;
     const passed = resolvedScore >= 16;
+
     return (
       <div className="mx-auto w-full max-w-[500px] p-6 pt-20 text-center">
         <div className="mb-6 text-6xl">{passed ? '🎓' : '💔'}</div>
@@ -147,12 +156,15 @@ export default function Exam() {
         <div className="glass-panel mb-8 p-6 text-left">
           <div className="mb-4 text-sm text-slate-300">
             {passed
-              ? 'Поздравляем! Ты доказал свои знания и готов к реальным задачам. Сертификат теперь доступен в профиле.'
+              ? earnedXP > 0
+                ? 'Поздравляем! Ты доказал свои знания и готов к реальным задачам. Сертификат теперь доступен в профиле.'
+                : 'Экзамен снова сдан. Сертификат уже доступен, но дополнительный XP за повтор не начисляется.'
               : 'Не расстраивайся. Повтори теорию, пройди практику и попробуй снова. Для сдачи нужно минимум 16 правильных ответов.'}
           </div>
-          {passed && (
+
+          {earnedXP > 0 && (
             <div className="bg-brand-green/10 border-brand-green/30 flex items-center justify-between rounded-xl border p-3">
-              <span className="text-brand-green text-sm font-bold">+500 XP</span>
+              <span className="text-brand-green text-sm font-bold">+{earnedXP} XP</span>
               <span className="text-brand-green text-xl">✨</span>
             </div>
           )}
@@ -167,6 +179,7 @@ export default function Exam() {
               Получить сертификат
             </button>
           )}
+
           <button
             onClick={() => navigate('home')}
             className="glass-button w-full py-4 font-bold tracking-wide text-white uppercase"
@@ -178,7 +191,8 @@ export default function Exam() {
     );
   }
 
-  const q = questions[currentIdx];
+  const question = questions[currentIdx];
+  const choiceOptionTexts = getChoiceOptionDisplayTexts(question.opts);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -190,6 +204,7 @@ export default function Exam() {
         onConfirm={() => navigate('home')}
         onCancel={() => setShowConfirm(false)}
       />
+
       <div className="solid-header p-4">
         <div className="mx-auto mb-3 flex max-w-[600px] items-center justify-between">
           <button
@@ -204,6 +219,7 @@ export default function Exam() {
             ⏱ {formatTime(timeLeft)}
           </div>
         </div>
+
         <div className="mx-auto h-2.5 max-w-[600px] overflow-hidden rounded-full border border-white/5 bg-black/30">
           <div
             className="bg-brand-purple h-full rounded-full transition-all duration-300"
@@ -213,47 +229,51 @@ export default function Exam() {
       </div>
 
       <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-6">
-        <div className="text-brand-purple mb-4 font-mono text-sm font-bold tracking-widest uppercase">
-          Вопрос {currentIdx + 1} из 20
-        </div>
-        <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">
-          {compactQuestionText(q.q)}
-        </h2>
+        <div
+          key={currentIdx}
+          className={isTransitioning ? 'question-stage-exit' : 'question-stage-enter'}
+        >
+          <div className="text-brand-purple mb-4 font-mono text-sm font-bold tracking-widest uppercase">
+            Вопрос {currentIdx + 1} из 20
+          </div>
+          <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">
+            {compactQuestionText(question.q)}
+          </h2>
 
-        <div className="flex flex-1 flex-col gap-3">
-          {(q.opts || []).map((opt: string, idx: number) => {
-            const optionText = compactChoiceOptionText(opt);
+          <div className="flex flex-1 flex-col gap-3">
+            {question.opts.map((_, idx) => {
+              const optionText = choiceOptionTexts[idx];
+              const isSelected = selectedOption === idx;
 
-            return (
-              <button
-                key={idx}
-                title={opt}
-                onClick={() => setSelectedOption(idx)}
-                className={`rounded-2xl border-[1.5px] px-4 py-3 text-left backdrop-blur-md transition-all duration-200 ${selectedOption === idx ? 'border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${selectedOption === idx ? 'border-brand-purple' : 'border-white/20'}`}
-                  >
-                    {selectedOption === idx && (
-                      <div className="bg-brand-purple h-3 w-3 rounded-full"></div>
-                    )}
+              return (
+                <button
+                  key={idx}
+                  disabled={isTransitioning}
+                  onClick={() => setSelectedOption(idx)}
+                  className={`min-h-[86px] rounded-2xl border-[1.5px] px-4 py-3 text-left backdrop-blur-md transition-all duration-300 ease-out ${isSelected ? 'answer-choice-selected border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300'} ${!isTransitioning && !isSelected ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${isSelected ? 'border-brand-purple' : 'border-white/20'}`}
+                    >
+                      {isSelected && <div className="bg-brand-purple h-3 w-3 rounded-full"></div>}
+                    </div>
+                    <span className="flex-1 text-[15px] leading-relaxed">{optionText}</span>
                   </div>
-                  <span className="flex-1 text-[15px] leading-relaxed">{optionText}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
 
-        <div className="mt-8">
-          <button
-            disabled={selectedOption === null}
-            onClick={handleAnswer}
-            className={`w-full rounded-xl border py-4 font-bold tracking-wide uppercase backdrop-blur-md transition-all ${selectedOption !== null ? 'bg-brand-purple/80 border-brand-purple/50 hover:bg-brand-purple text-white' : 'cursor-not-allowed border-white/5 bg-black/20 text-slate-500'}`}
-          >
-            {currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ ЭКЗАМЕН' : 'СЛЕДУЮЩИЙ ВОПРОС'}
-          </button>
+          <div className="mt-8">
+            <button
+              disabled={selectedOption === null || isTransitioning}
+              onClick={handleAnswer}
+              className={`w-full rounded-xl border py-4 font-bold tracking-wide uppercase backdrop-blur-md transition-all ${selectedOption !== null && !isTransitioning ? 'bg-brand-purple/80 border-brand-purple/50 hover:bg-brand-purple text-white' : 'cursor-not-allowed border-white/5 bg-black/20 text-slate-500'}`}
+            >
+              {currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ ЭКЗАМЕН' : 'СЛЕДУЮЩИЙ ВОПРОС'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

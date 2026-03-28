@@ -265,6 +265,137 @@ export function compactChoiceOptionText(text: string) {
   return value.replace(/[.,;:!?-]+$/g, '').trim();
 }
 
+function squeezeChoiceOptionText(text: string) {
+  return compactChoiceOptionText(text)
+    .replace(/\s*\(([^)]{4,})\)$/g, '')
+    .replace(/^Они\s+/i, '')
+    .replace(/^Это\s+/i, '')
+    .replace(/^Чтобы\s+/i, '')
+    .replace(/^Когда\s+/i, '')
+    .replace(/^Если\s+/i, '')
+    .replace(/^Проверка,\s+что\s+/i, 'Проверяет, что ')
+    .replace(/^Проверка\s+/i, 'Проверяет ')
+    .replace(/[.,;:!?-]+$/g, '')
+    .trim();
+}
+
+const SAFE_CHOICE_BALANCE_SEPARATORS = [
+  '. ',
+  ', из-за которых ',
+  ', из-за ',
+  ', которые ',
+  ', который ',
+  ', которая ',
+  ', которое ',
+  ', когда ',
+  ', если ',
+  ', чтобы ',
+  ', потому что ',
+  ', так как ',
+  ', где ',
+];
+
+function hasBalancedParentheses(text: string) {
+  let depth = 0;
+
+  for (const char of text) {
+    if (char === '(') {
+      depth += 1;
+    }
+
+    if (char === ')') {
+      depth -= 1;
+    }
+
+    if (depth < 0) {
+      return false;
+    }
+  }
+
+  return depth === 0;
+}
+
+function trimChoiceOptionTextSafely(text: string, targetLength: number) {
+  if (text.length <= targetLength) {
+    return text;
+  }
+
+  let bestCut = -1;
+
+  for (const separator of SAFE_CHOICE_BALANCE_SEPARATORS) {
+    let separatorIndex = text.indexOf(separator);
+
+    while (separatorIndex !== -1) {
+      const candidate = text.slice(0, separatorIndex).trim();
+
+      if (
+        separatorIndex >= 24 &&
+        separatorIndex <= targetLength + 16 &&
+        hasBalancedParentheses(candidate)
+      ) {
+        bestCut = Math.max(bestCut, separatorIndex);
+      }
+
+      separatorIndex = text.indexOf(separator, separatorIndex + separator.length);
+    }
+  }
+
+  if (bestCut >= 24) {
+    return text.slice(0, bestCut).trim();
+  }
+
+  return text;
+}
+
+export function capitalizeDisplayedChoiceText(text: string) {
+  return text.replace(/^([^A-Za-zА-ЯЁа-яё]*)([а-яё])/, (_, prefix: string, letter: string) => {
+    return `${prefix}${letter.toUpperCase()}`;
+  });
+}
+
+export function getChoiceOptionDisplayTexts(options: string[]) {
+  const balancedOptions = options.map((option) =>
+    capitalizeDisplayedChoiceText(squeezeChoiceOptionText(option))
+  );
+
+  if (balancedOptions.length < 2) {
+    return balancedOptions;
+  }
+
+  const lengths = balancedOptions.map((option) => option.length);
+  const longestLength = Math.max(...lengths);
+  const longestIndexes = lengths
+    .map((length, index) => (length === longestLength ? index : -1))
+    .filter((index) => index >= 0);
+
+  if (longestIndexes.length !== 1) {
+    return balancedOptions;
+  }
+
+  const longestIndex = longestIndexes[0];
+  const secondLongestLength = [...lengths]
+    .filter((_, index) => index !== longestIndex)
+    .sort((left, right) => right - left)[0];
+
+  if (longestLength - secondLongestLength <= 8) {
+    return balancedOptions;
+  }
+
+  const targetLength = Math.max(secondLongestLength + 6, 32);
+  const trimmedLongestOption = capitalizeDisplayedChoiceText(
+    trimChoiceOptionTextSafely(balancedOptions[longestIndex], targetLength)
+  );
+
+  if (
+    trimmedLongestOption.length < balancedOptions[longestIndex].length &&
+    hasBalancedParentheses(trimmedLongestOption)
+  ) {
+    balancedOptions[longestIndex] = trimmedLongestOption;
+  }
+
+  return balancedOptions;
+}
+
 export function plural(n: number, a: string, b: string, c: string) {
   const m = n % 100,
     m10 = n % 10;

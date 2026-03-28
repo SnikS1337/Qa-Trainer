@@ -1,6 +1,11 @@
 import type { LessonMeta } from '../types';
+import { LESSON_EXPANSIONS } from './lesson_expansions';
 
-export const LESSON_META: LessonMeta[] = [
+const QUESTION_COUNT_INCREMENTS = new Map(
+  Object.entries(LESSON_EXPANSIONS).map(([lessonId, questions]) => [lessonId, questions.length])
+);
+
+const BASE_LESSON_META: LessonMeta[] = [
   {
     id: 'pyramid',
     title: 'Пирамида тестирования',
@@ -262,3 +267,8 @@ export const LESSON_META: LessonMeta[] = [
     questionCount: 5,
   },
 ];
+
+export const LESSON_META: LessonMeta[] = BASE_LESSON_META.map((lesson) => ({
+  ...lesson,
+  questionCount: lesson.questionCount + (QUESTION_COUNT_INCREMENTS.get(lesson.id) ?? 0),
+}));

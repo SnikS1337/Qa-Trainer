@@ -105,6 +105,63 @@ html,
   animation: ambient-outline-pulse 4.2s ease-in-out infinite;
 }
 
+@keyframes question-stage-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.992);
+    filter: blur(7px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes question-stage-exit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.994);
+    filter: blur(4px);
+  }
+}
+
+@keyframes answer-choice-pop {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+
+  55% {
+    transform: translateY(-2px) scale(1.006);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.18);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+  }
+}
+
+.question-stage-enter {
+  animation: question-stage-enter 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.question-stage-exit {
+  animation: question-stage-exit 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.answer-choice-selected {
+  animation: answer-choice-pop 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Noise overlay */
 body::before {
   content: '';

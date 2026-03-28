@@ -67,8 +67,9 @@ export default function App() {
   const store = useAppStoreInit();
   const [screen, setScreen] = useState<ScreenName>('splash');
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ msg: string; color: string } | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [toasts, setToasts] = useState<Array<{ id: number; msg: string; color: string }>>([]);
+  const toastTimersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const nextToastIdRef = useRef(1);
   const backgroundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [baseGradient, setBaseGradient] = useState(() => getBackgroundGradient('splash'));
   const [transitionGradient, setTransitionGradient] = useState<string | null>(null);
@@ -79,12 +80,37 @@ export default function App() {
   }, []);
 
   const showToast = useCallback((msg: string, color: string = 'text-brand-green') => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
+    if (/подряд/i.test(msg)) {
+      return;
     }
 
-    setToast({ msg, color });
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+    const id = nextToastIdRef.current++;
+
+    setToasts((prev) => {
+      const next = [...prev, { id, msg, color }];
+
+      if (next.length <= 4) {
+        return next;
+      }
+
+      const removed = next.shift();
+      if (removed) {
+        const removedTimer = toastTimersRef.current.get(removed.id);
+        if (removedTimer) {
+          clearTimeout(removedTimer);
+          toastTimersRef.current.delete(removed.id);
+        }
+      }
+
+      return next;
+    });
+
+    const timer = setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+      toastTimersRef.current.delete(id);
+    }, 3200);
+
+    toastTimersRef.current.set(id, timer);
   }, []);
 
   useEffect(() => {
@@ -123,10 +149,13 @@ export default function App() {
   }, [screen, baseGradient, transitionGradient]);
 
   useEffect(() => {
+    const toastTimers = toastTimersRef.current;
+
     return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current);
+      for (const timer of toastTimers.values()) {
+        clearTimeout(timer);
       }
+      toastTimers.clear();
 
       if (backgroundTimerRef.current) {
         clearTimeout(backgroundTimerRef.current);
@@ -231,18 +260,23 @@ export default function App() {
           </AnimatePresence>
         </div>
 
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className={`glass-panel fixed bottom-6 left-1/2 z-[140] min-w-[280px] -translate-x-1/2 px-5 py-3 text-center text-[13px] font-bold tracking-wide ${toast.color}`}
-            >
-              {toast.msg}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="pointer-events-none fixed right-4 bottom-6 left-4 z-[140] flex flex-col items-center gap-3">
+          <AnimatePresence>
+            {toasts.map((toast) => (
+              <motion.div
+                key={toast.id}
+                layout
+                initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 14, scale: 0.96 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className={`glass-panel w-full max-w-[420px] px-5 py-3 text-center text-[13px] font-bold tracking-wide ${toast.color}`}
+              >
+                {toast.msg}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </AppContext.Provider>
   );

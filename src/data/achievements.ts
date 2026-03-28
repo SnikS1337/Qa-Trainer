@@ -1,4 +1,5 @@
 import type { Achievement } from '../types';
+import { FOUNDATION_LESSON_IDS } from '../domain/course';
 import { LESSON_META } from './lesson_meta';
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -49,17 +50,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🏆',
     title: 'QA Чемпион',
     desc: 'Пройди все базовые уроки',
-    check: (s) =>
-      [
-        'pyramid',
-        'equiv',
-        'boundary',
-        'decision',
-        'testcase',
-        'states',
-        'types',
-        'checklist',
-      ].every((id) => s.completedLessons.includes(id)),
+    check: (s) => FOUNDATION_LESSON_IDS.every((lessonId) => s.completedLessons.includes(lessonId)),
   },
   {
     id: 'retry',

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AppState } from './types';
+import { hydrateAppState } from './domain/persistence';
 
 export const initialState: AppState = {
   totalXP: 0,
@@ -29,7 +30,7 @@ export function useAppStoreInit() {
   const [state, setState] = useState<AppState>(() => {
     try {
       const s = localStorage.getItem('qa_trainer_v2');
-      return s ? { ...initialState, ...JSON.parse(s) } : initialState;
+      return s ? hydrateAppState(JSON.parse(s), initialState) : initialState;
     } catch {
       return initialState;
     }
@@ -45,12 +46,15 @@ export function useAppStoreInit() {
     }
   }, [state]);
 
-  const updateState = (updates: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
-    setState((prev) => {
-      const newValues = typeof updates === 'function' ? updates(prev) : updates;
-      return { ...prev, ...newValues };
-    });
-  };
+  const updateState = useCallback(
+    (updates: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
+      setState((prev) => {
+        const newValues = typeof updates === 'function' ? updates(prev) : updates;
+        return { ...prev, ...newValues };
+      });
+    },
+    []
+  );
 
   return { state, updateState };
 }
