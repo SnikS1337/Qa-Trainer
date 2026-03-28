@@ -2,8 +2,126 @@ import { useAppStore } from '../store';
 import { LESSONS, QUOTES, PRACTICE_TASKS } from '../data';
 import { getLevelInfo, plural } from '../utils';
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
 import DevMenu from '../components/DevMenu';
+
+function buildLessonOutlinePaths(width: number, height: number) {
+  const inset = 1.5;
+  const left = inset;
+  const top = inset;
+  const right = Math.max(width - inset, left);
+  const bottom = Math.max(height - inset, top);
+  const radius = Math.min(24, (right - left) / 2, (bottom - top) / 2);
+  const centerX = width / 2;
+
+  const leftPath = [
+    `M ${centerX} ${bottom}`,
+    `L ${left + radius} ${bottom}`,
+    `Q ${left} ${bottom} ${left} ${bottom - radius}`,
+    `L ${left} ${top + radius}`,
+    `Q ${left} ${top} ${left + radius} ${top}`,
+    `L ${centerX} ${top}`,
+  ].join(' ');
+
+  const rightPath = [
+    `M ${centerX} ${bottom}`,
+    `L ${right - radius} ${bottom}`,
+    `Q ${right} ${bottom} ${right} ${bottom - radius}`,
+    `L ${right} ${top + radius}`,
+    `Q ${right} ${top} ${right - radius} ${top}`,
+    `L ${centerX} ${top}`,
+  ].join(' ');
+
+  return [leftPath, rightPath];
+}
+
+function LessonOutline({ color, hovered, opening }: { color: string; hovered: boolean; opening: boolean }) {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const node = svgRef.current;
+    if (!node) return;
+
+    const updateSize = () => {
+      const nextWidth = node.clientWidth;
+      const nextHeight = node.clientHeight;
+
+      setSize(prev => (
+        prev.width === nextWidth && prev.height === nextHeight
+          ? prev
+          : { width: nextWidth, height: nextHeight }
+      ));
+    };
+
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const outlineProgress = opening ? 1 : hovered ? 0.5 : 0;
+  const outlineDashArray = `${outlineProgress} 1`;
+  const outlineTransition = opening
+    ? '460ms cubic-bezier(0.22, 1, 0.36, 1)'
+    : '320ms cubic-bezier(0.22, 1, 0.36, 1)';
+  const viewBoxWidth = Math.max(size.width, 1);
+  const viewBoxHeight = Math.max(size.height, 1);
+  const [leftPath, rightPath] = buildLessonOutlinePaths(viewBoxWidth, viewBoxHeight);
+  const paths = [leftPath, rightPath];
+  const isActive = opening || hovered;
+
+  return (
+    <svg
+      ref={svgRef}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-[2] h-full w-full overflow-visible"
+      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+    >
+      {paths.map((path) => (
+        <g key={path}>
+          <path
+            d={path}
+            pathLength={1}
+            fill="none"
+            stroke={`color-mix(in srgb, ${color} 82%, white 18%)`}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            style={{
+              opacity: isActive ? 0.5 : 0,
+              strokeDasharray: outlineDashArray,
+              transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
+              filter: isActive
+                ? `blur(3px) drop-shadow(0 0 10px ${color}88) drop-shadow(0 0 24px ${color}55)`
+                : 'none',
+            }}
+          />
+          <path
+            d={path}
+            pathLength={1}
+            fill="none"
+            stroke={`color-mix(in srgb, ${color} 88%, white 12%)`}
+            strokeWidth="1.55"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            style={{
+              opacity: isActive ? 1 : 0,
+              strokeDasharray: outlineDashArray,
+              transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
+              filter: isActive
+                ? `drop-shadow(0 0 6px ${color}aa) drop-shadow(0 0 18px ${color}55)`
+                : 'none',
+            }}
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
 
 export default function Home() {
   const { state, navigate, updateState } = useAppStore();
@@ -164,7 +282,6 @@ export default function Home() {
                 }
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
-                const isActive = isOpening || isHovered;
 
                 return (
                   <div
@@ -176,35 +293,7 @@ export default function Home() {
                       ${locked ? 'opacity-50 cursor-default' : 'cursor-pointer hover:translate-x-1'}
                       ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
                   >
-                    {!locked && (
-                      <svg
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-                        viewBox="0 0 100 100"
-                        preserveAspectRatio="none"
-                      >
-                        <motion.path
-                          d="M 50 100 L 4.3 100 Q 0 100 0 76 L 0 24 Q 0 0 4.3 0 L 95.7 0 Q 100 0 100 24 L 100 76 Q 100 100 95.7 100 L 50 100"
-                          fill="none"
-                          stroke="rgba(125, 211, 252, 0.94)"
-                          strokeWidth="1.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          vectorEffect="non-scaling-stroke"
-                          initial={false}
-                          animate={{
-                            opacity: isActive ? 1 : 0,
-                            pathLength: isOpening ? 1 : isHovered ? 0.5 : 0,
-                          }}
-                          transition={{ duration: isOpening ? 0.42 : 0.28, ease: 'easeInOut' }}
-                          style={{
-                            filter: isActive
-                              ? 'drop-shadow(0 0 7px rgba(125, 211, 252, 0.52)) drop-shadow(0 0 18px rgba(125, 211, 252, 0.28))'
-                              : 'drop-shadow(0 0 0 rgba(0, 0, 0, 0))',
-                          }}
-                        />
-                      </svg>
-                    )}
+                    {!locked && <LessonOutline color={lesson.color} hovered={isHovered} opening={isOpening} />}
                     <div
                       className={`glass-panel p-4 relative overflow-hidden transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
                       style={{ borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined }}
