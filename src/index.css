@@ -80,6 +80,21 @@ html,
   background: rgba(0, 0, 0, 0.3);
 }
 
+@keyframes ambient-outline-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.ambient-card-outline-pulse {
+  animation: ambient-outline-pulse 4.2s ease-in-out infinite;
+}
+
 /* Noise overlay */
 body::before {
   content: '';
