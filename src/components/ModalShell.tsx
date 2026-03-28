@@ -70,7 +70,7 @@ export default function ModalShell({
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl transition-colors"
+              className="absolute top-4 right-4 text-xl text-slate-400 transition-colors hover:text-white"
             >
               ✕
             </button>

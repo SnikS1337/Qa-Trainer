@@ -27,6 +27,17 @@ export interface Lesson {
   questions: Question[];
 }
 
+export interface LessonMeta {
+  id: string;
+  title: string;
+  icon: string;
+  color: string;
+  category: string;
+  xp: number;
+  desc: string;
+  questionCount: number;
+}
+
 export interface Quote {
   text: string;
   author: string;
@@ -154,3 +165,8 @@ export type PracticeTask =
   | PracticeFindErrorTask
   | PracticeWriteTestTask
   | PracticeBugReportTask;
+
+export type PracticeTaskMeta = Pick<
+  PracticeTask,
+  'id' | 'type' | 'icon' | 'xp' | 'color' | 'title' | 'desc'
+>;

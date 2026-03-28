@@ -3,19 +3,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { AppContext, useAppStoreInit } from './store';
-import { motion, AnimatePresence } from 'motion/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import Home from './screens/Home';
 import Lesson from './screens/Lesson';
 import Practice from './screens/Practice';
 import PracticeTask from './screens/PracticeTask';
 import Exam from './screens/Exam';
 import Daily from './screens/Daily';
-import { Splash, Stats, Achievements, Certificate } from './screens/Misc';
+import { Achievements, Certificate, Splash, Stats } from './screens/Misc';
+import { preloadLessonsContent, preloadPracticeTasksContent } from './data/content_loaders';
+import { AppContext, useAppStoreInit } from './store';
 import { getBackgroundGradient } from './utils';
 
-type ScreenName = 'splash' | 'home' | 'lesson' | 'practice' | 'practice-task' | 'exam' | 'daily' | 'stats' | 'achievements' | 'certificate';
+type ScreenName =
+  | 'splash'
+  | 'home'
+  | 'lesson'
+  | 'practice'
+  | 'practice-task'
+  | 'exam'
+  | 'daily'
+  | 'stats'
+  | 'achievements'
+  | 'certificate';
 
 const BACKGROUND_TRANSITION_MS = 1450;
 
@@ -56,14 +67,14 @@ export default function App() {
   const store = useAppStoreInit();
   const [screen, setScreen] = useState<ScreenName>('splash');
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{msg: string, color: string} | null>(null);
+  const [toast, setToast] = useState<{ msg: string; color: string } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backgroundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [baseGradient, setBaseGradient] = useState(() => getBackgroundGradient('splash'));
   const [transitionGradient, setTransitionGradient] = useState<string | null>(null);
 
-  const navigate = useCallback((s: ScreenName, id?: string) => {
-    setScreen(s);
+  const navigate = useCallback((nextScreen: ScreenName, id?: string) => {
+    setScreen(nextScreen);
     setCurrentId(id ?? null);
   }, []);
 
@@ -74,6 +85,15 @@ export default function App() {
 
     setToast({ msg, color });
     toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  useEffect(() => {
+    const preloadTimer = window.setTimeout(() => {
+      preloadLessonsContent();
+      preloadPracticeTasksContent();
+    }, 120);
+
+    return () => window.clearTimeout(preloadTimer);
   }, []);
 
   useEffect(() => {
@@ -102,12 +122,12 @@ export default function App() {
     }, BACKGROUND_TRANSITION_MS);
   }, [screen, baseGradient, transitionGradient]);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) {
         clearTimeout(toastTimerRef.current);
       }
+
       if (backgroundTimerRef.current) {
         clearTimeout(backgroundTimerRef.current);
       }
@@ -119,20 +139,51 @@ export default function App() {
     [store, navigate, showToast]
   );
 
+  const currentScreen = useMemo(() => {
+    switch (screen) {
+      case 'splash':
+        return { key: 'splash', element: <Splash /> };
+      case 'home':
+        return { key: 'home', element: <Home /> };
+      case 'lesson':
+        return currentId
+          ? { key: 'lesson', element: <Lesson id={currentId} /> }
+          : { key: 'lesson-fallback', element: <Home /> };
+      case 'practice':
+        return { key: 'practice', element: <Practice /> };
+      case 'practice-task':
+        return currentId
+          ? { key: 'practice-task', element: <PracticeTask id={currentId} /> }
+          : { key: 'practice-task-fallback', element: <Practice /> };
+      case 'exam':
+        return { key: 'exam', element: <Exam /> };
+      case 'daily':
+        return { key: 'daily', element: <Daily /> };
+      case 'stats':
+        return { key: 'stats', element: <Stats /> };
+      case 'achievements':
+        return { key: 'achievements', element: <Achievements /> };
+      case 'certificate':
+        return { key: 'certificate', element: <Certificate /> };
+      default:
+        return { key: 'home-fallback', element: <Home /> };
+    }
+  }, [screen, currentId]);
+
   return (
     <AppContext.Provider value={appContextValue}>
-      <div className="min-h-screen overflow-x-hidden text-white font-sans selection:bg-brand-purple/30 relative">
+      <div className="selection:bg-brand-purple/30 relative min-h-screen overflow-x-hidden font-sans text-white">
         <motion.div
-          className="fixed -inset-10 pointer-events-none"
+          className="pointer-events-none fixed -inset-10"
           style={{
             backgroundColor: '#0f111a',
             backgroundImage: baseGradient,
             backgroundPosition: '50% 50%',
             backgroundRepeat: 'no-repeat',
-            backgroundSize: '120% 120%'
+            backgroundSize: '120% 120%',
           }}
         />
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-[1]">
+        <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden">
           {AMBIENT_LAYERS.map((layer) => (
             <motion.div
               key={layer.key}
@@ -156,7 +207,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
               exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
               transition={{ duration: BACKGROUND_TRANSITION_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed -inset-10 pointer-events-none"
+              className="pointer-events-none fixed -inset-10"
               style={{
                 backgroundColor: '#0f111a',
                 backgroundImage: transitionGradient,
@@ -164,39 +215,29 @@ export default function App() {
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: '120% 120%',
                 transformOrigin: 'center center',
-                willChange: 'opacity, transform, filter'
+                willChange: 'opacity, transform, filter',
               }}
             />
           )}
         </AnimatePresence>
-        
+
         <div className="noise-overlay pointer-events-none z-0"></div>
-        
-        <div className="relative z-10 min-h-screen flex flex-col overflow-x-hidden">
+
+        <div className="relative z-10 flex min-h-screen flex-col overflow-x-hidden">
           <AnimatePresence mode="wait">
-            {screen === 'splash' && <motion.div key="splash" {...PAGE_MOTION} className="flex-1 flex w-full"><Splash /></motion.div>}
-            {screen === 'home' && <motion.div key="home" {...PAGE_MOTION} className="flex-1 flex w-full"><Home /></motion.div>}
-            {screen === 'lesson' && currentId && <motion.div key="lesson" {...PAGE_MOTION} className="flex-1 flex w-full"><Lesson id={currentId} /></motion.div>}
-            {screen === 'lesson' && !currentId && <motion.div key="lesson-fallback" {...PAGE_MOTION} className="flex-1 flex w-full"><Home /></motion.div>}
-            {screen === 'practice' && <motion.div key="practice" {...PAGE_MOTION} className="flex-1 flex w-full"><Practice /></motion.div>}
-            {screen === 'practice-task' && currentId && <motion.div key="practice-task" {...PAGE_MOTION} className="flex-1 flex w-full"><PracticeTask id={currentId} /></motion.div>}
-            {screen === 'practice-task' && !currentId && <motion.div key="practice-task-fallback" {...PAGE_MOTION} className="flex-1 flex w-full"><Practice /></motion.div>}
-            {screen === 'exam' && <motion.div key="exam" {...PAGE_MOTION} className="flex-1 flex w-full"><Exam /></motion.div>}
-            {screen === 'daily' && <motion.div key="daily" {...PAGE_MOTION} className="flex-1 flex w-full"><Daily /></motion.div>}
-            {screen === 'stats' && <motion.div key="stats" {...PAGE_MOTION} className="flex-1 flex w-full"><Stats /></motion.div>}
-            {screen === 'achievements' && <motion.div key="achievements" {...PAGE_MOTION} className="flex-1 flex w-full"><Achievements /></motion.div>}
-            {screen === 'certificate' && <motion.div key="certificate" {...PAGE_MOTION} className="flex-1 flex w-full"><Certificate /></motion.div>}
+            <motion.div key={currentScreen.key} {...PAGE_MOTION} className="flex w-full flex-1">
+              {currentScreen.element}
+            </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Toast Notifications */}
         <AnimatePresence>
           {toast && (
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[140] px-5 py-3 glass-panel font-bold text-[13px] tracking-wide text-center min-w-[280px] ${toast.color}`}
+              className={`glass-panel fixed bottom-6 left-1/2 z-[140] min-w-[280px] -translate-x-1/2 px-5 py-3 text-center text-[13px] font-bold tracking-wide ${toast.color}`}
             >
               {toast.msg}
             </motion.div>

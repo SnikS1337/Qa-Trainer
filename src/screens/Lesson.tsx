@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { LESSONS, MOTIVATIONAL_MESSAGES, ACHIEVEMENTS } from '../data';
-import { AppState, Question } from '../types';
+import { ACHIEVEMENTS } from '../data/achievements';
+import { loadLessonById } from '../data/content_loaders';
+import { MOTIVATIONAL_MESSAGES } from '../data/messages';
+import type { AppState, Lesson as LessonType, Question } from '../types';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function Lesson({ id }: { id: string }) {
   const { updateState, navigate, showToast } = useAppStore();
-  const lesson = LESSONS.find(l => l.id === id);
-  
+
+  const [lesson, setLesson] = useState<LessonType | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qIndex, setQIndex] = useState(0);
   const [hearts, setHearts] = useState(3);
@@ -25,18 +27,26 @@ export default function Lesson({ id }: { id: string }) {
   const perfectToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (lesson) {
-      setQuestions(shuffle(lesson.questions).slice(0, 6));
-    }
+    let isMounted = true;
+
+    void loadLessonById(id).then((loadedLesson) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setLesson(loadedLesson);
+      setQuestions(loadedLesson ? shuffle(loadedLesson.questions).slice(0, 6) : []);
+    });
 
     return () => {
+      isMounted = false;
       if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
       if (perfectToastTimerRef.current) clearTimeout(perfectToastTimerRef.current);
     };
-  }, [lesson]);
+  }, [id]);
 
   const checkAchievements = (newState: AppState) => {
-    ACHIEVEMENTS.forEach(a => {
+    ACHIEVEMENTS.forEach((a) => {
       if (!newState.unlockedAchievements.includes(a.id) && a.check(newState)) {
         newState.unlockedAchievements.push(a.id);
         showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
@@ -50,7 +60,7 @@ export default function Lesson({ id }: { id: string }) {
       finishLesson();
       return;
     }
-    
+
     if (answered) {
       setQIndex(qIndex + 1);
       setAnswered(false);
@@ -65,7 +75,7 @@ export default function Lesson({ id }: { id: string }) {
     if (q.type === 'sort') isCorrect = JSON.stringify(sortOrder) === JSON.stringify(q.correct);
 
     setAnswered(true);
-    
+
     let newConsecutive = consecutiveCorrect;
     let newHearts = hearts;
     let newCorrect = correct;
@@ -73,7 +83,7 @@ export default function Lesson({ id }: { id: string }) {
     if (isCorrect) {
       newCorrect++;
       newConsecutive++;
-       if (newConsecutive >= 3) {
+      if (newConsecutive >= 3) {
         setCurrentStreak(newConsecutive);
       }
     } else {
@@ -86,7 +96,7 @@ export default function Lesson({ id }: { id: string }) {
     setConsecutiveCorrect(newConsecutive);
     setHearts(newHearts);
 
-    updateState(prev => {
+    updateState((prev) => {
       const s = { ...prev };
       s.totalQuestionsAnswered++;
       if (isCorrect) s.totalCorrect++;
@@ -101,20 +111,24 @@ export default function Lesson({ id }: { id: string }) {
     const pct = Math.round((correct / total) * 100);
     const passed = pct >= 60 && hearts > 0;
     const perfect = correct === total && hearts === 3;
-    const gainedXP = passed ? (perfect ? Math.round(lesson!.xp * 1.5) : lesson!.xp) : Math.round(lesson!.xp * 0.2);
+    const gainedXP = passed
+      ? perfect
+        ? Math.round(lesson!.xp * 1.5)
+        : lesson!.xp
+      : Math.round(lesson!.xp * 0.2);
 
-    updateState(prev => {
+    updateState((prev) => {
       const s = { ...prev };
       s.totalXP += gainedXP;
       s.streak = passed ? s.streak + 1 : 0;
       if (s.streak > s.maxStreak) s.maxStreak = s.streak;
-      
+
       if (passed && !s.completedLessons.includes(lesson!.id)) {
         s.completedLessons.push(lesson!.id);
       }
       if (perfect) s.perfectLessons++;
       if (!passed) s.retries++;
-      
+
       checkAchievements(s);
       return s;
     });
@@ -122,29 +136,40 @@ export default function Lesson({ id }: { id: string }) {
     if (passed) {
       confettiTimerRef.current = setTimeout(() => confetti(), 200);
       if (perfect) {
-        perfectToastTimerRef.current = setTimeout(() => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'), 1000);
+        perfectToastTimerRef.current = setTimeout(
+          () => showToast('💎 Идеальный результат! +50% XP!', 'text-brand-amber'),
+          1000
+        );
       }
     }
   };
 
-  if (!lesson || questions.length === 0) return null;
+  if (!lesson || questions.length === 0) {
+    return <div className="p-10 text-center text-slate-400">Подготавливаем урок...</div>;
+  }
 
   if (finished) {
     const total = questions.length;
     const pct = Math.round((correct / total) * 100);
     const passed = pct >= 60 && hearts > 0;
     const perfect = correct === total && hearts === 3;
-    const gainedXP = passed ? (perfect ? Math.round(lesson.xp * 1.5) : lesson.xp) : Math.round(lesson.xp * 0.2);
-    const motivMsg = MOTIVATIONAL_MESSAGES.find(m => pct >= m.pct)!;
+    const gainedXP = passed
+      ? perfect
+        ? Math.round(lesson.xp * 1.5)
+        : lesson.xp
+      : Math.round(lesson.xp * 0.2);
+    const motivMsg = MOTIVATIONAL_MESSAGES.find((m) => pct >= m.pct)!;
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center w-full">
-        <div className="max-w-[400px] w-full glass-panel p-8">
-          <div className="text-[80px] mb-4 animate-bounce">{perfect ? '🎉' : passed ? '💪' : '😤'}</div>
-          <div className="text-3xl font-extrabold mb-2 text-white">{motivMsg.msg}</div>
-          <div className="text-[15px] text-slate-300 mb-7 leading-relaxed">{motivMsg.sub}</div>
-          
-          <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center p-6 text-center">
+        <div className="glass-panel w-full max-w-[400px] p-8">
+          <div className="mb-4 animate-bounce text-[80px]">
+            {perfect ? '🎉' : passed ? '💪' : '😤'}
+          </div>
+          <div className="mb-2 text-3xl font-extrabold text-white">{motivMsg.msg}</div>
+          <div className="mb-7 text-[15px] leading-relaxed text-slate-300">{motivMsg.sub}</div>
+
+          <div className="mb-6 grid grid-cols-2 gap-3">
             {[
               { l: 'Правильных', v: `${correct}/${total}`, c: 'text-brand-green' },
               { l: 'Результат', v: `${pct}%`, c: 'text-white', style: { color: lesson.color } },
@@ -152,25 +177,42 @@ export default function Lesson({ id }: { id: string }) {
               { l: 'Жизни', v: '❤️'.repeat(hearts) || '💀', c: 'text-brand-red' },
             ].map((s, i) => (
               <div key={i} className="glass-panel p-4 text-center">
-                <div className={`text-2xl font-extrabold font-mono ${s.c}`} style={s.style}>{s.v}</div>
-                <div className="text-[11px] text-slate-300 mt-1 tracking-[1px] uppercase">{s.l}</div>
+                <div className={`font-mono text-2xl font-extrabold ${s.c}`} style={s.style}>
+                  {s.v}
+                </div>
+                <div className="mt-1 text-[11px] tracking-[1px] text-slate-300 uppercase">
+                  {s.l}
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="p-4 bg-brand-green/10 rounded-xl text-[13px] text-brand-green leading-relaxed mb-6 text-left border border-brand-green/20">
+          <div className="bg-brand-green/10 text-brand-green border-brand-green/20 mb-6 rounded-xl border p-4 text-left text-[13px] leading-relaxed">
             💡 Практикуй каждый день — 15 минут регулярно лучше, чем 3 часа раз в неделю!
           </div>
 
           <div className="flex flex-col gap-3">
-            <button className="w-full bg-brand-green/80 hover:bg-brand-green backdrop-blur-md border border-brand-green/50 text-white font-bold py-4 rounded-xl uppercase tracking-wide transition-all" onClick={() => navigate('home')}>
+            <button
+              className="bg-brand-green/80 hover:bg-brand-green border-brand-green/50 w-full rounded-xl border py-4 font-bold tracking-wide text-white uppercase backdrop-blur-md transition-all"
+              onClick={() => navigate('home')}
+            >
               ← На главную
             </button>
             {(!passed || perfect) && (
-              <button className="w-full glass-button text-white font-bold py-4 uppercase tracking-wide" onClick={() => {
-                setQIndex(0); setHearts(3); setCorrect(0); setAnswered(false); setSelected(null); setSortOrder([]); setConsecutiveCorrect(0); setFinished(false);
-                setQuestions(shuffle(lesson.questions).slice(0, 6));
-              }}>
+              <button
+                className="glass-button w-full py-4 font-bold tracking-wide text-white uppercase"
+                onClick={() => {
+                  setQIndex(0);
+                  setHearts(3);
+                  setCorrect(0);
+                  setAnswered(false);
+                  setSelected(null);
+                  setSortOrder([]);
+                  setConsecutiveCorrect(0);
+                  setFinished(false);
+                  setQuestions(shuffle(lesson.questions).slice(0, 6));
+                }}
+              >
                 🔄 Повторить урок
               </button>
             )}
@@ -183,28 +225,42 @@ export default function Lesson({ id }: { id: string }) {
   const q = questions[qIndex];
   const progress = (qIndex / questions.length) * 100;
   const isReady = q.type === 'choice' ? selected !== null : sortOrder.length === q.items?.length;
-  const isCorrectAns = q.type === 'choice' ? selected === q.ans : JSON.stringify(sortOrder) === JSON.stringify(q.correct);
+  const isCorrectAns =
+    q.type === 'choice'
+      ? selected === q.ans
+      : JSON.stringify(sortOrder) === JSON.stringify(q.correct);
 
   return (
-    <div className="flex flex-col min-h-screen w-full">
-      <ConfirmModal 
-        isOpen={showConfirm} 
-        title="Выйти из урока?" 
-        message="Прогресс не сохранится. Вы уверены?" 
+    <div className="flex min-h-screen w-full flex-col">
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Выйти из урока?"
+        message="Прогресс не сохранится. Вы уверены?"
         confirmText="Да, прервать"
-        onConfirm={() => navigate('home')} 
-        onCancel={() => setShowConfirm(false)} 
+        onConfirm={() => navigate('home')}
+        onCancel={() => setShowConfirm(false)}
       />
       {/* Top bar */}
       <div className="solid-header p-3">
-        <div className="max-w-[600px] mx-auto flex items-center gap-3">
-          <button onClick={() => setShowConfirm(true)} className="text-slate-300 text-xl p-1 hover:text-white transition-colors">✕</button>
-          <div className="flex-1 bg-black/30 border border-white/5 rounded-full h-2.5 overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: lesson.color }}></div>
+        <div className="mx-auto flex max-w-[600px] items-center gap-3">
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="p-1 text-xl text-slate-300 transition-colors hover:text-white"
+          >
+            ✕
+          </button>
+          <div className="h-2.5 flex-1 overflow-hidden rounded-full border border-white/5 bg-black/30">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%`, backgroundColor: lesson.color }}
+            ></div>
           </div>
           <div className="flex gap-1 text-xl">
-            {[0,1,2].map(i => (
-              <span key={i} className={`transition-all duration-300 ${i < hearts ? 'opacity-100 drop-shadow-[0_0_4px_#f87171]' : 'opacity-20 grayscale'}`}>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={`transition-all duration-300 ${i < hearts ? 'opacity-100 drop-shadow-[0_0_4px_#f87171]' : 'opacity-20 grayscale'}`}
+              >
                 {i < hearts ? '❤️' : '🖤'}
               </span>
             ))}
@@ -212,56 +268,105 @@ export default function Lesson({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="max-w-[600px] mx-auto w-full p-5 flex flex-col flex-1">
+      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-5">
         <div className="mb-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-[0.5px] font-mono border" style={{ backgroundColor: `${lesson.color}18`, color: lesson.color, borderColor: `${lesson.color}30` }}>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] font-bold tracking-[0.5px]"
+            style={{
+              backgroundColor: `${lesson.color}18`,
+              color: lesson.color,
+              borderColor: `${lesson.color}30`,
+            }}
+          >
             {lesson.icon} {lesson.title}
           </span>
         </div>
-        <div className="text-xs text-slate-300 mb-4 font-mono">Вопрос {qIndex + 1} из {questions.length}</div>
-
-        <div className={`glass-panel p-5 mb-5 transition-colors duration-300 ${answered ? (isCorrectAns ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}>
-          <div className="text-[17px] font-bold leading-relaxed text-white">{q.q}</div>
-          {q.type === 'sort' && <div className="mt-2 text-xs text-slate-300">👇 Нажимай на варианты в правильном порядке (снизу вверх)</div>}
+        <div className="mb-4 font-mono text-xs text-slate-300">
+          Вопрос {qIndex + 1} из {questions.length}
         </div>
 
-        <div className="flex-1 flex flex-col gap-2.5">
-          {q.type === 'choice' && q.opts.map((opt: string, i: number) => {
-            const isSelected = selected === i;
-            const isCorrectOption = q.ans === i;
-            
-            let bg = 'bg-white/5';
-            let border = 'border-white/10';
-            let text = 'text-white';
-            
-            if (answered) {
-              if (isCorrectOption) { bg = 'bg-brand-green/10'; border = 'border-brand-green/50'; text = 'text-brand-green'; }
-              else if (isSelected) { bg = 'bg-brand-red/10'; border = 'border-brand-red/50'; text = 'text-brand-red'; }
-            } else if (isSelected) {
-              bg = `bg-white/10`; border = 'border-white/30';
-            }
+        <div
+          className={`glass-panel mb-5 p-5 transition-colors duration-300 ${answered ? (isCorrectAns ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}
+        >
+          <div className="text-[17px] leading-relaxed font-bold text-white">{q.q}</div>
+          {q.type === 'sort' && (
+            <div className="mt-2 text-xs text-slate-300">
+              👇 Нажимай на варианты в правильном порядке (снизу вверх)
+            </div>
+          )}
+        </div>
 
-            return (
-              <button key={i} disabled={answered} onClick={() => setSelected(i)} className={`w-full text-left p-3.5 rounded-xl border-[1.5px] font-semibold text-[14px] flex items-center gap-3 transition-all backdrop-blur-md ${bg} ${border} ${text} ${!answered && 'hover:bg-white/10 hover:border-white/20'}`} style={!answered && isSelected ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` } : undefined}>
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono shrink-0 ${answered && isCorrectOption ? 'bg-brand-green/20 text-brand-green' : isSelected && !answered ? 'bg-white/20 text-white' : 'bg-black/30 text-slate-300'}`} style={!answered && isSelected ? { backgroundColor: `${lesson.color}40`, color: lesson.color } : undefined}>
-                  {['A','B','C','D'][i]}
-                </span>
-                <span className="flex-1">{opt}</span>
-                {answered && isCorrectOption && <span>✓</span>}
-                {answered && isSelected && !isCorrectOption && <span>✗</span>}
-              </button>
-            );
-          })}
+        <div className="flex flex-1 flex-col gap-2.5">
+          {q.type === 'choice' &&
+            q.opts.map((opt: string, i: number) => {
+              const isSelected = selected === i;
+              const isCorrectOption = q.ans === i;
+
+              let bg = 'bg-white/5';
+              let border = 'border-white/10';
+              let text = 'text-white';
+
+              if (answered) {
+                if (isCorrectOption) {
+                  bg = 'bg-brand-green/10';
+                  border = 'border-brand-green/50';
+                  text = 'text-brand-green';
+                } else if (isSelected) {
+                  bg = 'bg-brand-red/10';
+                  border = 'border-brand-red/50';
+                  text = 'text-brand-red';
+                }
+              } else if (isSelected) {
+                bg = `bg-white/10`;
+                border = 'border-white/30';
+              }
+
+              return (
+                <button
+                  key={i}
+                  disabled={answered}
+                  onClick={() => setSelected(i)}
+                  className={`flex w-full items-center gap-3 rounded-xl border-[1.5px] p-3.5 text-left text-[14px] font-semibold backdrop-blur-md transition-all ${bg} ${border} ${text} ${!answered && 'hover:border-white/20 hover:bg-white/10'}`}
+                  style={
+                    !answered && isSelected
+                      ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` }
+                      : undefined
+                  }
+                >
+                  <span
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-extrabold ${answered && isCorrectOption ? 'bg-brand-green/20 text-brand-green' : isSelected && !answered ? 'bg-white/20 text-white' : 'bg-black/30 text-slate-300'}`}
+                    style={
+                      !answered && isSelected
+                        ? { backgroundColor: `${lesson.color}40`, color: lesson.color }
+                        : undefined
+                    }
+                  >
+                    {['A', 'B', 'C', 'D'][i]}
+                  </span>
+                  <span className="flex-1">{opt}</span>
+                  {answered && isCorrectOption && <span>✓</span>}
+                  {answered && isSelected && !isCorrectOption && <span>✗</span>}
+                </button>
+              );
+            })}
 
           {q.type === 'sort' && (
             <>
-              <div className="min-h-[60px] glass-panel border-dashed p-2.5 mb-3 flex flex-col gap-1.5">
+              <div className="glass-panel mb-3 flex min-h-[60px] flex-col gap-1.5 border-dashed p-2.5">
                 {sortOrder.length === 0 ? (
-                  <div className="text-slate-400 text-xs p-1">Сюда появятся выбранные варианты...</div>
+                  <div className="p-1 text-xs text-slate-400">
+                    Сюда появятся выбранные варианты...
+                  </div>
                 ) : (
                   sortOrder.map((s, i) => (
-                    <div key={s} onClick={() => !answered && setSortOrder(sortOrder.filter(x => x !== s))} className="bg-brand-green/10 border-[1.5px] border-brand-green/30 rounded-lg py-2 px-3 text-[13px] font-semibold cursor-pointer flex justify-between items-center text-white">
-                      <span>{i + 1}. {s}</span>
+                    <div
+                      key={s}
+                      onClick={() => !answered && setSortOrder(sortOrder.filter((x) => x !== s))}
+                      className="bg-brand-green/10 border-brand-green/30 flex cursor-pointer items-center justify-between rounded-lg border-[1.5px] px-3 py-2 text-[13px] font-semibold text-white"
+                    >
+                      <span>
+                        {i + 1}. {s}
+                      </span>
                       <span className="text-slate-400">✕</span>
                     </div>
                   ))
@@ -271,10 +376,15 @@ export default function Lesson({ id }: { id: string }) {
                 {q.items.map((item: string) => {
                   const isSelected = sortOrder.includes(item);
                   return (
-                    <button key={item} disabled={answered} onClick={() => {
-                      if (isSelected) setSortOrder(sortOrder.filter(x => x !== item));
-                      else setSortOrder([...sortOrder, item]);
-                    }} className={`w-full text-left p-3 rounded-xl border-[1.5px] font-semibold text-[13px] transition-all backdrop-blur-md text-white ${isSelected ? 'opacity-35 border-white/5 bg-black/20' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'}`}>
+                    <button
+                      key={item}
+                      disabled={answered}
+                      onClick={() => {
+                        if (isSelected) setSortOrder(sortOrder.filter((x) => x !== item));
+                        else setSortOrder([...sortOrder, item]);
+                      }}
+                      className={`w-full rounded-xl border-[1.5px] p-3 text-left text-[13px] font-semibold text-white backdrop-blur-md transition-all ${isSelected ? 'border-white/5 bg-black/20 opacity-35' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
+                    >
                       {item}
                     </button>
                   );
@@ -285,8 +395,12 @@ export default function Lesson({ id }: { id: string }) {
         </div>
 
         {answered && (
-          <div className={`mt-4 p-4 rounded-2xl text-[13px] leading-relaxed border-l-[3px] backdrop-blur-md ${isCorrectAns ? 'bg-brand-green/10 border-brand-green' : 'bg-brand-red/10 border-brand-red'}`}>
-            <div className={`font-extrabold mb-1 ${isCorrectAns ? 'text-brand-green' : 'text-brand-red'}`}>
+          <div
+            className={`mt-4 rounded-2xl border-l-[3px] p-4 text-[13px] leading-relaxed backdrop-blur-md ${isCorrectAns ? 'bg-brand-green/10 border-brand-green' : 'bg-brand-red/10 border-brand-red'}`}
+          >
+            <div
+              className={`mb-1 font-extrabold ${isCorrectAns ? 'text-brand-green' : 'text-brand-red'}`}
+            >
               {isCorrectAns ? '✅ Верно!' : '❌ Не совсем...'}
             </div>
             <div className="text-slate-300">{q.exp}</div>
@@ -294,23 +408,24 @@ export default function Lesson({ id }: { id: string }) {
         )}
 
         {answered && currentStreak >= 3 && (
-          <div className="mt-4 p-4 rounded-2xl text-[13px] leading-relaxed font-bold text-center text-brand-amber animate-pulse glass-panel backdrop-blur-xl border border-brand-amber/30">
+          <div className="text-brand-amber glass-panel border-brand-amber/30 mt-4 animate-pulse rounded-2xl border p-4 text-center text-[13px] leading-relaxed font-bold backdrop-blur-xl">
             🔥 {currentStreak} подряд!
           </div>
         )}
 
         <div className="mt-5">
-          <button 
-            disabled={!isReady} 
-            onClick={handleCheck} 
-            className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all backdrop-blur-md border ${isReady ? (answered ? (isCorrectAns ? 'bg-brand-green/80 border-brand-green/50 text-white hover:bg-brand-green' : 'bg-brand-red/80 border-brand-red/50 text-white hover:bg-brand-red') : 'text-white border-white/20') : 'bg-black/20 border-white/5 text-slate-400 opacity-50'}`}
-            style={{ backgroundColor: isReady && !answered ? `${lesson.color}CC` : undefined, borderColor: isReady && !answered ? lesson.color : undefined }}
+          <button
+            disabled={!isReady}
+            onClick={handleCheck}
+            className={`w-full rounded-xl border py-4 font-bold tracking-wide uppercase backdrop-blur-md transition-all ${isReady ? (answered ? (isCorrectAns ? 'bg-brand-green/80 border-brand-green/50 hover:bg-brand-green text-white' : 'bg-brand-red/80 border-brand-red/50 hover:bg-brand-red text-white') : 'border-white/20 text-white') : 'border-white/5 bg-black/20 text-slate-400 opacity-50'}`}
+            style={{
+              backgroundColor: isReady && !answered ? `${lesson.color}CC` : undefined,
+              borderColor: isReady && !answered ? lesson.color : undefined,
+            }}
           >
             {answered ? 'ДАЛЬШЕ →' : 'ПРОВЕРИТЬ'}
           </button>
         </div>
-
-
       </div>
     </div>
   );

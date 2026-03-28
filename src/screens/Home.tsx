@@ -1,5 +1,8 @@
 import { useAppStore } from '../store';
-import { LESSONS, QUOTES, PRACTICE_TASKS } from '../data';
+import { preloadLessonsContent, preloadPracticeTasksContent } from '../data/content_loaders';
+import { LESSON_META } from '../data/lesson_meta';
+import { PRACTICE_TASK_META } from '../data/practice_task_meta';
+import { QUOTES } from '../data/quotes';
 import { getLevelInfo, plural } from '../utils';
 import { useState, useRef, useEffect } from 'react';
 import DevMenu from '../components/DevMenu';
@@ -56,11 +59,11 @@ function CardOutline({
       const nextWidth = node.clientWidth;
       const nextHeight = node.clientHeight;
 
-      setSize(prev => (
+      setSize((prev) =>
         prev.width === nextWidth && prev.height === nextHeight
           ? prev
           : { width: nextWidth, height: nextHeight }
-      ));
+      );
     };
 
     updateSize();
@@ -102,46 +105,43 @@ function CardOutline({
       className="pointer-events-none absolute inset-0 z-[2] h-full w-full overflow-visible"
       viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
     >
-      {hasSize && paths.map((path) => (
-        <g key={path.id} className={isAmbient ? 'ambient-card-outline-pulse' : undefined}>
-          <path
-            d={path.d}
-            pathLength={1}
-            fill="none"
-            stroke={`color-mix(in srgb, ${color} 82%, white 18%)`}
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            style={{
-              opacity: isActive ? glowOpacity : 0,
-              strokeDasharray: outlineDashArray,
-              transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
-              filter: isActive
-                ? glowFilter
-                : 'none',
-            }}
-          />
-          <path
-            d={path.d}
-            pathLength={1}
-            fill="none"
-            stroke={`color-mix(in srgb, ${color} 88%, white 12%)`}
-            strokeWidth="1.55"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            style={{
-              opacity: isActive ? lineOpacity : 0,
-              strokeDasharray: outlineDashArray,
-              transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
-              filter: isActive
-                ? lineFilter
-                : 'none',
-            }}
-          />
-        </g>
-      ))}
+      {hasSize &&
+        paths.map((path) => (
+          <g key={path.id} className={isAmbient ? 'ambient-card-outline-pulse' : undefined}>
+            <path
+              d={path.d}
+              pathLength={1}
+              fill="none"
+              stroke={`color-mix(in srgb, ${color} 82%, white 18%)`}
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{
+                opacity: isActive ? glowOpacity : 0,
+                strokeDasharray: outlineDashArray,
+                transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
+                filter: isActive ? glowFilter : 'none',
+              }}
+            />
+            <path
+              d={path.d}
+              pathLength={1}
+              fill="none"
+              stroke={`color-mix(in srgb, ${color} 88%, white 12%)`}
+              strokeWidth="1.55"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{
+                opacity: isActive ? lineOpacity : 0,
+                strokeDasharray: outlineDashArray,
+                transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
+                filter: isActive ? lineFilter : 'none',
+              }}
+            />
+          </g>
+        ))}
     </svg>
   );
 }
@@ -197,6 +197,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    preloadLessonsContent();
+    preloadPracticeTasksContent();
+
     const today = new Date().toDateString();
 
     if (state.dailyQuoteDate !== today) {
@@ -205,24 +208,24 @@ export default function Home() {
         dailyQuoteDate: today,
       });
     }
-  }, [state.lastQuoteIndex, state.dailyQuoteDate, updateState]);
+  }, [state.dailyQuoteDate, updateState]);
 
   const quote = QUOTES[state.lastQuoteIndex % QUOTES.length];
 
-  const categories = Array.from(new Set(LESSONS.map(l => l.category)));
+  const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
   const today = new Date().toDateString();
   const dailyDone = state.lastDailyDate === today;
   const practDone = state.completedPractice?.length || 0;
 
   return (
-    <div className="pb-10 w-full">
+    <div className="w-full pb-10">
       {/* Header */}
       <div className="solid-header p-4">
-        <div className="max-w-[600px] mx-auto">
-          <div className="flex justify-between items-center mb-3">
+        <div className="mx-auto max-w-[600px]">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span 
-                className="text-2xl cursor-pointer select-none"
+              <span
+                className="cursor-pointer text-2xl select-none"
                 onPointerDown={handlePointerDown}
                 onPointerUp={handlePointerUpOrLeave}
                 onPointerLeave={handlePointerUpOrLeave}
@@ -230,71 +233,115 @@ export default function Home() {
                 🧪
               </span>
               <div>
-                <div className="font-mono text-[10px] text-brand-green tracking-[3px]">QA TRAINER</div>
+                <div className="text-brand-green font-mono text-[10px] tracking-[3px]">
+                  QA TRAINER
+                </div>
                 <div className="text-lg font-extrabold text-white">Привет, тестировщик!</div>
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="glass-button px-3 py-2 text-xs" onClick={() => navigate('achievements')}>🏆</button>
-              <button className="glass-button px-3 py-2 text-xs" onClick={() => navigate('stats')}>📊</button>
-              <button className="glass-button px-3 py-2 text-xs" onClick={() => navigate('certificate')}>🎓</button>
+              <button
+                className="glass-button px-3 py-2 text-xs"
+                onClick={() => navigate('achievements')}
+              >
+                🏆
+              </button>
+              <button className="glass-button px-3 py-2 text-xs" onClick={() => navigate('stats')}>
+                📊
+              </button>
+              <button
+                className="glass-button px-3 py-2 text-xs"
+                onClick={() => navigate('certificate')}
+              >
+                🎓
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="mb-3 grid grid-cols-4 gap-2">
             {[
               { icon: '⚡', val: state.totalXP, label: 'XP', color: 'text-brand-amber' },
               { icon: '🎯', val: lvl.level, label: 'Уровень', color: 'text-brand-green' },
               { icon: '🔥', val: state.streak, label: 'Серия', color: 'text-brand-red' },
-              { icon: '✅', val: `${state.completedLessons.length}/${LESSONS.length}`, label: 'Уроки', color: 'text-brand-blue' },
+              {
+                icon: '✅',
+                val: `${state.completedLessons.length}/${LESSON_META.length}`,
+                label: 'Уроки',
+                color: 'text-brand-blue',
+              },
             ].map((s, i) => (
-              <div key={i} className="glass-panel p-2 text-center rounded-xl">
-                <div className="text-base mb-1">{s.icon}</div>
-                <div className={`text-lg font-extrabold font-mono ${s.color}`}>{s.val}</div>
-                <div className="text-[9px] text-slate-300 tracking-[1.5px] uppercase mt-1">{s.label}</div>
+              <div key={i} className="glass-panel rounded-xl p-2 text-center">
+                <div className="mb-1 text-base">{s.icon}</div>
+                <div className={`font-mono text-lg font-extrabold ${s.color}`}>{s.val}</div>
+                <div className="mt-1 text-[9px] tracking-[1.5px] text-slate-300 uppercase">
+                  {s.label}
+                </div>
               </div>
             ))}
           </div>
 
           <div>
-            <div className="flex justify-between mb-1 text-[11px] text-slate-300">
-              <span>Уровень {lvl.level} — {lvl.name}</span>
-              <span>{lvl.xpInLevel} / {lvl.xpToNext} XP</span>
+            <div className="mb-1 flex justify-between text-[11px] text-slate-300">
+              <span>
+                Уровень {lvl.level} — {lvl.name}
+              </span>
+              <span>
+                {lvl.xpInLevel} / {lvl.xpToNext} XP
+              </span>
             </div>
-            <div className="bg-black/30 rounded-full h-2 overflow-hidden border border-white/5">
-              <div className="h-full bg-brand-amber rounded-full transition-all duration-500" style={{ width: `${lvl.pct}%` }}></div>
+            <div className="h-2 overflow-hidden rounded-full border border-white/5 bg-black/30">
+              <div
+                className="bg-brand-amber h-full rounded-full transition-all duration-500"
+                style={{ width: `${lvl.pct}%` }}
+              ></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[600px] mx-auto px-5 pt-5">
+      <div className="mx-auto max-w-[600px] px-5 pt-5">
         {/* Quote */}
-        <div className="p-4 glass-panel mb-6 flex gap-3 items-start border-brand-green/30 bg-brand-green/5">
-          <span className="text-xl mt-0.5 shrink-0">💬</span>
+        <div className="glass-panel border-brand-green/30 bg-brand-green/5 mb-6 flex items-start gap-3 p-4">
+          <span className="mt-0.5 shrink-0 text-xl">💬</span>
           <div>
-            <div className="text-[11px] text-brand-green font-bold tracking-[2px] mb-1 font-mono">ЦИТАТА ДНЯ</div>
+            <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
+              ЦИТАТА ДНЯ
+            </div>
             <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
-            <div className="text-[11px] text-slate-300 mt-1">— {quote.author}, "{quote.book}"</div>
+            <div className="mt-1 text-[11px] text-slate-300">
+              — {quote.author}, "{quote.book}"
+            </div>
           </div>
         </div>
 
         {/* Lessons */}
         {categories.map((cat, catIdx) => {
-          const catLessons = LESSONS.filter(l => l.category === cat);
+          const catLessons = LESSON_META.filter((lesson) => lesson.category === cat);
           const prevCat = catIdx > 0 ? categories[catIdx - 1] : null;
-          const prevCatLessons = prevCat ? LESSONS.filter(l => l.category === prevCat) : [];
-          
-          const catUnlocked = catIdx === 0 || prevCatLessons.every(l => state.completedLessons.includes(l.id));
-          const catDone = catLessons.filter(l => state.completedLessons.includes(l.id)).length;
+          const prevCatLessons = prevCat
+            ? LESSON_META.filter((lesson) => lesson.category === prevCat)
+            : [];
+
+          const catUnlocked =
+            catIdx === 0 || prevCatLessons.every((l) => state.completedLessons.includes(l.id));
+          const catDone = catLessons.filter((l) => state.completedLessons.includes(l.id)).length;
 
           return (
             <div key={cat} className="mb-7">
-              <div className={`font-mono text-[10px] ${catUnlocked ? 'text-white' : 'text-slate-400'} tracking-[3px] uppercase mb-3 flex items-center gap-2`}>
-                <span className="flex-1 h-[1px] bg-white/20"></span>
-                <span>{!catUnlocked && '🔒 '}{cat}</span>
-                {catUnlocked && <span className="text-[9px] text-slate-300 font-bold tracking-normal">{catDone}/{catLessons.length}</span>}
-                <span className="flex-1 h-[1px] bg-white/20"></span>
+              <div
+                className={`font-mono text-[10px] ${catUnlocked ? 'text-white' : 'text-slate-400'} mb-3 flex items-center gap-2 tracking-[3px] uppercase`}
+              >
+                <span className="h-[1px] flex-1 bg-white/20"></span>
+                <span>
+                  {!catUnlocked && '🔒 '}
+                  {cat}
+                </span>
+                {catUnlocked && (
+                  <span className="text-[9px] font-bold tracking-normal text-slate-300">
+                    {catDone}/{catLessons.length}
+                  </span>
+                )}
+                <span className="h-[1px] flex-1 bg-white/20"></span>
               </div>
 
               {catLessons.map((lesson, idxInCat) => {
@@ -308,39 +355,63 @@ export default function Home() {
 
                 return (
                   <div
-                    key={lesson.id} 
+                    key={lesson.id}
                     onClick={() => handleLessonOpen(lesson.id, locked)}
                     onMouseEnter={() => !locked && setHoveredLessonId(lesson.id)}
-                    onMouseLeave={() => setHoveredLessonId(prev => (prev === lesson.id ? null : prev))}
-                    className={`relative mb-3 overflow-visible transition-all duration-300
-                      ${locked ? 'opacity-50 cursor-default' : 'cursor-pointer hover:translate-x-1'}
-                      ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
+                    onMouseLeave={() =>
+                      setHoveredLessonId((prev) => (prev === lesson.id ? null : prev))
+                    }
+                    className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer hover:translate-x-1'} ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
                   >
-                    {!locked && <CardOutline color={lesson.color} hovered={isHovered} opening={isOpening} />}
+                    {!locked && (
+                      <CardOutline color={lesson.color} hovered={isHovered} opening={isOpening} />
+                    )}
                     <div
-                      className={`glass-panel p-4 relative overflow-hidden transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
-                      style={{ borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined }}
+                      className={`glass-panel relative overflow-hidden p-4 transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
+                      style={{
+                        borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined,
+                      }}
                     >
                       {done && (
-                        <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: lesson.color }}>
+                        <div
+                          className="absolute top-0 right-0 rounded-bl-xl px-2.5 py-1 font-mono text-[9px] font-extrabold tracking-[1px] text-black"
+                          style={{ backgroundColor: lesson.color }}
+                        >
                           ГОТОВО ✓
                         </div>
                       )}
                       <div className="relative z-[1] flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 bg-black/20" 
-                             style={{ borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50` }}>
+                        <div
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-black/20 text-2xl"
+                          style={{
+                            borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50`,
+                          }}
+                        >
                           {locked ? '🔒' : lesson.icon}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm mb-0.5 text-white">{lesson.title}</div>
-                          <div className="text-xs text-slate-300 mb-2 truncate">{lesson.desc}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-0.5 text-sm font-bold text-white">{lesson.title}</div>
+                          <div className="mb-2 truncate text-xs text-slate-300">{lesson.desc}</div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-slate-300 font-mono">{lesson.questions.length} вопросов</span>
+                            <span className="font-mono text-[11px] text-slate-300">
+                              {lesson.questionCount} вопросов
+                            </span>
                             <span className="text-slate-500">·</span>
-                            <span className="bg-brand-amber/20 text-brand-amber border border-brand-amber/30 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">+{lesson.xp} XP</span>
+                            <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
+                              +{lesson.xp} XP
+                            </span>
                           </div>
                         </div>
-                        {!locked && <div className={`text-lg shrink-0 transition-all duration-200 ${openingLessonId === lesson.id ? 'text-white translate-x-0.5' : ''}`} style={{ color: openingLessonId === lesson.id ? undefined : lesson.color }}>›</div>}
+                        {!locked && (
+                          <div
+                            className={`shrink-0 text-lg transition-all duration-200 ${openingLessonId === lesson.id ? 'translate-x-0.5 text-white' : ''}`}
+                            style={{
+                              color: openingLessonId === lesson.id ? undefined : lesson.color,
+                            }}
+                          >
+                            ›
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -354,15 +425,21 @@ export default function Home() {
         <div className="pb-10">
           <div className={`relative mb-3 ${dailyDone ? 'opacity-60' : ''}`}>
             <CardOutline color="#a78bfa" variant="ambient" />
-            <div 
+            <div
               onClick={() => !dailyDone && navigate('daily')}
-              className={`glass-panel p-4 transition-all duration-300 border-purple-400/30 bg-purple-400/5 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
+              className={`glass-panel border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
                 <div className="flex-1">
-                  <div className="font-extrabold text-sm mb-1 text-white">Ежедневный квиз {state.dailyStreak > 1 && `🔥${state.dailyStreak}`}</div>
-                  <div className="text-xs text-slate-300">{dailyDone ? 'Уже пройден сегодня — возвращайся завтра!' : '5 случайных вопросов · +15 XP · Обновляется каждый день'}</div>
+                  <div className="mb-1 text-sm font-extrabold text-white">
+                    Ежедневный квиз {state.dailyStreak > 1 && `🔥${state.dailyStreak}`}
+                  </div>
+                  <div className="text-xs text-slate-300">
+                    {dailyDone
+                      ? 'Уже пройден сегодня — возвращайся завтра!'
+                      : '5 случайных вопросов · +15 XP · Обновляется каждый день'}
+                  </div>
                 </div>
                 {!dailyDone && <div className="text-brand-purple text-lg">›</div>}
               </div>
@@ -372,15 +449,25 @@ export default function Home() {
           {state.completedLessons.length >= 4 && (
             <div className="relative mb-3">
               <CardOutline color="#f87171" variant="ambient" />
-              <div 
+              <div
                 onClick={() => navigate('exam')}
-                className="glass-panel p-4 cursor-pointer transition-all duration-300 border-red-400/30 bg-red-400/5 hover:bg-red-400/10"
+                className="glass-panel cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
               >
                 <div className="relative z-[1] flex items-center gap-3">
                   <div className="text-3xl">🎯</div>
                   <div className="flex-1">
-                    <div className="font-extrabold text-sm mb-1 text-white">Режим экзамена</div>
-                    <div className="text-xs text-slate-300">20 вопросов · 10 минут · Без подсказок {state.examBestScore > 0 && <span>· Рекорд: <span className="text-brand-red font-extrabold">{state.examBestScore}%</span></span>}</div>
+                    <div className="mb-1 text-sm font-extrabold text-white">Режим экзамена</div>
+                    <div className="text-xs text-slate-300">
+                      20 вопросов · 10 минут · Без подсказок{' '}
+                      {state.examBestScore > 0 && (
+                        <span>
+                          · Рекорд:{' '}
+                          <span className="text-brand-red font-extrabold">
+                            {state.examBestScore}%
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-brand-red text-lg">›</div>
                 </div>
@@ -390,37 +477,54 @@ export default function Home() {
 
           <div className="relative mb-3">
             <CardOutline color="#34d399" variant="ambient" />
-            <div 
+            <div
               onClick={() => navigate('practice')}
-              className="glass-panel p-4 cursor-pointer transition-all duration-300 border-emerald-400/30 bg-emerald-400/5 hover:bg-emerald-400/10"
+              className="glass-panel cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">🛠️</div>
                 <div className="flex-1">
-                  <div className="font-extrabold text-sm mb-1 text-white">Практические задания</div>
-                  <div className="text-xs text-slate-300">Реальные сценарии · {practDone}/{PRACTICE_TASKS.length} пройдено</div>
+                  <div className="mb-1 text-sm font-extrabold text-white">Практические задания</div>
+                  <div className="text-xs text-slate-300">
+                    Реальные сценарии · {practDone}/{PRACTICE_TASK_META.length} пройдено
+                  </div>
                 </div>
-                <div className="text-emerald-400 text-lg">›</div>
+                <div className="text-lg text-emerald-400">›</div>
               </div>
             </div>
           </div>
 
           {state.completedLessons.length === 0 ? (
-            <div className="text-center p-5 text-slate-300 text-[13px] leading-relaxed">
-              <div className="text-3xl mb-2">🚀</div>
+            <div className="p-5 text-center text-[13px] leading-relaxed text-slate-300">
+              <div className="mb-2 text-3xl">🚀</div>
               Начни с первого урока! Каждый профессиональный тестировщик начинал именно так.
             </div>
-          ) : state.completedLessons.length < LESSONS.length ? (
-            <div className="text-center p-4 glass-panel mt-1">
-              <div className="text-2xl mb-1">{state.completedLessons.length > LESSONS.length / 2 ? '💪' : '🌱'}</div>
-              <div className="text-sm font-bold mb-1 text-white">{Math.round((state.completedLessons.length / LESSONS.length) * 100)}% пройдено</div>
-              <div className="text-xs text-slate-300">Ещё {LESSONS.length - state.completedLessons.length} {plural(LESSONS.length - state.completedLessons.length, 'урок', 'урока', 'уроков')} до финала!</div>
+          ) : state.completedLessons.length < LESSON_META.length ? (
+            <div className="glass-panel mt-1 p-4 text-center">
+              <div className="mb-1 text-2xl">
+                {state.completedLessons.length > LESSON_META.length / 2 ? '💪' : '🌱'}
+              </div>
+              <div className="mb-1 text-sm font-bold text-white">
+                {Math.round((state.completedLessons.length / LESSON_META.length) * 100)}% пройдено
+              </div>
+              <div className="text-xs text-slate-300">
+                Ещё {LESSON_META.length - state.completedLessons.length}{' '}
+                {plural(
+                  LESSON_META.length - state.completedLessons.length,
+                  'урок',
+                  'урока',
+                  'уроков'
+                )}{' '}
+                до финала!
+              </div>
             </div>
           ) : (
-            <div className="text-center p-5 glass-panel border-brand-green/40 bg-brand-green/10">
-              <div className="text-4xl mb-2 animate-bounce">🏆</div>
-              <div className="text-base font-extrabold text-brand-green">Все уроки пройдены!</div>
-              <div className="text-xs text-slate-300 mt-1.5">Теперь испытай себя в режиме экзамена 👆</div>
+            <div className="glass-panel border-brand-green/40 bg-brand-green/10 p-5 text-center">
+              <div className="mb-2 animate-bounce text-4xl">🏆</div>
+              <div className="text-brand-green text-base font-extrabold">Все уроки пройдены!</div>
+              <div className="mt-1.5 text-xs text-slate-300">
+                Теперь испытай себя в режиме экзамена 👆
+              </div>
             </div>
           )}
         </div>

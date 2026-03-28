@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
@@ -16,12 +12,6 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true
   },
-  "include": [
-    "src",
-    "vite.config.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["src", "vite.config.ts"],
+  "exclude": ["dist", "node_modules"]
 }

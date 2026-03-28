@@ -2,13 +2,27 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { AppState } from './types';
 
 export const initialState: AppState = {
-  totalXP: 0, completedLessons: [], streak: 0, maxStreak: 0,
-  perfectLessons: 0, retries: 0, bestStreak: 0,
-  unlockedAchievements: [], lastQuoteIndex: 0, dailyQuoteDate: '',
-  examBestScore: 0, examAttempts: 0,
-  dailyStreak: 0, lastDailyDate: '',
-  totalQuestionsAnswered: 0, totalCorrect: 0, completedPractice: [],
-  certName: '', lastActiveDate: '', isCheater: false, examPassed: false
+  totalXP: 0,
+  completedLessons: [],
+  streak: 0,
+  maxStreak: 0,
+  perfectLessons: 0,
+  retries: 0,
+  bestStreak: 0,
+  unlockedAchievements: [],
+  lastQuoteIndex: 0,
+  dailyQuoteDate: '',
+  examBestScore: 0,
+  examAttempts: 0,
+  dailyStreak: 0,
+  lastDailyDate: '',
+  totalQuestionsAnswered: 0,
+  totalCorrect: 0,
+  completedPractice: [],
+  certName: '',
+  lastActiveDate: '',
+  isCheater: false,
+  examPassed: false,
 };
 
 export function useAppStoreInit() {
@@ -32,7 +46,7 @@ export function useAppStoreInit() {
   }, [state]);
 
   const updateState = (updates: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
-    setState(prev => {
+    setState((prev) => {
       const newValues = typeof updates === 'function' ? updates(prev) : updates;
       return { ...prev, ...newValues };
     });
@@ -41,11 +55,29 @@ export function useAppStoreInit() {
   return { state, updateState };
 }
 
-export const AppContext = createContext<ReturnType<typeof useAppStoreInit> & { navigate: (s: 'splash' | 'home' | 'lesson' | 'practice' | 'practice-task' | 'exam' | 'daily' | 'stats' | 'achievements' | 'certificate', id?: string) => void, showToast: (msg: string, color?: string) => void }>({
+export const AppContext = createContext<
+  ReturnType<typeof useAppStoreInit> & {
+    navigate: (
+      s:
+        | 'splash'
+        | 'home'
+        | 'lesson'
+        | 'practice'
+        | 'practice-task'
+        | 'exam'
+        | 'daily'
+        | 'stats'
+        | 'achievements'
+        | 'certificate',
+      id?: string
+    ) => void;
+    showToast: (msg: string, color?: string) => void;
+  }
+>({
   state: initialState,
   updateState: () => {},
   navigate: () => {},
-  showToast: () => {}
+  showToast: () => {},
 });
 
 export const useAppStore = () => useContext(AppContext);
