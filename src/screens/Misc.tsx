@@ -3,6 +3,7 @@ import { QUOTES, LESSONS, ACHIEVEMENTS } from '../data';
 import { getLevelInfo } from '../utils';
 import { useMemo, useRef, useEffect, useState, FormEvent } from 'react';
 import ConfirmModal from '../components/ConfirmModal';
+import ModalShell from '../components/ModalShell';
 
 export function Splash() {
   const { navigate } = useAppStore();
@@ -149,6 +150,7 @@ export function Certificate() {
   const [passInput, setPassInput] = useState('');
   const [certType, setCertType] = useState<'none'|'foundation'|'design'|'career'>('none');
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passInputRef = useRef<HTMLInputElement | null>(null);
 
   // Проверяем, какие сертификаты доступны
   const coreFoundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
@@ -188,6 +190,12 @@ export function Certificate() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (showPassModal) {
+      passInputRef.current?.focus();
+    }
+  }, [showPassModal]);
 
   const handlePassSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -473,25 +481,24 @@ export function Certificate() {
     <div className="max-w-[600px] mx-auto p-6 pb-10 w-full">
       {/* Modal вынесен наружу, чтобы не ограничивался размером родителя */}
       {showPassModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-panel p-6 w-full max-w-2xl mx-auto">
-             <h3 className="text-xl font-extrabold mb-4 text-white">Cert Debug</h3>
-            <form onSubmit={handlePassSubmit}>
-              <input 
-                type="password" 
-                value={passInput}
-                onChange={e => setPassInput(e.target.value)}
-                placeholder="Пароль"
-                className="glass-input w-full p-3 mb-4"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setShowPassModal(false)} className="flex-1 glass-button py-3 text-xs">ОТМЕНА</button>
-                <button type="submit" className="flex-1 bg-brand-blue/80 text-white font-bold py-3 rounded-xl text-xs">ОК</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ModalShell isOpen={showPassModal} onClose={() => setShowPassModal(false)} size="wide" showCloseButton>
+          <h3 className="text-xl font-extrabold mb-2 text-white">Cert Debug</h3>
+          <p className="text-slate-300 text-[14px] leading-relaxed mb-6">Введи сервисный пароль, чтобы открыть отладочный просмотр сертификата.</p>
+          <form onSubmit={handlePassSubmit}>
+            <input 
+              type="password" 
+              value={passInput}
+              onChange={e => setPassInput(e.target.value)}
+              placeholder="Пароль"
+              className="glass-input w-full p-3 mb-4"
+              ref={passInputRef}
+            />
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setShowPassModal(false)} className="flex-1 glass-button py-3 text-[13px] font-bold uppercase tracking-wide">Отмена</button>
+              <button type="submit" className="flex-1 bg-brand-blue/80 hover:bg-brand-blue backdrop-blur-md border border-brand-blue/50 text-white font-bold py-3 rounded-2xl transition-colors text-[13px] uppercase tracking-wide">Открыть</button>
+            </div>
+          </form>
+        </ModalShell>
       )}
 
       <div className="flex items-center gap-3 mb-6">
