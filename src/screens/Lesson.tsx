@@ -4,9 +4,18 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import { loadLessonById } from '../data/content_loaders';
 import { MOTIVATIONAL_MESSAGES } from '../data/messages';
 import type { AppState, Lesson as LessonType, Question } from '../types';
-import { shuffle } from '../utils';
+import {
+  compactChoiceOptionText,
+  compactQuestionText,
+  prepareQuestionsWithShuffledChoices,
+  shuffle,
+} from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
+
+function buildLessonQuestionSet(questions: Question[]) {
+  return prepareQuestionsWithShuffledChoices(shuffle(questions).slice(0, 6));
+}
 
 export default function Lesson({ id }: { id: string }) {
   const { updateState, navigate, showToast } = useAppStore();
@@ -19,10 +28,8 @@ export default function Lesson({ id }: { id: string }) {
   const [answered, setAnswered] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<string[]>([]);
-  const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [currentStreak, setCurrentStreak] = useState(0);
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const perfectToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,7 +42,7 @@ export default function Lesson({ id }: { id: string }) {
       }
 
       setLesson(loadedLesson);
-      setQuestions(loadedLesson ? shuffle(loadedLesson.questions).slice(0, 6) : []);
+      setQuestions(loadedLesson ? buildLessonQuestionSet(loadedLesson.questions) : []);
     });
 
     return () => {
@@ -76,31 +83,22 @@ export default function Lesson({ id }: { id: string }) {
 
     setAnswered(true);
 
-    let newConsecutive = consecutiveCorrect;
     let newHearts = hearts;
     let newCorrect = correct;
 
     if (isCorrect) {
       newCorrect++;
-      newConsecutive++;
-      if (newConsecutive >= 3) {
-        setCurrentStreak(newConsecutive);
-      }
     } else {
       newHearts--;
-      newConsecutive = 0;
-      setCurrentStreak(0);
     }
 
     setCorrect(newCorrect);
-    setConsecutiveCorrect(newConsecutive);
     setHearts(newHearts);
 
     updateState((prev) => {
       const s = { ...prev };
       s.totalQuestionsAnswered++;
       if (isCorrect) s.totalCorrect++;
-      if (newConsecutive > s.bestStreak) s.bestStreak = newConsecutive;
       return s;
     });
   };
@@ -208,9 +206,8 @@ export default function Lesson({ id }: { id: string }) {
                   setAnswered(false);
                   setSelected(null);
                   setSortOrder([]);
-                  setConsecutiveCorrect(0);
                   setFinished(false);
-                  setQuestions(shuffle(lesson.questions).slice(0, 6));
+                  setQuestions(buildLessonQuestionSet(lesson.questions));
                 }}
               >
                 🔄 Повторить урок
@@ -288,7 +285,9 @@ export default function Lesson({ id }: { id: string }) {
         <div
           className={`glass-panel mb-5 p-5 transition-colors duration-300 ${answered ? (isCorrectAns ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}
         >
-          <div className="text-[17px] leading-relaxed font-bold text-white">{q.q}</div>
+          <div className="text-[17px] leading-relaxed font-bold text-white">
+            {compactQuestionText(q.q)}
+          </div>
           {q.type === 'sort' && (
             <div className="mt-2 text-xs text-slate-300">
               👇 Нажимай на варианты в правильном порядке (снизу вверх)
@@ -299,6 +298,7 @@ export default function Lesson({ id }: { id: string }) {
         <div className="flex flex-1 flex-col gap-2.5">
           {q.type === 'choice' &&
             q.opts.map((opt: string, i: number) => {
+              const optionText = compactChoiceOptionText(opt);
               const isSelected = selected === i;
               const isCorrectOption = q.ans === i;
 
@@ -326,7 +326,8 @@ export default function Lesson({ id }: { id: string }) {
                   key={i}
                   disabled={answered}
                   onClick={() => setSelected(i)}
-                  className={`flex w-full items-center gap-3 rounded-xl border-[1.5px] p-3.5 text-left text-[14px] font-semibold backdrop-blur-md transition-all ${bg} ${border} ${text} ${!answered && 'hover:border-white/20 hover:bg-white/10'}`}
+                  title={opt}
+                  className={`flex w-full items-start gap-3 rounded-xl border-[1.5px] px-3.5 py-3 text-left text-[14px] font-semibold backdrop-blur-md transition-all ${bg} ${border} ${text} ${!answered && 'hover:border-white/20 hover:bg-white/10'}`}
                   style={
                     !answered && isSelected
                       ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` }
@@ -343,7 +344,7 @@ export default function Lesson({ id }: { id: string }) {
                   >
                     {['A', 'B', 'C', 'D'][i]}
                   </span>
-                  <span className="flex-1">{opt}</span>
+                  <span className="flex-1 leading-relaxed">{optionText}</span>
                   {answered && isCorrectOption && <span>✓</span>}
                   {answered && isSelected && !isCorrectOption && <span>✗</span>}
                 </button>
@@ -404,12 +405,6 @@ export default function Lesson({ id }: { id: string }) {
               {isCorrectAns ? '✅ Верно!' : '❌ Не совсем...'}
             </div>
             <div className="text-slate-300">{q.exp}</div>
-          </div>
-        )}
-
-        {answered && currentStreak >= 3 && (
-          <div className="text-brand-amber glass-panel border-brand-amber/30 mt-4 animate-pulse rounded-2xl border p-4 text-center text-[13px] leading-relaxed font-bold backdrop-blur-xl">
-            🔥 {currentStreak} подряд!
           </div>
         )}
 

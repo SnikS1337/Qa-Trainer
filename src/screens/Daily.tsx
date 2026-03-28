@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { loadChoiceQuestions } from '../data/content_loaders';
-import { shuffle } from '../utils';
+import {
+  compactChoiceOptionText,
+  compactQuestionText,
+  prepareQuestionsWithShuffledChoices,
+  shuffle,
+} from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 import { QuestionChoice } from '../types';
+
+function buildDailyQuestions(questions: QuestionChoice[]) {
+  return prepareQuestionsWithShuffledChoices(shuffle(questions).slice(0, 5));
+}
+
+const DAILY_XP_REWARD = 15;
 
 export default function Daily() {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -18,6 +29,10 @@ export default function Daily() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
+    if (finished) {
+      return;
+    }
+
     // Проверяем прохождение daily по нормализованной дате.
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -36,18 +51,18 @@ export default function Daily() {
         return;
       }
 
-      setQuestions(shuffle(allQuestions).slice(0, 5));
+      setQuestions(buildDailyQuestions(allQuestions));
     });
 
     return () => {
       isMounted = false;
     };
-  }, [navigate, showToast, state.lastDailyDate]);
+  }, [finished, navigate, showToast, state.lastDailyDate]);
 
   const handleFinish = () => {
     setFinished(true);
     const passed = score >= 3; // 60% to pass
-    const xpEarned = score * 10;
+    const xpEarned = DAILY_XP_REWARD;
 
     if (passed) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -118,6 +133,8 @@ export default function Daily() {
 
   if (finished) {
     const passed = score >= 3;
+    const xpEarned = DAILY_XP_REWARD;
+
     return (
       <div className="mx-auto w-full max-w-[500px] p-6 pt-20 text-center">
         <div className="mb-6 text-6xl">{passed ? '🌟' : '👍'}</div>
@@ -136,17 +153,25 @@ export default function Daily() {
               : 'Хорошая попытка! Повторение - мать учения. Завтра будет новый шанс улучшить результат.'}
           </div>
           <div className="bg-brand-amber/10 border-brand-amber/30 flex items-center justify-between rounded-xl border p-3">
-            <span className="text-brand-amber text-sm font-bold">+{score * 10} XP</span>
+            <span className="text-brand-amber text-sm font-bold">+{xpEarned} XP</span>
             <span className="text-brand-amber text-xl">🔥</span>
           </div>
         </div>
 
-        <button
-          onClick={() => navigate('home')}
-          className="glass-button w-full py-4 font-bold tracking-wide text-white uppercase"
-        >
-          На главную
-        </button>
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => navigate('stats')}
+            className="glass-button w-full py-4 font-bold tracking-wide text-white uppercase"
+          >
+            К статистике
+          </button>
+          <button
+            onClick={() => navigate('home')}
+            className="glass-button w-full py-4 font-bold tracking-wide text-white uppercase"
+          >
+            На главную
+          </button>
+        </div>
       </div>
     );
   }
@@ -185,10 +210,13 @@ export default function Daily() {
         <div className="text-brand-amber mb-4 font-mono text-sm font-bold tracking-widest uppercase">
           Вопрос {currentIdx + 1} из 5
         </div>
-        <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">{q.q}</h2>
+        <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">
+          {compactQuestionText(q.q)}
+        </h2>
 
         <div className="flex flex-1 flex-col gap-3">
           {(q.opts || []).map((opt: string, idx: number) => {
+            const optionText = compactChoiceOptionText(opt);
             let bgClass = 'bg-white/5';
             let borderClass = 'border-white/10';
             let textClass = 'text-slate-300';
@@ -213,10 +241,11 @@ export default function Daily() {
               <button
                 key={idx}
                 disabled={answered}
+                title={opt}
                 onClick={() => setSelectedOption(idx)}
-                className={`rounded-2xl border-[1.5px] p-4 text-left backdrop-blur-md transition-all duration-200 ${bgClass} ${borderClass} ${textClass} ${!answered && 'hover:border-white/20 hover:bg-white/10'}`}
+                className={`rounded-2xl border-[1.5px] px-4 py-3 text-left backdrop-blur-md transition-all duration-200 ${bgClass} ${borderClass} ${textClass} ${!answered && 'hover:border-white/20 hover:bg-white/10'}`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <div
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${selectedOption === idx || (answered && idx === q.ans) ? borderClass : 'border-white/20'}`}
                   >
@@ -226,7 +255,7 @@ export default function Daily() {
                       ></div>
                     )}
                   </div>
-                  <span className="text-[15px] leading-relaxed">{opt}</span>
+                  <span className="flex-1 text-[15px] leading-relaxed">{optionText}</span>
                 </div>
               </button>
             );

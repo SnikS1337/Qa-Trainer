@@ -2,10 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { loadChoiceQuestions } from '../data/content_loaders';
-import { shuffle } from '../utils';
+import {
+  compactChoiceOptionText,
+  compactQuestionText,
+  prepareQuestionsWithShuffledChoices,
+  shuffle,
+} from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 import { QuestionChoice } from '../types';
+
+function buildExamQuestions(questions: QuestionChoice[]) {
+  return prepareQuestionsWithShuffledChoices(shuffle(questions).slice(0, 20));
+}
 
 export default function Exam() {
   const { updateState, navigate, showToast } = useAppStore();
@@ -27,7 +36,7 @@ export default function Exam() {
         return;
       }
 
-      setQuestions(shuffle(allQuestions).slice(0, 20));
+      setQuestions(buildExamQuestions(allQuestions));
     });
 
     return () => {
@@ -207,27 +216,34 @@ export default function Exam() {
         <div className="text-brand-purple mb-4 font-mono text-sm font-bold tracking-widest uppercase">
           Вопрос {currentIdx + 1} из 20
         </div>
-        <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">{q.q}</h2>
+        <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">
+          {compactQuestionText(q.q)}
+        </h2>
 
         <div className="flex flex-1 flex-col gap-3">
-          {(q.opts || []).map((opt: string, idx: number) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedOption(idx)}
-              className={`rounded-2xl border-[1.5px] p-4 text-left backdrop-blur-md transition-all duration-200 ${selectedOption === idx ? 'border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${selectedOption === idx ? 'border-brand-purple' : 'border-white/20'}`}
-                >
-                  {selectedOption === idx && (
-                    <div className="bg-brand-purple h-3 w-3 rounded-full"></div>
-                  )}
+          {(q.opts || []).map((opt: string, idx: number) => {
+            const optionText = compactChoiceOptionText(opt);
+
+            return (
+              <button
+                key={idx}
+                title={opt}
+                onClick={() => setSelectedOption(idx)}
+                className={`rounded-2xl border-[1.5px] px-4 py-3 text-left backdrop-blur-md transition-all duration-200 ${selectedOption === idx ? 'border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${selectedOption === idx ? 'border-brand-purple' : 'border-white/20'}`}
+                  >
+                    {selectedOption === idx && (
+                      <div className="bg-brand-purple h-3 w-3 rounded-full"></div>
+                    )}
+                  </div>
+                  <span className="flex-1 text-[15px] leading-relaxed">{optionText}</span>
                 </div>
-                <span className="text-[15px] leading-relaxed">{opt}</span>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
         <div className="mt-8">

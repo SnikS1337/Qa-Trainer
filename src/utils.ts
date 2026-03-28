@@ -1,4 +1,5 @@
 import { LEVEL_NAMES } from './data/messages';
+import type { Question, QuestionChoice } from './types';
 
 export function getLevelInfo(xp: number) {
   const levels = [0, 50, 120, 220, 350, 500, 700, 1000];
@@ -45,6 +46,223 @@ export function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+export function shuffleChoiceQuestion(question: QuestionChoice): QuestionChoice {
+  const shuffledOptions = shuffle(
+    question.opts.map((option, index) => ({
+      option,
+      isCorrect: index === question.ans,
+    }))
+  );
+
+  return {
+    ...question,
+    opts: shuffledOptions.map((item) => item.option),
+    ans: shuffledOptions.findIndex((item) => item.isCorrect),
+  };
+}
+
+function pickBalancedCorrectIndex(
+  question: QuestionChoice,
+  usageByIndex: Map<number, number>,
+  previousCorrectIndex: number | null
+) {
+  const positions = question.opts.map((_, index) => index);
+  const minUsage = Math.min(...positions.map((index) => usageByIndex.get(index) ?? 0));
+
+  let candidates = positions.filter((index) => (usageByIndex.get(index) ?? 0) === minUsage);
+
+  const nonRepeatingCandidates = candidates.filter((index) => index !== previousCorrectIndex);
+  if (nonRepeatingCandidates.length > 0) {
+    candidates = nonRepeatingCandidates;
+  }
+
+  const nonOriginalCandidates = candidates.filter((index) => index !== question.ans);
+  if (nonOriginalCandidates.length > 0) {
+    candidates = nonOriginalCandidates;
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function rebalanceChoiceQuestion(
+  question: QuestionChoice,
+  usageByIndex: Map<number, number>,
+  previousCorrectIndex: number | null
+) {
+  const nextCorrectIndex = pickBalancedCorrectIndex(question, usageByIndex, previousCorrectIndex);
+  const correctOption = question.opts[question.ans];
+  const distractors = shuffle(question.opts.filter((_, index) => index !== question.ans));
+  const nextOptions: string[] = [];
+  let distractorIndex = 0;
+
+  for (let index = 0; index < question.opts.length; index++) {
+    if (index === nextCorrectIndex) {
+      nextOptions.push(correctOption);
+      continue;
+    }
+
+    nextOptions.push(distractors[distractorIndex]);
+    distractorIndex += 1;
+  }
+
+  return {
+    ...question,
+    opts: nextOptions,
+    ans: nextCorrectIndex,
+  };
+}
+
+export function prepareQuestionsWithShuffledChoices<T extends Question>(questions: T[]): T[] {
+  const usageByIndex = new Map<number, number>();
+  let previousCorrectIndex: number | null = null;
+
+  return questions.map((question) => {
+    if (question.type !== 'choice') {
+      return question;
+    }
+
+    const nextQuestion = rebalanceChoiceQuestion(question, usageByIndex, previousCorrectIndex);
+    usageByIndex.set(nextQuestion.ans, (usageByIndex.get(nextQuestion.ans) ?? 0) + 1);
+    previousCorrectIndex = nextQuestion.ans;
+
+    return nextQuestion as T;
+  });
+}
+
+const DISPLAY_TERM_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/'Visual Regression Testing'/gi, 'визуальная регрессия'],
+  [/Visual Regression Testing/gi, 'визуальная регрессия'],
+  [/'Component Testing'/gi, 'тестирование компонента'],
+  [/Component Testing/gi, 'тестирование компонента'],
+  [/'Build Verification Test' \(BVT\)/gi, 'быстрая проверка сборки (BVT)'],
+  [/Build Verification Test \(BVT\)/gi, 'быстрая проверка сборки (BVT)'],
+  [/'Internationalization' \(I18n\)/gi, 'подготовка к переводу (I18n)'],
+  [/Internationalization \(I18n\)/gi, 'подготовка к переводу (I18n)'],
+  [/'Localization' \(L10n\)/gi, 'локализация (L10n)'],
+  [/Localization \(L10n\)/gi, 'локализация (L10n)'],
+  [/'Feature Flag' \(фича-флаг\)/gi, 'флаг функции'],
+  [/Feature Flag \(фича-флаг\)/gi, 'флаг функции'],
+  [/'Environment Parity' \(различия окружений\)/gi, 'разные окружения'],
+  [/Environment Parity \(различия окружений\)/gi, 'разные окружения'],
+  [/'Backward Compatibility' \(обратная совместимость\)/gi, 'обратная совместимость'],
+  [/Backward Compatibility \(обратная совместимость\)/gi, 'обратная совместимость'],
+  [/'Security Headers' \(напр\. CSP, HSTS\)/gi, 'защитные заголовки'],
+  [/Security Headers \(напр\. CSP, HSTS\)/gi, 'защитные заголовки'],
+  [/'Session-Based Testing'/gi, 'сессионное тестирование'],
+  [/Session-Based Testing/gi, 'сессионное тестирование'],
+  [/'Error Guessing'/gi, 'предположение ошибок'],
+  [/Error Guessing/gi, 'предположение ошибок'],
+  [/'Showstopper'/gi, 'стоп-баг'],
+  [/Showstopper/gi, 'стоп-баг'],
+  [/'Decision Table' \(Таблица принятия решений\)/gi, 'таблица решений'],
+  [/Decision Table \(Таблица принятия решений\)/gi, 'таблица решений'],
+  [/'Test Suite' \(Тестовый набор\)/gi, 'набор тестов'],
+  [/Test Suite \(Тестовый набор\)/gi, 'набор тестов'],
+  [/'Transition' \(Переход\)/gi, 'переход'],
+  [/Transition \(Переход\)/gi, 'переход'],
+  [/'Subquery' \(подзапрос\)/gi, 'подзапрос'],
+  [/Subquery \(подзапрос\)/gi, 'подзапрос'],
+  [/'Rendering Engine' \(движок рендеринга\)/gi, 'движок браузера'],
+  [/Rendering Engine \(движок рендеринга\)/gi, 'движок браузера'],
+  [/'Polyfill' \(полифил\)/gi, 'полифил'],
+  [/Polyfill \(полифил\)/gi, 'полифил'],
+  [/'Orthogonal Array' \(ортогональные массивы\)/gi, 'ортогональные массивы'],
+  [/Orthogonal Array \(ортогональные массивы\)/gi, 'ортогональные массивы'],
+  [/'All-Pairs'/gi, 'попарное покрытие'],
+  [/All-Pairs/gi, 'попарное покрытие'],
+  [/'All-Combinations'/gi, 'все комбинации'],
+  [/All-Combinations/gi, 'все комбинации'],
+  [/'Testing Trophy'/gi, 'трофей тестирования'],
+  [/Testing Trophy/gi, 'трофей тестирования'],
+  [/'Shift Left Testing'/gi, 'раннее тестирование'],
+  [/Shift Left Testing/gi, 'раннее тестирование'],
+];
+
+function normalizeDisplayTerms(text: string) {
+  return DISPLAY_TERM_REPLACEMENTS.reduce(
+    (result, [pattern, replacement]) => result.replace(pattern, replacement),
+    text
+  )
+    .replace(/'/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function compactQuestionText(text: string) {
+  let value = normalizeDisplayTerms(text);
+
+  value = value
+    .replace(/^Что означает (.+?), а что — (.+)\?$/i, 'Чем отличается $1 от $2?')
+    .replace('обычно располагается', 'обычно находится')
+    .replace('в контексте', 'в')
+    .replace('и как он соотносится со', 'и чем отличается от');
+
+  return value;
+}
+
+export function compactChoiceOptionText(text: string) {
+  let value = normalizeDisplayTerms(text);
+
+  value = value
+    .replace('проверяет визуальное отображение в браузере', 'проверяет внешний вид интерфейса')
+    .replace('подготовить продукт к разным языкам', 'подготовить продукт к переводу')
+    .replace('перевести и настроить под конкретную страну', 'перевести и настроить под страну')
+    .replace(
+      'автоматизированный Smoke-тест, который запускается сразу после сборки билда',
+      'автоматический Smoke-тест сразу после сборки'
+    )
+    .replace(
+      'тестирование отдельного компонента в изоляции',
+      'проверка отдельного компонента отдельно'
+    )
+    .replace('значительно больше, чем', 'больше, чем')
+    .replace('Это делает поддержку дорогой и неэффективной', '')
+    .replace(
+      'Система должна сообщать об ошибке как можно раньше',
+      'Ошибка должна находиться как можно раньше'
+    )
+    .replace(
+      'проверка, что две системы понимают один и тот же API-контракт',
+      'проверка, что две системы понимают один API-контракт'
+    )
+    .replace(
+      'Тестирование начинают как можно раньше, еще на этапе требований',
+      'Тестирование начинают как можно раньше'
+    )
+    .replace(
+      'В код специально вносят маленькую ошибку и смотрят, заметят ли ее тесты',
+      'В код вносят ошибку и смотрят, заметят ли ее тесты'
+    );
+
+  const withoutExamples = value.replace(/\s*\((?:напр\.?|например)[^)]*\)/gi, '');
+  if (withoutExamples.length <= value.length - 10) {
+    value = withoutExamples.trim();
+  }
+
+  if (value.length > 80 && value.includes('. ')) {
+    value = value.split('. ')[0].trim();
+  }
+
+  if (value.length > 78) {
+    for (const separator of [
+      ', так как',
+      ' так как ',
+      ', потому что',
+      ' потому что ',
+      ', чтобы ',
+    ]) {
+      const separatorIndex = value.indexOf(separator);
+
+      if (separatorIndex >= 20 && separatorIndex <= 84) {
+        value = value.slice(0, separatorIndex).trim();
+        break;
+      }
+    }
+  }
+
+  return value.replace(/[.,;:!?-]+$/g, '').trim();
 }
 
 export function plural(n: number, a: string, b: string, c: string) {

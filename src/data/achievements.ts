@@ -69,13 +69,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.retries >= 1,
   },
   {
-    id: 'speed',
-    icon: '⚡',
-    title: 'Быстрый разум',
-    desc: '5 правильных ответов подряд',
-    check: (s) => s.bestStreak >= 5,
-  },
-  {
     id: 'exam_pass',
     icon: '🎯',
     title: 'Экзамен сдан!',
