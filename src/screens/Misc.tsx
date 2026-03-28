@@ -194,7 +194,7 @@ export function Certificate() {
   };
 
   useEffect(() => {
-    if (((certType !== 'none' && !isCheater) || debugUnlocked) && canvasRef.current) {
+    if ((certType !== 'none' || debugUnlocked) && canvasRef.current) {
       drawCertificate(name || 'Твоё имя');
     }
   }, [name, certType, isCheater, debugUnlocked]);
@@ -435,7 +435,7 @@ export function Certificate() {
     ctx.fillText('Дата: ' + ds, W/2, footerY);
 
     // Watermark for debug mode
-    if (debugUnlocked && isCheater) {
+    if (isCheater) {
       ctx.save();
       ctx.translate(W/2, H/2);
       ctx.rotate(-Math.PI/6);
@@ -518,18 +518,18 @@ export function Certificate() {
         </div>
       ) : (
         <div>
-          {debugUnlocked && isCheater && (
+          {isCheater && (
             <div className="text-center mb-5 p-3.5 glass-panel border-brand-red/30 bg-brand-red/10 text-[13px] text-brand-red">
-              ⚠️ Режим отладки: Сертификат виден, но скачивание заблокировано (читы).
+              ⚠️ Обнаружено читерство: сертификат показан только для просмотра, скачивание заблокировано.
             </div>
           )}
-           {!debugUnlocked && (
-            <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
-              {certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.'}
-              {certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.'}
-              {certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.'}
-            </div>
-          )}
+           {!isCheater && !debugUnlocked && (
+             <div className="text-center mb-5 p-3.5 glass-panel border-brand-green/30 bg-brand-green/10 text-[13px] text-brand-green">
+               {certType === 'foundation' && '✅ Все уроки "Основы" пройдены! Введи своё имя и скачай сертификат.'}
+               {certType === 'design' && '✅ Все уроки "Техники тест-дизайна" пройдены! Введи своё имя и скачай сертификат.'}
+               {certType === 'career' && '✅ Все уроки "Карьера" пройдены! Введи своё имя и скачай сертификат.'}
+             </div>
+           )}
           
           <div className="mb-4">
             <label className="text-[12px] text-slate-300 block mb-1.5 font-mono tracking-[2px]">ТВОЁ ИМЯ</label>
@@ -559,7 +559,7 @@ export function Certificate() {
               className={`w-full font-bold py-4 rounded-xl text-[15px] transition-all backdrop-blur-md border ${(isCheater || debugUnlocked) ? 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed grayscale' : 'bg-brand-green/80 hover:bg-brand-green border-brand-green/50 text-white'}`}
               onClick={handleDownload}
             >
-              {(isCheater || debugUnlocked) ? '🚫 Скачивание заблокировано (дебаг меню активировано)' : '⬇️ Скачать сертификат (PNG)'}
+              {(isCheater || debugUnlocked) ? '🚫 Скачивание заблокировано из-за читов / дебаг-режима' : '⬇️ Скачать сертификат (PNG)'}
             </button>
         </div>
       )}
