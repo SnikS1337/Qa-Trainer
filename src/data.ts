@@ -1,5 +1,4 @@
-import { AppState, Lesson, Quote, Achievement } from './types';
-import { LESSONS_PART_1 } from './data/lessons_part_1';
+import { Lesson, Quote, Achievement, PracticeTask, PracticeCheckValues } from './types';
 import { LESSONS_PART_2 } from './data/lessons_part_2';
 import { LESSONS_PART_3 } from './data/lessons_part_3';
 import { LESSONS_PART_4 } from './data/lessons_part_4';
@@ -172,11 +171,11 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "all", icon: "🏆", title: "QA Чемпион", desc: "Пройди все базовые уроки", check: s => ['pyramid','equiv','boundary','decision','testcase','states','types','checklist'].every(id => s.completedLessons.includes(id)) },
   { id: "retry", icon: "🔄", title: "Упорный", desc: "Повтори урок после неудачи", check: s => s.retries >= 1 },
   { id: "speed", icon: "⚡", title: "Быстрый разум", desc: "5 правильных ответов подряд", check: s => s.bestStreak >= 5 },
-  { id: "exam_pass", icon: "🎯", title: "Экзамен сдан!", desc: "Пройди экзамен с результатом 70%+", check: s => s.examBestScore >= 70 },
+  { id: "exam_pass", icon: "🎯", title: "Экзамен сдан!", desc: "Пройди экзамен с результатом 80%+", check: s => s.examBestScore >= 80 },
   { id: "daily7", icon: "📅", title: "Недельная серия", desc: "Пройди ежедневный квиз 7 дней подряд", check: s => s.dailyStreak >= 7 },
 ];
 
-export const PRACTICE_TASKS: any[] = [
+export const PRACTICE_TASKS: PracticeTask[] = [
   {
     id: "triage1", type: "triage", icon: "🔴", xp: 20, color: "#f87171",
     title: "Расставь severity",
@@ -246,10 +245,10 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Составь грамотный тест-кейс на основе требования. Проверяется структура и конкретика.",
     requirement: "Система восстановления пароля: пользователь вводит email, получает ссылку на почту. Ссылка должна быть одноразовой и действовать 24 часа.",
     checkItems: [
-      { label: "Название содержит 'Восстановление пароля'", check: (v:any) => v.title?.toLowerCase().includes('восстановление пароля') },
-      { label: "В шагах указан ввод email", check: (v:any) => v.steps?.toLowerCase().includes('email') || v.steps?.toLowerCase().includes('почт') },
-      { label: "В ожидаемом результате есть проверка ссылки", check: (v:any) => v.expected?.toLowerCase().includes('ссылк') },
-      { label: "Указано предусловие (наличие аккаунта)", check: (v:any) => v.precond?.toLowerCase().includes('зарегистрирован') || v.precond?.toLowerCase().includes('аккаунт') },
+      { label: "Название содержит 'Восстановление пароля'", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('восстановление пароля') },
+      { label: "В шагах указан ввод email", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('email') || v.steps?.toLowerCase().includes('почт') },
+      { label: "В ожидаемом результате есть проверка ссылки", check: (v: PracticeCheckValues) => v.expected?.toLowerCase().includes('ссылк') },
+      { label: "Указано предусловие (наличие аккаунта)", check: (v: PracticeCheckValues) => v.precond?.toLowerCase().includes('зарегистрирован') || v.precond?.toLowerCase().includes('аккаунт') },
     ],
     solution: {
       title: "Восстановление пароля через валидный email",
@@ -269,10 +268,10 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Опиши найденный баг максимально профессионально.",
     scenario: "Ты нажал кнопку 'Оформить заказ' в корзине, и приложение просто закрылось (вылетело на рабочий стол). В корзине был один товар: 'iPhone 15'.",
     checkItems: [
-      { label: "Заголовок содержит 'Crash' или 'Вылет'", check: (v:any) => v.title?.toLowerCase().includes('crash') || v.title?.toLowerCase().includes('вылет') },
-      { label: "В шагах указана корзина", check: (v:any) => v.steps?.toLowerCase().includes('корзин') },
-      { label: "Указан конкретный товар", check: (v:any) => v.steps?.toLowerCase().includes('iphone') },
-      { label: "В заголовке указана критичность бага", check: (v:any) => v.title?.toLowerCase().includes('critical') || v.title?.toLowerCase().includes('blocker') || v.title?.toLowerCase().includes('крит') },
+      { label: "Заголовок содержит 'Crash' или 'Вылет'", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('crash') || v.title?.toLowerCase().includes('вылет') },
+      { label: "В шагах указана корзина", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('корзин') },
+      { label: "Указан конкретный товар", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('iphone') },
+      { label: "В заголовке указана критичность бага", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('critical') || v.title?.toLowerCase().includes('blocker') || v.title?.toLowerCase().includes('крит') },
     ],
     solution: {
       title: "[Checkout] Crash при нажатии 'Оформить заказ' с iPhone 15 в корзине",
@@ -352,9 +351,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши тест-кейсы для виджета выбора даты (Date Picker).",
     requirement: "Поле 'Дата рождения'. Должно принимать даты от 01.01.1900 до текущей даты. Учитывать високосные годы.",
     checkItems: [
-      { label: "Проверка 29 февраля в високосный год", check: (v:any) => v.steps?.toLowerCase().includes('29') && v.steps?.toLowerCase().includes('феврал') },
-      { label: "Проверка будущего времени (невалидно)", check: (v:any) => v.expected?.toLowerCase().includes('ошибк') || v.expected?.toLowerCase().includes('нельзя') },
-      { label: "Проверка нижней границы (1900 год)", check: (v:any) => v.steps?.includes('1900') },
+      { label: "Проверка 29 февраля в високосный год", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('29') && v.steps?.toLowerCase().includes('феврал') },
+      { label: "Проверка будущего времени (невалидно)", check: (v: PracticeCheckValues) => v.expected?.toLowerCase().includes('ошибк') || v.expected?.toLowerCase().includes('нельзя') },
+      { label: "Проверка нижней границы (1900 год)", check: (v: PracticeCheckValues) => v.steps?.includes('1900') },
     ],
     solution: {
       title: "Валидация граничных дат в календаре",
@@ -373,9 +372,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Опиши 'плавающий' баг (Race Condition).",
     scenario: "В чате при одновременной отправке сообщения двумя пользователями, сообщения иногда меняются местами или одно из них пропадает. Воспроизводится примерно 2 раза из 10.",
     checkItems: [
-      { label: "Указана частота воспроизведения (2/10)", check: (v:any) => v.steps?.includes('2/10') || v.steps?.toLowerCase().includes('иногда') },
-      { label: "Заголовок содержит 'Race Condition' или 'Порядок'", check: (v:any) => v.title?.toLowerCase().includes('race') || v.title?.toLowerCase().includes('порядок') },
-      { label: "Описаны действия двух пользователей", check: (v:any) => v.steps?.toLowerCase().includes('дву') || v.steps?.toLowerCase().includes('одновремен') },
+      { label: "Указана частота воспроизведения (2/10)", check: (v: PracticeCheckValues) => v.steps?.includes('2/10') || v.steps?.toLowerCase().includes('иногда') },
+      { label: "Заголовок содержит 'Race Condition' или 'Порядок'", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('race') || v.title?.toLowerCase().includes('порядок') },
+      { label: "Описаны действия двух пользователей", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('дву') || v.steps?.toLowerCase().includes('одновремен') },
     ],
     solution: {
       title: "[Chat] Race condition: нарушение порядка сообщений при одновременной отправке",
@@ -395,9 +394,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши негативные тест-кейсы для корзины интернет-магазина.",
     requirement: "Корзина должна позволять добавлять товары, изменять количество (1-99) и применять один промокод.",
     checkItems: [
-      { label: "Проверка ввода 0 или отрицательного количества", check: (v:any) => v.steps?.includes('0') || v.steps?.includes('-') },
-      { label: "Проверка ввода букв в поле количества", check: (v:any) => v.steps?.toLowerCase().includes('букв') || v.steps?.toLowerCase().includes('текст') },
-      { label: "Проверка применения двух промокодов", check: (v:any) => v.steps?.toLowerCase().includes('два') || v.steps?.toLowerCase().includes('второй') },
+      { label: "Проверка ввода 0 или отрицательного количества", check: (v: PracticeCheckValues) => v.steps?.includes('0') || v.steps?.includes('-') },
+      { label: "Проверка ввода букв в поле количества", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('букв') || v.steps?.toLowerCase().includes('текст') },
+      { label: "Проверка применения двух промокодов", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('два') || v.steps?.toLowerCase().includes('второй') },
     ],
     solution: {
       title: "Негативные сценарии работы с корзиной",
@@ -439,9 +438,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши тест-кейсы для компонента загрузки аватара.",
     requirement: "Принимаются файлы: JPG, PNG. Макс размер: 2МБ. Миниатюра должна отображаться сразу после выбора.",
     checkItems: [
-      { label: "Проверка загрузки файла .exe или .pdf", check: (v:any) => v.steps?.toLowerCase().includes('exe') || v.steps?.toLowerCase().includes('pdf') },
-      { label: "Проверка файла размером 3МБ", check: (v:any) => v.steps?.includes('3') || v.steps?.toLowerCase().includes('больше') },
-      { label: "Проверка отображения превью", check: (v:any) => v.expected?.toLowerCase().includes('превью') || v.expected?.toLowerCase().includes('миниатюр') },
+      { label: "Проверка загрузки файла .exe или .pdf", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('exe') || v.steps?.toLowerCase().includes('pdf') },
+      { label: "Проверка файла размером 3МБ", check: (v: PracticeCheckValues) => v.steps?.includes('3') || v.steps?.toLowerCase().includes('больше') },
+      { label: "Проверка отображения превью", check: (v: PracticeCheckValues) => v.expected?.toLowerCase().includes('превью') || v.expected?.toLowerCase().includes('миниатюр') },
     ],
     solution: {
       title: "Тестирование валидации загрузки аватара",
@@ -489,9 +488,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Напиши тест-кейсы для фильтра поиска авиабилетов.",
     requirement: "Фильтры: Город (откуда/куда), Дата, Количество пассажиров (1-9), Класс (Эконом/Бизнес).",
     checkItems: [
-      { label: "Проверка 10 пассажиров (граничное значение)", check: (v:any) => v.steps?.includes('10') || v.steps?.toLowerCase().includes('гранич') },
-      { label: "Проверка даты в прошлом", check: (v:any) => v.steps?.toLowerCase().includes('прошл') || v.steps?.toLowerCase().includes('вчера') },
-      { label: "Проверка одинаковых городов (откуда = куда)", check: (v:any) => v.steps?.toLowerCase().includes('одинак') || v.steps?.toLowerCase().includes('тот же') },
+      { label: "Проверка 10 пассажиров (граничное значение)", check: (v: PracticeCheckValues) => v.steps?.includes('10') || v.steps?.toLowerCase().includes('гранич') },
+      { label: "Проверка даты в прошлом", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('прошл') || v.steps?.toLowerCase().includes('вчера') },
+      { label: "Проверка одинаковых городов (откуда = куда)", check: (v: PracticeCheckValues) => v.steps?.toLowerCase().includes('одинак') || v.steps?.toLowerCase().includes('тот же') },
     ],
     solution: {
       title: "Тестирование фильтров поиска билетов",
@@ -526,9 +525,9 @@ export const PRACTICE_TASKS: any[] = [
     desc: "Опиши баг, позволяющий видеть чужие заказы через смену ID в URL.",
     requirement: "URL заказа: /orders/123. Если сменить 123 на 124, открывается заказ другого пользователя.",
     checkItems: [
-      { label: "Указание уязвимости IDOR", check: (v:any) => v.title?.toLowerCase().includes('idor') || v.desc?.toLowerCase().includes('доступ к чужим') },
-      { label: "Шаги со сменой ID в URL", check: (v:any) => v.steps?.includes('URL') || v.steps?.includes('ID') },
-      { label: "Ожидаемый результат: 403 Forbidden", check: (v:any) => v.expected?.includes('403') || v.expected?.toLowerCase().includes('запрещен') },
+      { label: "Указание уязвимости IDOR", check: (v: PracticeCheckValues) => v.title?.toLowerCase().includes('idor') || v.desc?.toLowerCase().includes('доступ к чужим') },
+      { label: "Шаги со сменой ID в URL", check: (v: PracticeCheckValues) => v.steps?.includes('URL') || v.steps?.includes('ID') },
+      { label: "Ожидаемый результат: 403 Forbidden", check: (v: PracticeCheckValues) => v.expected?.includes('403') || v.expected?.toLowerCase().includes('запрещен') },
     ],
     solution: {
       title: "[Security] IDOR: Доступ к чужим заказам через URL",

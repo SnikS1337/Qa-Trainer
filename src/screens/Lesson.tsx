@@ -7,7 +7,7 @@ import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function Lesson({ id }: { id: string }) {
-  const { state, updateState, navigate, showToast } = useAppStore();
+  const { updateState, navigate, showToast } = useAppStore();
   const lesson = LESSONS.find(l => l.id === id);
   
   const [questions, setQuestions] = useState<Question[]>([]);

@@ -64,3 +64,93 @@ export interface AppState {
   isCheater?: boolean;
   examPassed?: boolean;
 }
+
+export interface PracticeCheckValues {
+  title?: string;
+  precond?: string;
+  steps?: string;
+  expected?: string;
+  actual?: string;
+  desc?: string;
+  [key: string]: string | undefined;
+}
+
+export interface PracticeCheckItem {
+  label: string;
+  check: (values: PracticeCheckValues) => boolean;
+}
+
+export interface PracticeSeverity {
+  key: string;
+  label: string;
+  color: string;
+  desc: string;
+}
+
+export interface PracticeBug {
+  id: number;
+  desc: string;
+  correct: string;
+  hint: string;
+}
+
+export interface PracticeField {
+  id: string;
+  label: string;
+  value: string;
+  hasError: boolean;
+  errorExp?: string;
+}
+
+interface PracticeTaskBase {
+  id: string;
+  icon: string;
+  xp: number;
+  color: string;
+  title: string;
+  desc: string;
+}
+
+export interface PracticeTriageTask extends PracticeTaskBase {
+  type: 'triage';
+  bugs: PracticeBug[];
+  severities: PracticeSeverity[];
+}
+
+export interface PracticeFindErrorTask extends PracticeTaskBase {
+  type: 'find_error';
+  context: string;
+  fields: PracticeField[];
+}
+
+export interface PracticeWriteTestTask extends PracticeTaskBase {
+  type: 'write_test';
+  requirement: string;
+  checkItems: PracticeCheckItem[];
+  solution: {
+    title: string;
+    precondition: string;
+    steps: string[];
+    expected: string;
+  };
+}
+
+export interface PracticeBugReportTask extends PracticeTaskBase {
+  type: 'bug_report';
+  scenario?: string;
+  requirement?: string;
+  checkItems: PracticeCheckItem[];
+  solution: {
+    title: string;
+    steps: string[];
+    actual?: string;
+    expected: string;
+    severity?: string;
+  };
+}
+
+export type PracticeTask =
+  | PracticeTriageTask
+  | PracticeFindErrorTask
+  | PracticeWriteTestTask
+  | PracticeBugReportTask;

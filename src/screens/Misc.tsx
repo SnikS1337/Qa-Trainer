@@ -151,18 +151,25 @@ export function Certificate() {
   const [certType, setCertType] = useState<'none'|'foundation'|'design'|'career'>('none');
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const passInputRef = useRef<HTMLInputElement | null>(null);
+  const decorativeCircles = useMemo(
+    () => Array.from({ length: 20 }, (_, i) => ({
+      x: ((i * 83) % 800) + 20,
+      y: ((i * 137) % 560) + 10,
+      size: 12 + ((i * 17) % 28),
+    })),
+    []
+  );
 
   // Проверяем, какие сертификаты доступны
-  const coreFoundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
-  const designDone = coreFoundationDone && DESIGN_TECHNIQUES_LESSONS.every(id => state.completedLessons.includes(id)); // 2 урока техник дизайна
-  const foundationDone = coreFoundationDone; // Для сертификата "Основы" теперь требуются все 9 уроков основ
-  const careerDone = coreFoundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
+  const foundationDone = FOUNDATION_LESSONS.every(id => state.completedLessons.includes(id)); // 9 уроков основ
+  const designDone = foundationDone && DESIGN_TECHNIQUES_LESSONS.every(id => state.completedLessons.includes(id)); // 2 урока техник дизайна
+  const careerDone = foundationDone && state.completedLessons.includes(CAREER_LESSON[0]); // 1 урок карьеры (плюс основы)
 
   // Определяем тип доступного сертификата (наивысший из пройденных)
   useEffect(() => {
     if (careerDone) setCertType('career');
     else if (designDone) setCertType('design');
-    else if (foundationDone) setCertType('foundation'); // Исправлено: используем foundationDone вместо coreFoundationDone
+    else if (foundationDone) setCertType('foundation');
     else setCertType('none');
   }, [careerDone, designDone, foundationDone]);
 
@@ -264,12 +271,9 @@ export function Certificate() {
 
     // Decorative elements
     ctx.fillStyle = 'rgba(139, 92, 246, 0.05)';
-    for (let i = 0; i < 20; i++) {
-      const x = Math.random() * W;
-      const y = Math.random() * H;
-      const size = Math.random() * 30 + 10;
+    for (const circle of decorativeCircles) {
       ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.arc(circle.x, circle.y, circle.size, 0, Math.PI * 2);
       ctx.fill();
     }
 

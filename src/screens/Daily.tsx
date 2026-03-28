@@ -4,7 +4,7 @@ import { LESSONS } from '../data';
 import { shuffle } from '../utils';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
-import { Question, QuestionChoice } from '../types';
+import { QuestionChoice } from '../types';
 
 export default function Daily() {
   const { state, updateState, navigate, showToast } = useAppStore();
@@ -18,7 +18,7 @@ export default function Daily() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    // Check if already played today - fix: normalize date to midnight
+    // Проверяем прохождение daily по нормализованной дате.
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toDateString();
@@ -61,7 +61,7 @@ export default function Daily() {
       
       s.lastDailyDate = todayStr;
       
-      // Update streak if needed - fix: normalize dates to midnight for accurate comparison
+      // Обновляем стрик по нормализованной дате.
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toDateString();

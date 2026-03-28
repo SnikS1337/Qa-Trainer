@@ -41,7 +41,7 @@ export function useAppStoreInit() {
   return { state, updateState };
 }
 
-export const AppContext = createContext<ReturnType<typeof useAppStoreInit> & { navigate: (s: string, id?: string) => void, showToast: (msg: string, color?: string) => void }>({
+export const AppContext = createContext<ReturnType<typeof useAppStoreInit> & { navigate: (s: 'splash' | 'home' | 'lesson' | 'practice' | 'practice-task' | 'exam' | 'daily' | 'stats' | 'achievements' | 'certificate', id?: string) => void, showToast: (msg: string, color?: string) => void }>({
   state: initialState,
   updateState: () => {},
   navigate: () => {},

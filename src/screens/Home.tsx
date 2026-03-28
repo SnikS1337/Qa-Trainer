@@ -2,6 +2,7 @@ import { useAppStore } from '../store';
 import { LESSONS, QUOTES, PRACTICE_TASKS } from '../data';
 import { getLevelInfo, plural } from '../utils';
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'motion/react';
 import DevMenu from '../components/DevMenu';
 
 export default function Home() {
@@ -9,7 +10,10 @@ export default function Home() {
   const lvl = getLevelInfo(state.totalXP);
 
   const [showDevMenu, setShowDevMenu] = useState(false);
+  const [openingLessonId, setOpeningLessonId] = useState<string | null>(null);
+  const [hoveredLessonId, setHoveredLessonId] = useState<string | null>(null);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openLessonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePointerDown = () => {
     if (pressTimer.current) {
@@ -27,12 +31,26 @@ export default function Home() {
     }
   };
 
+  const handleLessonOpen = (lessonId: string, locked: boolean) => {
+    if (locked || openingLessonId) return;
+
+    setOpeningLessonId(lessonId);
+    openLessonTimer.current = setTimeout(() => {
+      navigate('lesson', lessonId);
+      openLessonTimer.current = null;
+    }, 460);
+  };
+
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (pressTimer.current) {
         clearTimeout(pressTimer.current);
         pressTimer.current = null;
+      }
+      if (openLessonTimer.current) {
+        clearTimeout(openLessonTimer.current);
+        openLessonTimer.current = null;
       }
     };
   }, []);
@@ -126,7 +144,6 @@ export default function Home() {
           const prevCat = catIdx > 0 ? categories[catIdx - 1] : null;
           const prevCatLessons = prevCat ? LESSONS.filter(l => l.category === prevCat) : [];
           
-          // Fix logic bug: require ALL lessons in previous category to be done
           const catUnlocked = catIdx === 0 || prevCatLessons.every(l => state.completedLessons.includes(l.id));
           const catDone = catLessons.filter(l => state.completedLessons.includes(l.id)).length;
 
@@ -145,36 +162,74 @@ export default function Home() {
                 if (catUnlocked && idxInCat > 0) {
                   locked = !state.completedLessons.includes(catLessons[idxInCat - 1].id);
                 }
+                const isOpening = openingLessonId === lesson.id;
+                const isHovered = hoveredLessonId === lesson.id;
+                const isActive = isOpening || isHovered;
 
                 return (
-                  <div 
+                  <div
                     key={lesson.id} 
-                    onClick={() => !locked && navigate('lesson', lesson.id)}
-                    className={`glass-panel p-4 mb-3 relative overflow-hidden transition-all duration-300
-                      ${locked ? 'opacity-50 cursor-default' : 'cursor-pointer hover:translate-x-1 hover:bg-white/10'}
-                      ${done ? 'border-opacity-50' : ''}`}
-                    style={{ borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined }}
+                    onClick={() => handleLessonOpen(lesson.id, locked)}
+                    onMouseEnter={() => !locked && setHoveredLessonId(lesson.id)}
+                    onMouseLeave={() => setHoveredLessonId(prev => (prev === lesson.id ? null : prev))}
+                    className={`relative mb-3 overflow-visible transition-all duration-300
+                      ${locked ? 'opacity-50 cursor-default' : 'cursor-pointer hover:translate-x-1'}
+                      ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
                   >
-                    {done && (
-                      <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: lesson.color }}>
-                        ГОТОВО ✓
-                      </div>
+                    {!locked && (
+                      <svg
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                      >
+                        <motion.path
+                          d="M 50 100 L 4.3 100 Q 0 100 0 76 L 0 24 Q 0 0 4.3 0 L 95.7 0 Q 100 0 100 24 L 100 76 Q 100 100 95.7 100 L 50 100"
+                          fill="none"
+                          stroke="rgba(125, 211, 252, 0.94)"
+                          strokeWidth="1.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          vectorEffect="non-scaling-stroke"
+                          initial={false}
+                          animate={{
+                            opacity: isActive ? 1 : 0,
+                            pathLength: isOpening ? 1 : isHovered ? 0.5 : 0,
+                          }}
+                          transition={{ duration: isOpening ? 0.42 : 0.28, ease: 'easeInOut' }}
+                          style={{
+                            filter: isActive
+                              ? 'drop-shadow(0 0 7px rgba(125, 211, 252, 0.52)) drop-shadow(0 0 18px rgba(125, 211, 252, 0.28))'
+                              : 'drop-shadow(0 0 0 rgba(0, 0, 0, 0))',
+                          }}
+                        />
+                      </svg>
                     )}
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 bg-black/20" 
-                           style={{ borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50` }}>
-                        {locked ? '🔒' : lesson.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm mb-0.5 text-white">{lesson.title}</div>
-                        <div className="text-xs text-slate-300 mb-2 truncate">{lesson.desc}</div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-slate-300 font-mono">{lesson.questions.length} вопросов</span>
-                          <span className="text-slate-500">·</span>
-                          <span className="bg-brand-amber/20 text-brand-amber border border-brand-amber/30 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">+{lesson.xp} XP</span>
+                    <div
+                      className={`glass-panel p-4 relative overflow-hidden transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
+                      style={{ borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined }}
+                    >
+                      {done && (
+                        <div className="absolute top-0 right-0 text-black text-[9px] font-extrabold px-2.5 py-1 rounded-bl-xl tracking-[1px] font-mono" style={{ backgroundColor: lesson.color }}>
+                          ГОТОВО ✓
                         </div>
+                      )}
+                      <div className="relative z-[1] flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 bg-black/20" 
+                             style={{ borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50` }}>
+                          {locked ? '🔒' : lesson.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm mb-0.5 text-white">{lesson.title}</div>
+                          <div className="text-xs text-slate-300 mb-2 truncate">{lesson.desc}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-slate-300 font-mono">{lesson.questions.length} вопросов</span>
+                            <span className="text-slate-500">·</span>
+                            <span className="bg-brand-amber/20 text-brand-amber border border-brand-amber/30 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">+{lesson.xp} XP</span>
+                          </div>
+                        </div>
+                        {!locked && <div className={`text-lg shrink-0 transition-all duration-200 ${openingLessonId === lesson.id ? 'text-white translate-x-0.5' : ''}`} style={{ color: openingLessonId === lesson.id ? undefined : lesson.color }}>›</div>}
                       </div>
-                      {!locked && <div className="text-lg shrink-0" style={{ color: lesson.color }}>›</div>}
                     </div>
                   </div>
                 );
@@ -208,7 +263,7 @@ export default function Home() {
                 <div className="text-3xl">🎯</div>
                 <div className="flex-1">
                   <div className="font-extrabold text-sm mb-1 text-white">Режим экзамена</div>
-                  <div className="text-xs text-slate-300">20 вопросов · 2 минуты · Без подсказок {state.examBestScore > 0 && <span>· Рекорд: <span className="text-brand-red font-extrabold">{state.examBestScore}%</span></span>}</div>
+                  <div className="text-xs text-slate-300">20 вопросов · 10 минут · Без подсказок {state.examBestScore > 0 && <span>· Рекорд: <span className="text-brand-red font-extrabold">{state.examBestScore}%</span></span>}</div>
                 </div>
                 <div className="text-brand-red text-lg">›</div>
               </div>

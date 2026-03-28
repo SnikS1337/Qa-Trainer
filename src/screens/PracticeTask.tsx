@@ -1,12 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
 import { PRACTICE_TASKS, ACHIEVEMENTS } from '../data';
-import { AppState } from '../types';
+import { AppState, PracticeBug, PracticeCheckItem, PracticeField, PracticeSeverity, PracticeTask as PracticeTaskType } from '../types';
 import confetti from 'canvas-confetti';
 
 export default function PracticeTask({ id }: { id: string }) {
-  const { state, updateState, navigate, showToast } = useAppStore();
-  const task = PRACTICE_TASKS.find(t => t.id === id);
+  const { updateState, navigate, showToast } = useAppStore();
+  const task = PRACTICE_TASKS.find((t): t is PracticeTaskType => t.id === id);
 
   const [answered, setAnswered] = useState(false);
   const [selections, setSelections] = useState<Record<string, string>>({});
@@ -75,9 +75,21 @@ export default function PracticeTask({ id }: { id: string }) {
     navigate('practice');
   };
 
+  const getCriteriaCount = (practiceTask: PracticeTaskType) => {
+    switch (practiceTask.type) {
+      case 'triage':
+        return practiceTask.bugs.length;
+      case 'find_error':
+        return practiceTask.fields.length;
+      case 'write_test':
+      case 'bug_report':
+        return practiceTask.checkItems.length;
+    }
+  };
+
   const handleCheck = () => {
     if (answered) {
-      const pct = Math.round((correctCount / (task.bugs?.length || task.fields?.length || task.checkItems?.length || 1)) * 100);
+      const pct = Math.round((correctCount / getCriteriaCount(task)) * 100);
       const passed = pct >= 60;
       const xp = passed ? task.xp : Math.round(task.xp * 0.3);
       finishTask(passed, xp);
@@ -86,24 +98,24 @@ export default function PracticeTask({ id }: { id: string }) {
 
     let correct = 0;
     if (task.type === 'triage') {
-      task.bugs.forEach((b: any) => { if (selections[b.id] === b.correct) correct++; });
+      task.bugs.forEach((b: PracticeBug) => { if (selections[b.id] === b.correct) correct++; });
     } else if (task.type === 'find_error') {
-      task.fields.forEach((f: any) => { if (f.hasError && selectedErrors.has(f.id)) correct++; });
+      task.fields.forEach((f: PracticeField) => { if (f.hasError && selectedErrors.has(f.id)) correct++; });
     } else if (task.type === 'write_test' || task.type === 'bug_report') {
-      task.checkItems.forEach((item: any) => {
-        try { if (item.check(formValues)) correct++; } catch(e) {}
+      task.checkItems.forEach((item: PracticeCheckItem) => {
+        try { if (item.check(formValues)) correct++; } catch {}
       });
     }
 
     setCorrectCount(correct);
     setAnswered(true);
 
-    const pct = Math.round((correct / (task.bugs?.length || task.fields?.length || task.checkItems?.length || 1)) * 100);
+    const pct = Math.round((correct / getCriteriaCount(task)) * 100);
     if (pct >= 60) confetti();
   };
 
-  const renderTriage = () => {
-    const allDone = task.bugs.every((b: any) => selections[b.id]);
+  const renderTriage = (task: Extract<PracticeTaskType, { type: 'triage' }>) => {
+    const allDone = task.bugs.every((b: PracticeBug) => selections[b.id]);
     const pct = answered ? Math.round((correctCount / task.bugs.length) * 100) : 0;
     const passed = pct >= 60;
 
@@ -116,14 +128,14 @@ export default function PracticeTask({ id }: { id: string }) {
         </div>
 
         <div className="flex-1 flex flex-col gap-2.5">
-          {task.bugs.map((bug: any) => {
+          {task.bugs.map((bug: PracticeBug) => {
             const sel = selections[bug.id];
             const isCorrect = sel === bug.correct;
             return (
               <div key={bug.id} className="glass-panel p-4">
                 <div className="text-[13px] font-semibold text-white mb-3 leading-relaxed">🐛 {bug.desc}</div>
                 <div className="flex flex-wrap gap-2">
-                  {task.severities.map((sev: any) => {
+                  {task.severities.map((sev: PracticeSeverity) => {
                     const isSelected = sel === sev.key;
                     return (
                       <button 
@@ -167,8 +179,8 @@ export default function PracticeTask({ id }: { id: string }) {
     );
   };
 
-  const renderFindError = () => {
-    const errorCount = task.fields.filter((f: any) => f.hasError).length;
+  const renderFindError = (task: Extract<PracticeTaskType, { type: 'find_error' }>) => {
+    const errorCount = task.fields.filter((f: PracticeField) => f.hasError).length;
     const selected = selectedErrors.size;
     const ready = selected === errorCount;
     const pct = answered ? Math.round((correctCount / errorCount) * 100) : 0;
@@ -184,7 +196,7 @@ export default function PracticeTask({ id }: { id: string }) {
         </div>
 
         <div className="flex-1 flex flex-col gap-2">
-          {task.fields.map((field: any) => {
+          {task.fields.map((field: PracticeField) => {
             const isSelected = selectedErrors.has(field.id);
             let bg = 'bg-white/5';
             let border = 'border-white/10';
@@ -227,7 +239,7 @@ export default function PracticeTask({ id }: { id: string }) {
     );
   };
 
-  const renderWriteTest = () => {
+  const renderWriteTest = (task: Extract<PracticeTaskType, { type: 'write_test' | 'bug_report' }>) => {
     const filled = Object.values(formValues).filter(x => typeof x === 'string' && x.trim().length > 5).length >= 3;
     const pct = answered ? Math.round((correctCount / task.checkItems.length) * 100) : 0;
     const passed = pct >= 60;
@@ -249,7 +261,7 @@ export default function PracticeTask({ id }: { id: string }) {
         <div className="text-xs text-slate-400 mb-3 font-mono">{task.type === 'write_test' ? 'Составь тест-кейс по требованию' : 'Напиши баг-репорт по описанию'}</div>
         <div className="glass-panel bg-amber-500/10 border-amber-500/30 p-4 mb-4 text-[13px] leading-relaxed text-slate-300">
           <div className="text-[10px] text-brand-amber font-bold tracking-[2px] font-mono mb-1.5">{task.type === 'write_test' ? '📄 ТРЕБОВАНИЕ' : '🔍 СЦЕНАРИЙ'}</div>
-          {task.requirement || task.scenario}
+          {task.type === 'write_test' ? task.requirement : task.scenario}
         </div>
 
         <div className="flex-1 flex flex-col gap-3.5">
@@ -282,9 +294,9 @@ export default function PracticeTask({ id }: { id: string }) {
           <>
             <div className="mt-4 glass-panel p-4">
               <div className="text-[10px] text-slate-400 font-mono tracking-[2px] mb-2.5">КРИТЕРИИ ПРОВЕРКИ</div>
-              {task.checkItems.map((item: any, i: number) => {
+              {task.checkItems.map((item: PracticeCheckItem, i: number) => {
                 let ok = false;
-                try { ok = item.check(formValues); } catch(e) {}
+                try { ok = item.check(formValues); } catch {}
                 return (
                   <div key={i} className="flex gap-2 py-1.5 border-b border-white/10 last:border-0 text-xs items-start leading-relaxed">
                     <span className="shrink-0 mt-0.5">{ok ? '✅' : '❌'}</span>
@@ -351,9 +363,9 @@ export default function PracticeTask({ id }: { id: string }) {
           </span>
         </div>
 
-        {task.type === 'triage' && renderTriage()}
-        {task.type === 'find_error' && renderFindError()}
-        {(task.type === 'write_test' || task.type === 'bug_report') && renderWriteTest()}
+        {task.type === 'triage' && renderTriage(task)}
+        {task.type === 'find_error' && renderFindError(task)}
+        {(task.type === 'write_test' || task.type === 'bug_report') && renderWriteTest(task)}
       </div>
     </div>
   );

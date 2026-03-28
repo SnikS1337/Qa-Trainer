@@ -7,13 +7,14 @@ import ConfirmModal from '../components/ConfirmModal';
 import { QuestionChoice } from '../types';
 
 export default function Exam() {
-  const { state, updateState, navigate, showToast } = useAppStore();
+  const { updateState, navigate, showToast } = useAppStore();
   
   const [questions, setQuestions] = useState<QuestionChoice[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
   const [finished, setFinished] = useState(false);
+  const [finalScore, setFinalScore] = useState<number | null>(null);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -31,16 +32,17 @@ export default function Exam() {
     setQuestions(shuffled);
   }, []);
 
-  const handleFinish = useCallback((finalScore: number = score) => {
+  const handleFinish = useCallback((resultScore: number = score) => {
     if (finished) return;
 
     setFinished(true);
-    const passed = finalScore >= 16; // 80% to pass
+    setFinalScore(resultScore);
+    const passed = resultScore >= 16; // 80% to pass
     
     updateState(prev => {
       const s = { ...prev };
       s.examAttempts += 1;
-      s.examBestScore = Math.max(s.examBestScore, Math.round((finalScore / 20) * 100));
+      s.examBestScore = Math.max(s.examBestScore, Math.round((resultScore / 20) * 100));
 
       if (passed) {
         s.totalXP += 500;
@@ -111,12 +113,13 @@ export default function Exam() {
   if (questions.length === 0) return <div className="p-10 text-center text-slate-400">Загрузка экзамена...</div>;
 
   if (finished) {
-    const passed = score >= 16;
+    const resolvedScore = finalScore ?? score;
+    const passed = resolvedScore >= 16;
     return (
       <div className="max-w-[500px] mx-auto p-6 pt-20 text-center w-full">
         <div className="text-6xl mb-6">{passed ? '🎓' : '💔'}</div>
         <h2 className="text-3xl font-extrabold mb-2 text-white">{passed ? 'Экзамен сдан!' : 'Экзамен провален'}</h2>
-        <p className="text-slate-400 mb-8">Твой результат: <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>{score} / 20</span></p>
+        <p className="text-slate-400 mb-8">Твой результат: <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>{resolvedScore} / 20</span></p>
         
         <div className="glass-panel p-6 mb-8 text-left">
           <div className="text-sm text-slate-300 mb-4">
