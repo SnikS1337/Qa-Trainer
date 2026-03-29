@@ -7,6 +7,7 @@ import { getLessonSessionQuestionCount } from '../domain/lesson_session';
 import { getLevelInfo, getTimeOfDayGreeting, plural } from '../utils';
 import { useState, useRef, useEffect } from 'react';
 import DevMenu from '../components/DevMenu';
+import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
 
 function buildLessonOutlinePaths(width: number, height: number) {
@@ -389,17 +390,19 @@ export default function Home() {
                     onMouseLeave={() =>
                       setHoveredLessonId((prev) => (prev === lesson.id ? null : prev))
                     }
-                    className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer hover:translate-x-1'} ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
+                    className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer'} ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
                   >
-                    {!locked && (
-                      <CardOutline color={lesson.color} hovered={isHovered} opening={isOpening} />
-                    )}
-                    <div
-                      className={`glass-panel relative overflow-hidden p-4 transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
-                      style={{
-                        borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined,
-                      }}
-                    >
+                    <TiltedSurface disabled={locked} className="rounded-[24px]">
+                      {!locked && (
+                        <CardOutline color={lesson.color} hovered={isHovered} opening={isOpening} />
+                      )}
+                      <div
+                        className={`glass-panel lesson-tilt-face relative overflow-hidden p-4 transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
+                        style={{
+                          ['--lesson-accent' as string]: lesson.color,
+                          borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined,
+                        }}
+                      >
                       {done && (
                         <div
                           className="absolute top-0 right-0 rounded-bl-xl px-2.5 py-1 font-mono text-[9px] font-extrabold tracking-[1px] text-black"
@@ -408,14 +411,25 @@ export default function Home() {
                           ГОТОВО ✓
                         </div>
                       )}
-                      <div className="relative z-[1] flex items-center gap-3">
-                        <div
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-black/20 text-2xl"
-                          style={{
-                            borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50`,
-                          }}
-                        >
-                          {locked ? '🔒' : lesson.icon}
+                      <div className="lesson-tilt-content relative z-[1] flex items-center gap-3">
+                        <div className="lesson-tilt-icon-slot relative h-12 w-12 shrink-0">
+                          <div
+                            aria-hidden="true"
+                            className="lesson-tilt-icon-well absolute inset-0 rounded-xl"
+                            style={{
+                              ['--icon-accent' as string]: locked ? 'rgba(255,255,255,0.18)' : lesson.color,
+                            }}
+                          />
+                          <div
+                            className="lesson-tilt-icon absolute top-0 left-0 flex h-12 w-12 items-center justify-center rounded-xl border bg-black/20 text-2xl"
+                            data-icon={locked ? '🔒' : lesson.icon}
+                            style={{
+                              ['--icon-color' as string]: locked ? '#94a3b8' : lesson.color,
+                              borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50`,
+                            }}
+                          >
+                            {locked ? '🔒' : lesson.icon}
+                          </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="mb-0.5 text-sm font-bold text-white">{lesson.title}</div>
@@ -442,6 +456,7 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+                    </TiltedSurface>
                   </div>
                 );
               })}
