@@ -41,10 +41,7 @@ export default function Practice() {
               className={`glass-panel relative cursor-pointer overflow-hidden p-4 transition-all duration-200 hover:translate-x-1 ${done ? 'opacity-70' : ''}`}
             >
               {done && (
-                <div
-                  className="absolute top-0 right-0 rounded-bl-xl px-2.5 py-1 font-mono text-[9px] font-extrabold tracking-[1px] text-black"
-                  style={{ backgroundColor: task.color }}
-                >
+                <div className="status-ribbon text-black" style={{ backgroundColor: task.color }}>
                   ПРОЙДЕНО ✓
                 </div>
               )}

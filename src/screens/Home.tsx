@@ -10,6 +10,9 @@ import DevMenu from '../components/DevMenu';
 import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
 
+const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
+const QUOTE_HIDE_ANIMATION_MS = 420;
+
 function buildLessonOutlinePaths(width: number, height: number) {
   const inset = 1.5;
   const left = inset;
@@ -160,13 +163,25 @@ function CardOutline({
 export default function Home() {
   const { state, navigate, updateState } = useAppStore();
   const lvl = getLevelInfo(state.totalXP);
+  const today = getLocalDateKey();
 
   const [now, setNow] = useState(() => new Date());
+  const [isQuoteCollapsed, setIsQuoteCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(QUOTE_VISIBILITY_STORAGE_KEY) === today;
+    } catch {
+      return false;
+    }
+  });
+  const [isQuoteExpandedRendered, setIsQuoteExpandedRendered] = useState(() => !isQuoteCollapsed);
   const [showDevMenu, setShowDevMenu] = useState(false);
   const [openingLessonId, setOpeningLessonId] = useState<string | null>(null);
   const [hoveredLessonId, setHoveredLessonId] = useState<string | null>(null);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openLessonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const quoteUnmountTimerRef = useRef<number | null>(null);
+  const quoteExpandedRef = useRef<HTMLDivElement | null>(null);
+  const [quoteExpandedHeight, setQuoteExpandedHeight] = useState(0);
 
   const handlePointerDown = () => {
     if (pressTimer.current) {
@@ -205,6 +220,10 @@ export default function Home() {
         clearTimeout(openLessonTimer.current);
         openLessonTimer.current = null;
       }
+      if (quoteUnmountTimerRef.current) {
+        window.clearTimeout(quoteUnmountTimerRef.current);
+        quoteUnmountTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -220,23 +239,106 @@ export default function Home() {
     preloadLessonsContent();
     preloadPracticeTasksContent();
 
-    const today = getLocalDateKey();
-
     if (state.dailyQuoteDate !== today) {
       updateState({
         lastQuoteIndex: Math.floor(Math.random() * QUOTES.length),
         dailyQuoteDate: today,
       });
     }
-  }, [state.dailyQuoteDate, updateState]);
+  }, [state.dailyQuoteDate, today, updateState]);
+
+  useEffect(() => {
+    if (quoteUnmountTimerRef.current) {
+      window.clearTimeout(quoteUnmountTimerRef.current);
+      quoteUnmountTimerRef.current = null;
+    }
+
+    try {
+      const hiddenToday = localStorage.getItem(QUOTE_VISIBILITY_STORAGE_KEY) === today;
+      setIsQuoteCollapsed(hiddenToday);
+      setIsQuoteExpandedRendered(!hiddenToday);
+    } catch {
+      setIsQuoteCollapsed(false);
+      setIsQuoteExpandedRendered(true);
+    }
+  }, [today]);
+
+  useEffect(() => {
+    if (quoteUnmountTimerRef.current) {
+      window.clearTimeout(quoteUnmountTimerRef.current);
+      quoteUnmountTimerRef.current = null;
+    }
+
+    if (!isQuoteCollapsed) {
+      setIsQuoteExpandedRendered(true);
+      return;
+    }
+
+    quoteUnmountTimerRef.current = window.setTimeout(() => {
+      setIsQuoteExpandedRendered(false);
+      quoteUnmountTimerRef.current = null;
+    }, QUOTE_HIDE_ANIMATION_MS);
+
+    return () => {
+      if (quoteUnmountTimerRef.current) {
+        window.clearTimeout(quoteUnmountTimerRef.current);
+        quoteUnmountTimerRef.current = null;
+      }
+    };
+  }, [isQuoteCollapsed]);
 
   const quote = QUOTES[state.lastQuoteIndex % QUOTES.length];
+
+  useEffect(() => {
+    const expandedNode = quoteExpandedRef.current;
+    if (!expandedNode) {
+      return;
+    }
+
+    const updateHeight = () => {
+      const nextHeight = Math.ceil(expandedNode.getBoundingClientRect().height);
+      setQuoteExpandedHeight((prev) => (Math.abs(prev - nextHeight) < 1 ? prev : nextHeight));
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(expandedNode);
+
+    return () => observer.disconnect();
+  }, [isQuoteExpandedRendered, state.lastQuoteIndex]);
+
   const greeting = getTimeOfDayGreeting(now);
 
   const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
-  const today = getLocalDateKey();
   const dailyDone = state.lastDailyDate === today;
   const practDone = state.completedPractice?.length || 0;
+
+  const hideQuoteForToday = () => {
+    try {
+      localStorage.setItem(QUOTE_VISIBILITY_STORAGE_KEY, today);
+    } catch {
+      // Ignore storage errors and still collapse in current session.
+    }
+
+    setIsQuoteCollapsed(true);
+  };
+
+  const showQuoteAgain = () => {
+    try {
+      localStorage.removeItem(QUOTE_VISIBILITY_STORAGE_KEY);
+    } catch {
+      // Ignore storage errors and still expand in current session.
+    }
+
+    if (quoteUnmountTimerRef.current) {
+      window.clearTimeout(quoteUnmountTimerRef.current);
+      quoteUnmountTimerRef.current = null;
+    }
+
+    setIsQuoteCollapsed(false);
+    setIsQuoteExpandedRendered(true);
+  };
 
   return (
     <div className="w-full pb-10">
@@ -262,16 +364,19 @@ export default function Home() {
             </div>
             <div className="flex gap-2">
               <button
-                className="glass-button px-3 py-2 text-xs"
+                className="home-toolbar-button text-sm"
                 onClick={() => navigate('achievements')}
               >
                 🏆
               </button>
-              <button className="glass-button px-3 py-2 text-xs" onClick={() => navigate('stats')}>
+              <button
+                className="home-toolbar-button text-sm"
+                onClick={() => navigate('stats')}
+              >
                 📊
               </button>
               <button
-                className="glass-button px-3 py-2 text-xs"
+                className="home-toolbar-button text-sm"
                 onClick={() => navigate('certificate')}
               >
                 🎓
@@ -291,7 +396,7 @@ export default function Home() {
                 color: 'text-brand-blue',
               },
             ].map((s, i) => (
-              <div key={i} className="glass-panel rounded-xl p-2 text-center">
+              <div key={i} className="home-clean-glass home-stat-card">
                 <div className="mb-1 text-base">{s.icon}</div>
                 <div className={`font-mono text-lg font-extrabold ${s.color}`}>{s.val}</div>
                 <div className="mt-1 text-[9px] tracking-[1.5px] text-slate-300 uppercase">
@@ -323,18 +428,53 @@ export default function Home() {
       <div className="mx-auto max-w-[600px] px-5 pt-5">
         {/* Quote */}
         <div className="relative mb-6">
-          <CardOutline color="#34d399" variant="ambient" pulseMode="soft" />
-          <div className="glass-panel liquid-accent-surface quote-liquid-surface border-brand-green/30 bg-brand-green/5 relative flex items-start gap-3 p-4">
-            <span className="relative z-[1] mt-0.5 shrink-0 text-xl">💬</span>
-            <div className="relative z-[1]">
-              <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
-                ЦИТАТА ДНЯ
+          <div
+            className={`quote-dock ${isQuoteCollapsed ? 'quote-dock--collapsed' : ''}`}
+            style={{
+              ['--quote-expanded-height' as string]: `${Math.max(quoteExpandedHeight, 92)}px`,
+            }}
+          >
+            {isQuoteExpandedRendered && (
+              <div
+                ref={quoteExpandedRef}
+                className={`quote-dock__expanded ${isQuoteCollapsed ? 'quote-dock__expanded--hidden' : ''}`}
+              >
+                <div className="home-surface-card home-surface-card--quote border-brand-green/30 bg-brand-green/5 relative flex items-start gap-3 p-4 pr-14">
+                  <button
+                    type="button"
+                    className="quote-toggle-button"
+                    onClick={hideQuoteForToday}
+                    aria-label="Скрыть цитату дня"
+                  >
+                    ×
+                  </button>
+                  <span className="relative z-[1] mt-0.5 shrink-0 text-xl">💬</span>
+                  <div className="relative z-[1]">
+                    <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
+                      ЦИТАТА ДНЯ
+                    </div>
+                    <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
+                    <div className="mt-1 text-[11px] text-slate-300">
+                      — {quote.author}, "{quote.book}"
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
-              <div className="mt-1 text-[11px] text-slate-300">
-                — {quote.author}, "{quote.book}"
+            )}
+
+            <button
+              type="button"
+              className={`quote-dock__collapsed glass-panel ${isQuoteCollapsed ? 'quote-dock__collapsed--visible' : ''}`}
+              onClick={showQuoteAgain}
+              aria-label="Показать цитату дня"
+            >
+              <span className="quote-dock__collapsed-icon">💬</span>
+              <div className="quote-dock__collapsed-copy">
+                <div className="quote-dock__collapsed-title">Цитата дня скрыта</div>
+                <div className="quote-dock__collapsed-subtitle">Можно показать снова</div>
               </div>
-            </div>
+              <span className="quote-dock__collapsed-action">Показать</span>
+            </button>
           </div>
         </div>
 
@@ -397,17 +537,14 @@ export default function Home() {
                         <CardOutline color={lesson.color} hovered={isHovered} opening={isOpening} />
                       )}
                       <div
-                        className={`glass-panel lesson-tilt-face relative overflow-hidden p-4 transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
+                        className={`home-surface-card lesson-tilt-face relative overflow-hidden p-4 transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
                         style={{
                           ['--lesson-accent' as string]: lesson.color,
                           borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined,
                         }}
                       >
                       {done && (
-                        <div
-                          className="absolute top-0 right-0 rounded-bl-xl px-2.5 py-1 font-mono text-[9px] font-extrabold tracking-[1px] text-black"
-                          style={{ backgroundColor: lesson.color }}
-                        >
+                        <div className="status-ribbon text-black" style={{ backgroundColor: lesson.color }}>
                           ГОТОВО ✓
                         </div>
                       )}
@@ -470,7 +607,7 @@ export default function Home() {
             <CardOutline color="#a78bfa" variant="ambient" />
             <div
               onClick={() => !dailyDone && navigate('daily')}
-              className={`glass-panel liquid-accent-surface border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
+              className={`home-surface-card home-surface-card--mode border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
@@ -494,7 +631,7 @@ export default function Home() {
               <CardOutline color="#f87171" variant="ambient" />
               <div
                 onClick={() => navigate('exam')}
-                className="glass-panel liquid-accent-surface cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
+                className="home-surface-card home-surface-card--mode cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
               >
                 <div className="relative z-[1] flex items-center gap-3">
                   <div className="text-3xl">🎯</div>
@@ -522,7 +659,7 @@ export default function Home() {
             <CardOutline color="#34d399" variant="ambient" />
             <div
               onClick={() => navigate('practice')}
-              className="glass-panel liquid-accent-surface cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
+              className="home-surface-card home-surface-card--mode cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">🛠️</div>
