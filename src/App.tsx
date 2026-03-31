@@ -35,9 +35,9 @@ const BACKGROUND_TRANSITION_MS = 1450;
 const PAGE_TRANSITION = { duration: 0.26, ease: 'easeInOut' as const };
 
 const PAGE_MOTION = {
-  initial: { opacity: 0, filter: 'blur(3px)' },
+  initial: { opacity: 0, filter: 'blur(2px)' },
   animate: { opacity: 1, filter: 'blur(0px)' },
-  exit: { opacity: 0, filter: 'blur(3px)' },
+  exit: { opacity: 0, filter: 'blur(2px)' },
   transition: PAGE_TRANSITION,
 };
 
@@ -84,30 +84,6 @@ function isSlowConnection() {
     connection.effectiveType === '3g'
   );
 }
-
-const AMBIENT_LAYERS = [
-  {
-    key: 'ambient-a',
-    className: 'top-[-18%] left-[-14%] h-[58vh] w-[58vh]',
-    color: 'rgba(96, 165, 250, 0.22)',
-    animate: { x: [0, 42, -28, 0], y: [0, -34, 18, 0], scale: [1, 1.09, 0.98, 1] },
-    duration: 18,
-  },
-  {
-    key: 'ambient-b',
-    className: 'top-[8%] right-[-12%] h-[52vh] w-[52vh]',
-    color: 'rgba(52, 211, 153, 0.18)',
-    animate: { x: [0, -36, 26, 0], y: [0, 24, -20, 0], scale: [1.02, 0.96, 1.08, 1.02] },
-    duration: 22,
-  },
-  {
-    key: 'ambient-c',
-    className: 'bottom-[-22%] left-[18%] h-[48vh] w-[48vh]',
-    color: 'rgba(251, 191, 36, 0.16)',
-    animate: { x: [0, 28, -38, 0], y: [0, -20, 26, 0], scale: [0.98, 1.07, 1, 0.98] },
-    duration: 20,
-  },
-];
 
 export default function App() {
   const store = useAppStoreInit();
@@ -363,10 +339,7 @@ export default function App() {
     }
   }, [screen, currentId]);
 
-  const ambientLayers = useMemo(
-    () => (isMobileDevice ? AMBIENT_LAYERS.slice(0, 2) : AMBIENT_LAYERS),
-    [isMobileDevice]
-  );
+  const ambientLayers = useMemo(() => [], []);
 
   const pageMotion = isMobileDevice ? MOBILE_PAGE_MOTION : PAGE_MOTION;
   const ambientOpacity = isMobileDevice ? 0.72 : 0.9;
@@ -435,19 +408,13 @@ export default function App() {
               <MotionDiv
                 key={transitionGradient}
                 initial={
-                  isMobileDevice
-                    ? { opacity: 0, scale: 1.01 }
-                    : { opacity: 0, scale: 1.02, filter: 'blur(14px)' }
+                  isMobileDevice ? { opacity: 0 } : { opacity: 0, scale: 1.01, filter: 'blur(8px)' }
                 }
                 animate={
-                  isMobileDevice
-                    ? { opacity: 1, scale: 1 }
-                    : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+                  isMobileDevice ? { opacity: 1 } : { opacity: 1, scale: 1, filter: 'blur(0px)' }
                 }
                 exit={
-                  isMobileDevice
-                    ? { opacity: 0, scale: 1.01 }
-                    : { opacity: 0, scale: 1.02, filter: 'blur(10px)' }
+                  isMobileDevice ? { opacity: 0 } : { opacity: 0, scale: 1.01, filter: 'blur(6px)' }
                 }
                 transition={{ duration: BACKGROUND_TRANSITION_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
                 className="pointer-events-none fixed -inset-10"
@@ -458,7 +425,7 @@ export default function App() {
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: '120% 120%',
                   transformOrigin: 'center center',
-                  willChange: 'opacity, transform, filter',
+                  willChange: 'opacity, filter',
                 }}
               />
             )}
