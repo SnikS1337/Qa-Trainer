@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 type TiltedSurfaceProps = {
@@ -13,6 +13,16 @@ export default function TiltedSurface({
   disabled = false,
 }: TiltedSurfaceProps) {
   const nodeRef = useRef<HTMLDivElement | null>(null);
+  const exitTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (exitTimerRef.current) {
+        clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const updatePointerVars = (clientX: number, clientY: number) => {
     const node = nodeRef.current;
@@ -60,14 +70,21 @@ export default function TiltedSurface({
     nodeRef.current.style.setProperty('--tilt-px', '0');
     nodeRef.current.style.setProperty('--tilt-py', '0');
 
-    window.setTimeout(() => {
+    if (exitTimerRef.current) {
+      clearTimeout(exitTimerRef.current);
+    }
+
+    exitTimerRef.current = window.setTimeout(() => {
       if (!nodeRef.current) {
+        exitTimerRef.current = null;
         return;
       }
 
       if (nodeRef.current.dataset.tiltActive === 'false') {
         nodeRef.current.dataset.tiltExiting = 'false';
       }
+
+      exitTimerRef.current = null;
     }, 320);
   };
 

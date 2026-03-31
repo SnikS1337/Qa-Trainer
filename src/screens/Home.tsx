@@ -3,7 +3,16 @@ import { LESSON_META } from '../data/lesson_meta';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
 import { getLevelInfo, getTimeOfDayGreeting, plural } from '../utils';
-import { useState, useRef, useEffect, type KeyboardEvent, type RefObject } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
 import DevMenu from '../components/DevMenu';
 import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
@@ -19,6 +28,38 @@ const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
 const QUOTE_HIDE_ANIMATION_MS = 420;
 const COMPLETE_PANEL_COOLDOWN_MS = 3000;
 const COMPLETE_PANEL_CELEBRATION_MS = 1800;
+
+const HOME_GLASS_STYLE: Record<string, string> = {
+  '--home-glass-left-y': '36%',
+  '--home-glass-right-y': '66%',
+  '--home-glass-green-alpha': '0.078',
+  '--home-glass-blue-alpha': '0.096',
+  '--home-glass-green-alpha-soft': '0.042',
+  '--home-glass-blue-alpha-soft': '0.056',
+  '--home-glass-green-alpha-strong': '0.088',
+  '--home-glass-blue-alpha-strong': '0.102',
+  '--home-lesson-glass-shift': '0px',
+  '--home-lesson-react-alpha': '0.17',
+  '--home-lesson-gloss-position': '12%',
+};
+
+const LESSON_PRESENTATION = new Map(
+  LESSON_META.map((lesson) => {
+    const sessionQuestionCount = getLessonSessionQuestionCount(lesson.questionCount);
+    const questionCountLabel =
+      lesson.questionCount > sessionQuestionCount
+        ? `${sessionQuestionCount} за попытку · ${lesson.questionCount} всего`
+        : `${lesson.questionCount} ${plural(lesson.questionCount, 'вопрос', 'вопроса', 'вопросов')}`;
+
+    return [
+      lesson.id,
+      {
+        questionCountLabel,
+        maxXp: Math.round(lesson.xp * 1.5),
+      },
+    ] as const;
+  })
+);
 
 type CompleteStarParticle = {
   id: string;
@@ -81,7 +122,7 @@ function buildLessonOutlinePaths(width: number, height: number) {
   return [leftPath, rightPath];
 }
 
-function CardOutline({
+const CardOutline = memo(function CardOutline({
   color,
   hovered = false,
   opening = false,
@@ -248,9 +289,9 @@ function CardOutline({
         ))}
     </svg>
   );
-}
+});
 
-function HomeQuoteDock({
+const HomeQuoteDock = memo(function HomeQuoteDock({
   quote,
   isQuoteCollapsed,
   isQuoteExpandedRendered,
@@ -319,7 +360,7 @@ function HomeQuoteDock({
       </div>
     </div>
   );
-}
+});
 
 export default function Home() {
   const { state, navigate, updateState } = useAppStore();
@@ -359,40 +400,46 @@ export default function Home() {
     }
   }, [state.completedLessons.length]);
 
-  const handlePointerDown = () => {
+  const handlePointerDown = useCallback(() => {
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
     }
     pressTimer.current = setTimeout(() => {
       setShowDevMenu(true);
     }, 1000);
-  };
+  }, []);
 
-  const handlePointerUpOrLeave = () => {
+  const handlePointerUpOrLeave = useCallback(() => {
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
-  };
+  }, []);
 
-  const handleKeyboardActivation = (event: KeyboardEvent<HTMLElement>, action: () => void) => {
-    if (event.key !== 'Enter' && event.key !== ' ') {
-      return;
-    }
+  const handleKeyboardActivation = useCallback(
+    (event: KeyboardEvent<HTMLElement>, action: () => void) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
 
-    event.preventDefault();
-    action();
-  };
+      event.preventDefault();
+      action();
+    },
+    []
+  );
 
-  const handleLessonOpen = (lessonId: string, locked: boolean) => {
-    if (locked || openingLessonId || isPageScrolling) return;
+  const handleLessonOpen = useCallback(
+    (lessonId: string, locked: boolean) => {
+      if (locked || openingLessonId || isPageScrolling) return;
 
-    setOpeningLessonId(lessonId);
-    openLessonTimer.current = setTimeout(() => {
-      navigate('lesson', lessonId);
-      openLessonTimer.current = null;
-    }, 460);
-  };
+      setOpeningLessonId(lessonId);
+      openLessonTimer.current = setTimeout(() => {
+        navigate('lesson', lessonId);
+        openLessonTimer.current = null;
+      }, 460);
+    },
+    [isPageScrolling, navigate, openingLessonId]
+  );
 
   useEffect(() => {
     isPageScrollingRef.current = isPageScrolling;
@@ -554,85 +601,109 @@ export default function Home() {
   }, [isQuoteExpandedRendered, state.lastQuoteIndex]);
 
   const greeting = getTimeOfDayGreeting(now);
-  const homeGlassStyle = {
-    ['--home-glass-left-y' as string]: '36%',
-    ['--home-glass-right-y' as string]: '66%',
-    ['--home-glass-green-alpha' as string]: '0.078',
-    ['--home-glass-blue-alpha' as string]: '0.096',
-    ['--home-glass-green-alpha-soft' as string]: '0.042',
-    ['--home-glass-blue-alpha-soft' as string]: '0.056',
-    ['--home-glass-green-alpha-strong' as string]: '0.088',
-    ['--home-glass-blue-alpha-strong' as string]: '0.102',
-    ['--home-lesson-glass-shift' as string]: '0px',
-    ['--home-lesson-react-alpha' as string]: '0.17',
-    ['--home-lesson-gloss-position' as string]: '12%',
-  };
-
-  const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
+  const categories = useMemo(
+    () => Array.from(new Set(LESSON_META.map((lesson) => lesson.category))),
+    []
+  );
+  const completedLessonsSet = useMemo(
+    () => new Set(state.completedLessons),
+    [state.completedLessons]
+  );
   const dailyDone = state.lastDailyDate === today;
   const practDone = state.completedPractice?.length || 0;
-  const lessonsByCategory = new Map(
-    categories.map((category) => [
-      category,
-      LESSON_META.filter((lesson) => lesson.category === category),
-    ])
+  const lessonsByCategory = useMemo(
+    () =>
+      new Map(
+        categories.map((category) => [
+          category,
+          LESSON_META.filter((lesson) => lesson.category === category),
+        ])
+      ),
+    [categories]
   );
 
-  const categoryUnlockedMap = new Map<string, boolean>();
-  let previousCategoryLessons: typeof LESSON_META = [];
-  categories.forEach((category, index) => {
-    const unlocked =
-      index === 0 ||
-      previousCategoryLessons.every((lesson) => state.completedLessons.includes(lesson.id));
-    categoryUnlockedMap.set(category, unlocked);
-    previousCategoryLessons = lessonsByCategory.get(category) ?? [];
-  });
+  const categoryUnlockedMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    let previousCategoryLessons: typeof LESSON_META = [];
 
-  const lessonLockedMap = new Map<string, boolean>();
-  categories.forEach((category) => {
-    const catLessons = lessonsByCategory.get(category) ?? [];
-    const catUnlocked = categoryUnlockedMap.get(category) ?? false;
-
-    catLessons.forEach((lesson, lessonIndex) => {
-      const locked =
-        !catUnlocked ||
-        (lessonIndex > 0 && !state.completedLessons.includes(catLessons[lessonIndex - 1].id));
-      lessonLockedMap.set(lesson.id, locked);
+    categories.forEach((category, index) => {
+      const unlocked =
+        index === 0 ||
+        previousCategoryLessons.every((lesson) => completedLessonsSet.has(lesson.id));
+      map.set(category, unlocked);
+      previousCategoryLessons = lessonsByCategory.get(category) ?? [];
     });
-  });
 
-  const weakCategoryCandidates = categories
-    .map((category) => {
+    return map;
+  }, [categories, completedLessonsSet, lessonsByCategory]);
+
+  const lessonLockedMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+
+    categories.forEach((category) => {
       const catLessons = lessonsByCategory.get(category) ?? [];
-      const done = catLessons.filter((lesson) => state.completedLessons.includes(lesson.id)).length;
-      const ratio = catLessons.length > 0 ? done / catLessons.length : 1;
+      const catUnlocked = categoryUnlockedMap.get(category) ?? false;
 
-      return {
-        category,
-        ratio,
-        lessons: catLessons,
-      };
-    })
-    .filter((item) => (categoryUnlockedMap.get(item.category) ?? false) && item.ratio < 1)
-    .sort((a, b) => a.ratio - b.ratio);
+      catLessons.forEach((lesson, lessonIndex) => {
+        const locked =
+          !catUnlocked ||
+          (lessonIndex > 0 && !completedLessonsSet.has(catLessons[lessonIndex - 1].id));
+        map.set(lesson.id, locked);
+      });
+    });
 
-  const weakLessonSuggestions = weakCategoryCandidates
-    .flatMap((item) =>
-      item.lessons.filter(
-        (lesson) =>
-          state.completedLessons.includes(lesson.id) && !(lessonLockedMap.get(lesson.id) ?? true)
+    return map;
+  }, [categories, categoryUnlockedMap, completedLessonsSet, lessonsByCategory]);
+
+  const weakLessonSuggestions = useMemo(() => {
+    const weakCategoryCandidates = categories
+      .map((category) => {
+        const catLessons = lessonsByCategory.get(category) ?? [];
+        const done = catLessons.filter((lesson) => completedLessonsSet.has(lesson.id)).length;
+        const ratio = catLessons.length > 0 ? done / catLessons.length : 1;
+
+        return {
+          category,
+          ratio,
+          lessons: catLessons,
+        };
+      })
+      .filter((item) => (categoryUnlockedMap.get(item.category) ?? false) && item.ratio < 1)
+      .sort((a, b) => a.ratio - b.ratio);
+
+    return weakCategoryCandidates
+      .flatMap((item) =>
+        item.lessons.filter(
+          (lesson) =>
+            completedLessonsSet.has(lesson.id) && !(lessonLockedMap.get(lesson.id) ?? true)
+        )
       )
-    )
-    .slice(0, 3);
+      .slice(0, 3);
+  }, [categories, categoryUnlockedMap, completedLessonsSet, lessonLockedMap, lessonsByCategory]);
+
+  const categoryDoneMap = useMemo(() => {
+    const map = new Map<string, number>();
+    categories.forEach((category) => {
+      const catLessons = lessonsByCategory.get(category) ?? [];
+      map.set(
+        category,
+        catLessons.reduce((acc, lesson) => acc + (completedLessonsSet.has(lesson.id) ? 1 : 0), 0)
+      );
+    });
+    return map;
+  }, [categories, completedLessonsSet, lessonsByCategory]);
 
   const dailyLessonBonusAvailable = state.lastLessonRewardDate !== today;
 
-  const handleWeakLessonOpen = (lessonId: string) => {
-    markWeakTopicLaunch(lessonId, today);
-    handleLessonOpen(lessonId, false);
-  };
+  const handleWeakLessonOpen = useCallback(
+    (lessonId: string) => {
+      markWeakTopicLaunch(lessonId, today);
+      handleLessonOpen(lessonId, false);
+    },
+    [handleLessonOpen, today]
+  );
 
-  const hideQuoteForToday = () => {
+  const hideQuoteForToday = useCallback(() => {
     try {
       localStorage.setItem(QUOTE_VISIBILITY_STORAGE_KEY, today);
     } catch {
@@ -640,9 +711,9 @@ export default function Home() {
     }
 
     setIsQuoteCollapsed(true);
-  };
+  }, [today]);
 
-  const showQuoteAgain = () => {
+  const showQuoteAgain = useCallback(() => {
     try {
       localStorage.removeItem(QUOTE_VISIBILITY_STORAGE_KEY);
     } catch {
@@ -656,10 +727,10 @@ export default function Home() {
 
     setIsQuoteCollapsed(false);
     setIsQuoteExpandedRendered(true);
-  };
+  }, []);
 
   return (
-    <div className="w-full pb-10" style={homeGlassStyle}>
+    <div className="w-full pb-10" style={HOME_GLASS_STYLE}>
       {/* Header */}
       <div className="solid-header p-4">
         <div className="mx-auto max-w-[600px]">
@@ -799,7 +870,7 @@ export default function Home() {
           const catLessons = lessonsByCategory.get(cat) ?? [];
 
           const catUnlocked = categoryUnlockedMap.get(cat) ?? false;
-          const catDone = catLessons.filter((l) => state.completedLessons.includes(l.id)).length;
+          const catDone = categoryDoneMap.get(cat) ?? 0;
 
           return (
             <div key={cat} className="mb-7">
@@ -819,24 +890,14 @@ export default function Home() {
                 <span className="h-[1px] flex-1 bg-white/20"></span>
               </div>
 
-              {catLessons.map((lesson, idxInCat) => {
-                const done = state.completedLessons.includes(lesson.id);
-                let locked = !catUnlocked;
-                if (catUnlocked && idxInCat > 0) {
-                  locked = !state.completedLessons.includes(catLessons[idxInCat - 1].id);
-                }
+              {catLessons.map((lesson) => {
+                const done = completedLessonsSet.has(lesson.id);
+                const locked = lessonLockedMap.get(lesson.id) ?? true;
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
-                const sessionQuestionCount = getLessonSessionQuestionCount(lesson.questionCount);
-                const questionCountLabel =
-                  lesson.questionCount > sessionQuestionCount
-                    ? `${sessionQuestionCount} за попытку · ${lesson.questionCount} всего`
-                    : `${lesson.questionCount} ${plural(
-                        lesson.questionCount,
-                        'вопрос',
-                        'вопроса',
-                        'вопросов'
-                      )}`;
+                const presentation = LESSON_PRESENTATION.get(lesson.id);
+                const questionCountLabel = presentation?.questionCountLabel ?? '';
+                const maxXp = presentation?.maxXp ?? Math.round(lesson.xp * 1.5);
 
                 return (
                   <div
@@ -908,7 +969,7 @@ export default function Home() {
                               </span>
                               <span className="text-slate-500">·</span>
                               <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
-                                До {Math.round(lesson.xp * 1.5)} XP
+                                До {maxXp} XP
                               </span>
                             </div>
                           </div>

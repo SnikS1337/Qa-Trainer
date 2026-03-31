@@ -33,6 +33,7 @@ npm run dev
 ## Скрипты
 
 - `npm run dev` - локальная разработка
+- `npm run test` - запуск встроенного набора доменных тестов
 - `npm run typecheck` - проверка TypeScript через `tsc --noEmit`
 - `npm run lint` - ESLint для `src` и `vite.config.ts`
 - `npm run lint:fix` - автоисправление ESLint
@@ -54,7 +55,15 @@ npm run dev
 - Основная нагрузка приходится на контентные модули в `src/data/*` (банки уроков/практики), а не на `src/data.ts`.
 - Уже используется lazy loading контента через `src/data/content_loaders.ts`.
 - Для UX приоритетнее стабильные переходы и предзагрузка контента, чем агрессивный route-level lazy loading всего UI.
-- Следующий безопасный шаг: сохранять текущий code splitting и добавлять точечные оптимизации только после замеров.
+- На Home добавлена структурная оптимизация ререндеров: memo/`useMemo`/`useCallback` и предвычисление презентационных метаданных уроков.
+- Снижена непрерывная GPU-нагрузка от декоративных слоёв (убраны постоянные «вечные» анимации и тяжелые blend-сценарии там, где они не критичны).
+- После изменений проект стабильно проходит `npm run test` и `npm run build`.
+
+## Надежность и утечки
+
+- Проведен аудит таймеров/слушателей/observer-ов в ключевых экранах (`App`, `Home`, `Lesson`, `Exam`, `Daily`, `PracticeTask`, `Misc`).
+- Добавлен cleanup таймера выхода в `src/components/TiltedSurface.tsx`.
+- Устранено накопление long-press таймеров в `src/screens/Misc.tsx` (сертификат debug hold).
 
 ## Debug-функции
 

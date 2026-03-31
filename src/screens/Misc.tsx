@@ -222,6 +222,9 @@ export function Certificate() {
 
   const handlePointerDown = () => {
     if (debugUnlocked) return;
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+    }
     holdTimerRef.current = setTimeout(() => {
       setShowPassModal(true);
     }, 3000);
