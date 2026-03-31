@@ -3,15 +3,48 @@ import { preloadLessonsContent, preloadPracticeTasksContent } from '../data/cont
 import { LESSON_META } from '../data/lesson_meta';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
-import { getLessonSessionQuestionCount } from '../domain/lesson_session';
 import { getLevelInfo, getTimeOfDayGreeting, plural } from '../utils';
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent, type RefObject } from 'react';
 import DevMenu from '../components/DevMenu';
 import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
+import type { Quote } from '../types';
 
 const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
 const QUOTE_HIDE_ANIMATION_MS = 420;
+const COMPLETE_PANEL_COOLDOWN_MS = 3000;
+const COMPLETE_PANEL_CELEBRATION_MS = 1800;
+
+type CompleteStarParticle = {
+  id: string;
+  x: number;
+  delay: number;
+  duration: number;
+  size: number;
+  drift: number;
+  rotate: number;
+};
+
+function createCompleteStarParticles() {
+  return Array.from({ length: 20 }, (_, index) => {
+    const x = 6 + Math.random() * 88;
+    const delay = Math.random() * 240;
+    const duration = 980 + Math.random() * 520;
+    const size = 10 + Math.round(Math.random() * 8);
+    const drift = -26 + Math.random() * 52;
+    const rotate = -32 + Math.random() * 64;
+
+    return {
+      id: `star-${index}-${Math.round(x * 10)}`,
+      x,
+      delay,
+      duration,
+      size,
+      drift,
+      rotate,
+    };
+  });
+}
 
 function buildLessonOutlinePaths(width: number, height: number) {
   const inset = 1.5;
@@ -91,6 +124,10 @@ function CardOutline({
   const hasSize = size.width > 0 && size.height > 0;
   const viewBoxWidth = Math.max(size.width, 1);
   const viewBoxHeight = Math.max(size.height, 1);
+  const outlineInset = 1.5;
+  const outlineRectWidth = Math.max(viewBoxWidth - outlineInset * 2, 0);
+  const outlineRectHeight = Math.max(viewBoxHeight - outlineInset * 2, 0);
+  const outlineRectRadius = Math.min(24, outlineRectWidth / 2, outlineRectHeight / 2);
   const [leftPath, rightPath] = buildLessonOutlinePaths(viewBoxWidth, viewBoxHeight);
   const paths = [
     { id: 'left', d: leftPath },
@@ -111,6 +148,7 @@ function CardOutline({
       ? 'ambient-card-outline-pulse-soft'
       : 'ambient-card-outline-pulse'
     : undefined;
+  const lineCap = isAmbient ? 'butt' : 'round';
 
   return (
     <svg
@@ -120,15 +158,20 @@ function CardOutline({
       viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
     >
       {hasSize &&
-        paths.map((path) => (
-          <g key={path.id} className={pulseClassName}>
-            <path
-              d={path.d}
+        (isAmbient ? (
+          <g className={pulseClassName}>
+            <rect
+              x={outlineInset}
+              y={outlineInset}
+              width={outlineRectWidth}
+              height={outlineRectHeight}
+              rx={outlineRectRadius}
+              ry={outlineRectRadius}
               pathLength={1}
               fill="none"
               stroke={`color-mix(in srgb, ${color} 82%, white 18%)`}
               strokeWidth="2.4"
-              strokeLinecap="round"
+              strokeLinecap="butt"
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
               style={{
@@ -138,13 +181,18 @@ function CardOutline({
                 filter: isActive ? glowFilter : 'none',
               }}
             />
-            <path
-              d={path.d}
+            <rect
+              x={outlineInset}
+              y={outlineInset}
+              width={outlineRectWidth}
+              height={outlineRectHeight}
+              rx={outlineRectRadius}
+              ry={outlineRectRadius}
               pathLength={1}
               fill="none"
               stroke={`color-mix(in srgb, ${color} 88%, white 12%)`}
               strokeWidth="1.55"
-              strokeLinecap="round"
+              strokeLinecap="butt"
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
               style={{
@@ -155,8 +203,116 @@ function CardOutline({
               }}
             />
           </g>
+        ) : (
+          paths.map((path) => (
+            <g key={path.id} className={pulseClassName}>
+              <path
+                d={path.d}
+                pathLength={1}
+                fill="none"
+                stroke={`color-mix(in srgb, ${color} 82%, white 18%)`}
+                strokeWidth="2.4"
+                strokeLinecap={lineCap}
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                style={{
+                  opacity: isActive ? glowOpacity : 0,
+                  strokeDasharray: outlineDashArray,
+                  transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
+                  filter: isActive ? glowFilter : 'none',
+                }}
+              />
+              <path
+                d={path.d}
+                pathLength={1}
+                fill="none"
+                stroke={`color-mix(in srgb, ${color} 88%, white 12%)`}
+                strokeWidth="1.55"
+                strokeLinecap={lineCap}
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                style={{
+                  opacity: isActive ? lineOpacity : 0,
+                  strokeDasharray: outlineDashArray,
+                  transition: `opacity ${outlineTransition}, stroke-dasharray ${outlineTransition}`,
+                  filter: isActive ? lineFilter : 'none',
+                }}
+              />
+            </g>
+          ))
         ))}
     </svg>
+  );
+}
+
+function HomeQuoteDock({
+  quote,
+  isQuoteCollapsed,
+  isQuoteExpandedRendered,
+  quoteExpandedHeight,
+  quoteExpandedRef,
+  onHideForToday,
+  onShowAgain,
+}: {
+  quote: Quote;
+  isQuoteCollapsed: boolean;
+  isQuoteExpandedRendered: boolean;
+  quoteExpandedHeight: number;
+  quoteExpandedRef: RefObject<HTMLDivElement | null>;
+  onHideForToday: () => void;
+  onShowAgain: () => void;
+}) {
+  return (
+    <div className="relative mb-6">
+      <div
+        className={`quote-dock ${isQuoteCollapsed ? 'quote-dock--collapsed' : ''}`}
+        style={{
+          ['--quote-expanded-height' as string]: `${Math.max(quoteExpandedHeight, 92)}px`,
+        }}
+      >
+        {isQuoteExpandedRendered && (
+          <div
+            ref={quoteExpandedRef}
+            className={`quote-dock__expanded ${isQuoteCollapsed ? 'quote-dock__expanded--hidden' : ''}`}
+          >
+            <div className="home-surface-card home-surface-card--quote border-brand-green/30 bg-brand-green/5 relative flex items-start gap-3 p-4 pr-14">
+              <button
+                type="button"
+                className="quote-toggle-button"
+                onClick={onHideForToday}
+                aria-label="Скрыть цитату дня"
+              >
+                ×
+              </button>
+              <span className="relative z-[1] mt-0.5 shrink-0 text-xl">💬</span>
+              <div className="relative z-[1]">
+                <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
+                  ЦИТАТА ДНЯ
+                </div>
+                <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
+                <div className="mt-1 text-[11px] text-slate-300">
+                  — {quote.author}, "{quote.book}"
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className={`quote-dock__collapsed ${isQuoteCollapsed ? 'quote-dock__collapsed--visible' : ''}`}
+          onClick={onShowAgain}
+          aria-label="Показать цитату дня"
+        >
+          <span className="quote-dock__collapsed-icon">💬</span>
+          <div className="quote-dock__collapsed-copy">
+            <div className="quote-dock__collapsed-title">Цитата дня скрыта</div>
+            <div className="quote-dock__collapsed-subtitle">Можно показать снова</div>
+          </div>
+          <span className="quote-dock__collapsed-action">Показать</span>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -181,8 +337,13 @@ export default function Home() {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openLessonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quoteUnmountTimerRef = useRef<number | null>(null);
+  const completeCelebrateTimerRef = useRef<number | null>(null);
   const quoteExpandedRef = useRef<HTMLDivElement | null>(null);
   const [quoteExpandedHeight, setQuoteExpandedHeight] = useState(0);
+  const [completeCelebrationKey, setCompleteCelebrationKey] = useState(0);
+  const [isCompleteCelebrating, setIsCompleteCelebrating] = useState(false);
+  const [completeCooldownUntil, setCompleteCooldownUntil] = useState(0);
+  const [completeStarParticles, setCompleteStarParticles] = useState<CompleteStarParticle[]>([]);
 
   const handlePointerDown = () => {
     if (pressTimer.current) {
@@ -200,10 +361,7 @@ export default function Home() {
     }
   };
 
-  const handleKeyboardActivation = (
-    event: KeyboardEvent<HTMLElement>,
-    action: () => void
-  ) => {
+  const handleKeyboardActivation = (event: KeyboardEvent<HTMLElement>, action: () => void) => {
     if (event.key !== 'Enter' && event.key !== ' ') {
       return;
     }
@@ -237,8 +395,34 @@ export default function Home() {
         window.clearTimeout(quoteUnmountTimerRef.current);
         quoteUnmountTimerRef.current = null;
       }
+      if (completeCelebrateTimerRef.current) {
+        window.clearTimeout(completeCelebrateTimerRef.current);
+        completeCelebrateTimerRef.current = null;
+      }
     };
   }, []);
+
+  const handleCompletePanelCelebrate = () => {
+    const nowMs = Date.now();
+    if (isCompleteCelebrating || nowMs < completeCooldownUntil) {
+      return;
+    }
+
+    if (completeCelebrateTimerRef.current) {
+      window.clearTimeout(completeCelebrateTimerRef.current);
+      completeCelebrateTimerRef.current = null;
+    }
+
+    setCompleteStarParticles(createCompleteStarParticles());
+    setCompleteCelebrationKey((prev) => prev + 1);
+    setIsCompleteCelebrating(true);
+    setCompleteCooldownUntil(nowMs + COMPLETE_PANEL_COOLDOWN_MS);
+
+    completeCelebrateTimerRef.current = window.setTimeout(() => {
+      setIsCompleteCelebrating(false);
+      completeCelebrateTimerRef.current = null;
+    }, COMPLETE_PANEL_CELEBRATION_MS);
+  };
 
   useEffect(() => {
     const greetingTimer = setInterval(() => {
@@ -255,7 +439,9 @@ export default function Home() {
       frame = 0;
       const maxScroll = Math.max(window.innerHeight * 1.35, 1);
       const nextProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
-      setScrollGlassProgress((prev) => (Math.abs(prev - nextProgress) < 0.01 ? prev : nextProgress));
+      setScrollGlassProgress((prev) =>
+        Math.abs(prev - nextProgress) < 0.01 ? prev : nextProgress
+      );
     };
 
     updateScrollGlass();
@@ -417,27 +603,27 @@ export default function Home() {
             <div className="flex gap-2">
               <button
                 type="button"
-                className="home-toolbar-button text-sm"
+                className="home-toolbar-button"
                 onClick={() => navigate('achievements')}
                 aria-label="Открыть достижения"
               >
-                🏆
+                <span className="home-toolbar-icon">🏆</span>
               </button>
               <button
                 type="button"
-                className="home-toolbar-button text-sm"
+                className="home-toolbar-button"
                 onClick={() => navigate('stats')}
                 aria-label="Открыть статистику"
               >
-                📊
+                <span className="home-toolbar-icon">📊</span>
               </button>
               <button
                 type="button"
-                className="home-toolbar-button text-sm"
+                className="home-toolbar-button"
                 onClick={() => navigate('certificate')}
                 aria-label="Открыть сертификат"
               >
-                🎓
+                <span className="home-toolbar-icon">🎓</span>
               </button>
             </div>
           </div>
@@ -485,56 +671,15 @@ export default function Home() {
 
       <div className="mx-auto max-w-[600px] px-5 pt-5">
         {/* Quote */}
-        <div className="relative mb-6">
-          <div
-            className={`quote-dock ${isQuoteCollapsed ? 'quote-dock--collapsed' : ''}`}
-            style={{
-              ['--quote-expanded-height' as string]: `${Math.max(quoteExpandedHeight, 92)}px`,
-            }}
-          >
-            {isQuoteExpandedRendered && (
-              <div
-                ref={quoteExpandedRef}
-                className={`quote-dock__expanded ${isQuoteCollapsed ? 'quote-dock__expanded--hidden' : ''}`}
-              >
-                <div className="home-surface-card home-surface-card--quote border-brand-green/30 bg-brand-green/5 relative flex items-start gap-3 p-4 pr-14">
-                  <button
-                    type="button"
-                    className="quote-toggle-button"
-                    onClick={hideQuoteForToday}
-                    aria-label="Скрыть цитату дня"
-                  >
-                    ×
-                  </button>
-                  <span className="relative z-[1] mt-0.5 shrink-0 text-xl">💬</span>
-                  <div className="relative z-[1]">
-                    <div className="text-brand-green mb-1 font-mono text-[11px] font-bold tracking-[2px]">
-                      ЦИТАТА ДНЯ
-                    </div>
-                    <div className="text-[13px] leading-relaxed text-white italic">"{quote.text}"</div>
-                    <div className="mt-1 text-[11px] text-slate-300">
-                      — {quote.author}, "{quote.book}"
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className={`quote-dock__collapsed glass-panel ${isQuoteCollapsed ? 'quote-dock__collapsed--visible' : ''}`}
-              onClick={showQuoteAgain}
-              aria-label="Показать цитату дня"
-            >
-              <span className="quote-dock__collapsed-icon">💬</span>
-              <div className="quote-dock__collapsed-copy">
-                <div className="quote-dock__collapsed-title">Цитата дня скрыта</div>
-                <div className="quote-dock__collapsed-subtitle">Можно показать снова</div>
-              </div>
-              <span className="quote-dock__collapsed-action">Показать</span>
-            </button>
-          </div>
-        </div>
+        <HomeQuoteDock
+          quote={quote}
+          isQuoteCollapsed={isQuoteCollapsed}
+          isQuoteExpandedRendered={isQuoteExpandedRendered}
+          quoteExpandedHeight={quoteExpandedHeight}
+          quoteExpandedRef={quoteExpandedRef}
+          onHideForToday={hideQuoteForToday}
+          onShowAgain={showQuoteAgain}
+        />
 
         {/* Lessons */}
         {categories.map((cat, catIdx) => {
@@ -574,11 +719,12 @@ export default function Home() {
                 }
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
-                const lessonRunQuestionCount = getLessonSessionQuestionCount(lesson.questionCount);
-                const questionCountLabel =
-                  lesson.questionCount > lessonRunQuestionCount
-                    ? `${lessonRunQuestionCount} из ${lesson.questionCount} вопросов`
-                    : `${lesson.questionCount} вопросов`;
+                const questionCountLabel = `До ${lesson.questionCount} ${plural(
+                  lesson.questionCount,
+                  'вопрос',
+                  'вопроса',
+                  'вопросов'
+                )}`;
 
                 return (
                   <div
@@ -607,56 +753,65 @@ export default function Home() {
                           borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined,
                         }}
                       >
-                      {done && (
-                        <div className="status-ribbon text-black" style={{ ['--status-bg' as string]: lesson.color }}>
-                          ГОТОВО ✓
-                        </div>
-                      )}
-                      <div className="lesson-tilt-content relative z-[1] flex items-center gap-3">
-                        <div className="lesson-tilt-icon-slot relative h-12 w-12 shrink-0">
+                        {done && (
                           <div
-                            aria-hidden="true"
-                            className="lesson-tilt-icon-well absolute inset-0 rounded-xl"
-                            style={{
-                              ['--icon-accent' as string]: locked ? 'rgba(255,255,255,0.18)' : lesson.color,
-                            }}
-                          />
-                          <div
-                            className="lesson-tilt-icon absolute top-0 left-0 flex h-12 w-12 items-center justify-center rounded-xl border bg-black/20 text-2xl"
-                            data-icon={locked ? '🔒' : lesson.icon}
-                            style={{
-                              ['--icon-color' as string]: locked ? '#94a3b8' : lesson.color,
-                              borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50`,
-                            }}
+                            className="status-ribbon text-black"
+                            style={{ ['--status-bg' as string]: lesson.color }}
                           >
-                            {locked ? '🔒' : lesson.icon}
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-0.5 text-sm font-bold text-white">{lesson.title}</div>
-                          <div className="mb-2 truncate text-xs text-slate-300">{lesson.desc}</div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[11px] text-slate-300">
-                              {questionCountLabel}
-                            </span>
-                            <span className="text-slate-500">·</span>
-                            <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
-                              До {Math.round(lesson.xp * 1.5)} XP
-                            </span>
-                          </div>
-                        </div>
-                        {!locked && (
-                          <div
-                            className={`shrink-0 text-lg transition-all duration-200 ${openingLessonId === lesson.id ? 'translate-x-0.5 text-white' : ''}`}
-                            style={{
-                              color: openingLessonId === lesson.id ? undefined : lesson.color,
-                            }}
-                          >
-                            ›
+                            ГОТОВО ✓
                           </div>
                         )}
+                        <div className="lesson-tilt-content relative z-[1] flex items-center gap-3">
+                          <div className="lesson-tilt-icon-slot relative h-12 w-12 shrink-0">
+                            <div
+                              aria-hidden="true"
+                              className="lesson-tilt-icon-well absolute inset-0 rounded-xl"
+                              style={{
+                                ['--icon-accent' as string]: locked
+                                  ? 'rgba(255,255,255,0.18)'
+                                  : lesson.color,
+                              }}
+                            />
+                            <div
+                              className="lesson-tilt-icon absolute top-0 left-0 flex h-12 w-12 items-center justify-center rounded-xl border bg-black/20 text-2xl"
+                              data-icon={locked ? '🔒' : lesson.icon}
+                              style={{
+                                ['--icon-color' as string]: locked ? '#94a3b8' : lesson.color,
+                                borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50`,
+                              }}
+                            >
+                              {locked ? '🔒' : lesson.icon}
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-0.5 text-sm font-bold text-white">
+                              {lesson.title}
+                            </div>
+                            <div className="mb-2 truncate text-xs text-slate-300">
+                              {lesson.desc}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[11px] text-slate-300">
+                                {questionCountLabel}
+                              </span>
+                              <span className="text-slate-500">·</span>
+                              <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
+                                До {Math.round(lesson.xp * 1.5)} XP
+                              </span>
+                            </div>
+                          </div>
+                          {!locked && (
+                            <div
+                              className={`shrink-0 text-lg transition-all duration-200 ${openingLessonId === lesson.id ? 'translate-x-0.5 text-white' : ''}`}
+                              style={{
+                                color: openingLessonId === lesson.id ? undefined : lesson.color,
+                              }}
+                            >
+                              ›
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
                     </TiltedSurface>
                   </div>
                 );
@@ -680,7 +835,7 @@ export default function Home() {
               role="button"
               tabIndex={dailyDone ? -1 : 0}
               aria-disabled={dailyDone}
-              className={`home-surface-card home-surface-card--mode border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
+              className={`home-surface-card home-surface-card--mode mode-gloss mode-gloss--daily border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
@@ -707,7 +862,7 @@ export default function Home() {
                 onKeyDown={(event) => handleKeyboardActivation(event, () => navigate('exam'))}
                 role="button"
                 tabIndex={0}
-                className="home-surface-card home-surface-card--mode cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
+                className="home-surface-card home-surface-card--mode mode-gloss mode-gloss--exam cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
               >
                 <div className="relative z-[1] flex items-center gap-3">
                   <div className="text-3xl">🎯</div>
@@ -738,7 +893,7 @@ export default function Home() {
               onKeyDown={(event) => handleKeyboardActivation(event, () => navigate('practice'))}
               role="button"
               tabIndex={0}
-              className="home-surface-card home-surface-card--mode cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
+              className="home-surface-card home-surface-card--mode mode-gloss mode-gloss--practice cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
             >
               <div className="relative z-[1] flex items-center gap-3">
                 <div className="text-3xl">🛠️</div>
@@ -778,7 +933,39 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="glass-panel border-brand-green/40 bg-brand-green/10 p-5 text-center">
+            <div className="glass-panel home-complete-panel border-brand-green/40 bg-brand-green/10 p-5 text-center">
+              <button
+                type="button"
+                className={`complete-panel-star-trigger ${isCompleteCelebrating ? 'complete-panel-star-trigger--active' : ''}`}
+                onClick={handleCompletePanelCelebrate}
+                aria-label="Запустить праздничные звёзды"
+              >
+                ✦
+              </button>
+              {isCompleteCelebrating && (
+                <div
+                  className="complete-panel-stars"
+                  key={completeCelebrationKey}
+                  aria-hidden="true"
+                >
+                  {completeStarParticles.map((particle) => (
+                    <span
+                      key={`${completeCelebrationKey}-${particle.id}`}
+                      className="complete-panel-star"
+                      style={{
+                        left: `${particle.x}%`,
+                        animationDelay: `${particle.delay}ms`,
+                        animationDuration: `${particle.duration}ms`,
+                        ['--star-size' as string]: `${particle.size}px`,
+                        ['--star-drift' as string]: `${particle.drift}px`,
+                        ['--star-rotate' as string]: `${particle.rotate}deg`,
+                      }}
+                    >
+                      ✦
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="mb-2 animate-bounce text-4xl">🏆</div>
               <div className="text-brand-green text-base font-extrabold">Все уроки пройдены!</div>
               <div className="mt-1.5 text-xs text-slate-300">

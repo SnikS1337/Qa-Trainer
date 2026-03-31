@@ -30,12 +30,15 @@ export default function Daily() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { isTransitioning, runQuestionTransition } = useQuestionTransition();
 
   useEffect(() => {
     if (finished) {
       return;
     }
+
+    setLoadError(null);
 
     const todayKey = getLocalDateKey();
 
@@ -47,18 +50,51 @@ export default function Daily() {
 
     let isMounted = true;
 
-    void loadChoiceQuestions().then((allQuestions) => {
-      if (!isMounted) {
-        return;
-      }
+    void loadChoiceQuestions()
+      .then((allQuestions) => {
+        if (!isMounted) {
+          return;
+        }
 
-      setQuestions(buildDailyQuestions(allQuestions));
-    });
+        if (allQuestions.length === 0) {
+          setLoadError('Не удалось подобрать вопросы для дейлика. Попробуй позже.');
+          return;
+        }
+
+        setQuestions(buildDailyQuestions(allQuestions));
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error('Failed to load daily questions:', error);
+        setLoadError('Ошибка загрузки ежедневного квиза. Попробуй снова.');
+        showToast('Ошибка загрузки дейлика', 'text-brand-red');
+      });
 
     return () => {
       isMounted = false;
     };
   }, [finished, navigate, showToast, state.lastDailyDate]);
+
+  if (loadError) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col items-center justify-center p-6 text-center">
+        <div className="glass-panel w-full p-6">
+          <div className="mb-3 text-4xl">⚠️</div>
+          <div className="mb-4 text-sm leading-relaxed text-slate-300">{loadError}</div>
+          <button
+            type="button"
+            className="glass-button w-full py-3 font-bold uppercase"
+            onClick={() => navigate('home')}
+          >
+            ← На главную
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleFinish = () => {
     setFinished(true);

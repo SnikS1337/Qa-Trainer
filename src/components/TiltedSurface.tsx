@@ -25,7 +25,7 @@ export default function TiltedSurface({
     const py = ((clientY - rect.top) / rect.height - 0.5) * 2;
     const clampedPx = Math.max(-1, Math.min(1, px));
     const clampedPy = Math.max(-1, Math.min(1, py));
-    const snappedPx = Math.round(clampedPx * 3) / 3;
+    const snappedPx = Math.round(clampedPx * 2) / 2;
     const snappedPy = Math.round(clampedPy * 2) / 2;
 
     node.style.setProperty('--tilt-px', `${snappedPx.toFixed(3)}`);

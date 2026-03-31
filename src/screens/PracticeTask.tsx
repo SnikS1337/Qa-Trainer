@@ -24,10 +24,12 @@ export default function PracticeTask({ id }: { id: string }) {
   const [selectedErrors, setSelectedErrors] = useState<Set<string>>(new Set());
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [correctCount, setCorrectCount] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     setTask(null);
+    setLoadError(null);
     setAnswered(false);
     setSelections({});
     setSelectedErrors(new Set());
@@ -36,16 +38,53 @@ export default function PracticeTask({ id }: { id: string }) {
 
     let isMounted = true;
 
-    void loadPracticeTaskById(id).then((loadedTask) => {
-      if (isMounted) {
+    void loadPracticeTaskById(id)
+      .then((loadedTask) => {
+        if (!isMounted) {
+          return;
+        }
+
+        if (!loadedTask) {
+          setTask(null);
+          setLoadError('Практическое задание не найдено.');
+          return;
+        }
+
         setTask(loadedTask);
-      }
-    });
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error('Failed to load practice task:', error);
+        setTask(null);
+        setLoadError('Не удалось загрузить практическое задание. Попробуй снова.');
+        showToast('Ошибка загрузки практики', 'text-brand-red');
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [id, showToast]);
+
+  if (loadError) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col items-center justify-center p-6 text-center">
+        <div className="glass-panel w-full p-6">
+          <div className="mb-3 text-4xl">⚠️</div>
+          <div className="mb-4 text-sm leading-relaxed text-slate-300">{loadError}</div>
+          <button
+            type="button"
+            className="glass-button w-full py-3 font-bold uppercase"
+            onClick={() => navigate('practice')}
+          >
+            ← К заданиям
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleToggleError = (fieldId: string) => {
     if (answered) return;

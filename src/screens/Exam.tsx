@@ -29,23 +29,40 @@ export default function Exam() {
   const [earnedXP, setEarnedXP] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { isTransitioning, runQuestionTransition } = useQuestionTransition();
 
   useEffect(() => {
     let isMounted = true;
+    setLoadError(null);
 
-    void loadChoiceQuestions().then((allQuestions) => {
-      if (!isMounted) {
-        return;
-      }
+    void loadChoiceQuestions()
+      .then((allQuestions) => {
+        if (!isMounted) {
+          return;
+        }
 
-      setQuestions(buildExamQuestions(allQuestions));
-    });
+        if (allQuestions.length === 0) {
+          setLoadError('Не удалось собрать экзамен. Вопросы недоступны.');
+          return;
+        }
+
+        setQuestions(buildExamQuestions(allQuestions));
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error('Failed to load exam questions:', error);
+        setLoadError('Ошибка загрузки экзамена. Попробуй снова.');
+        showToast('Ошибка загрузки экзамена', 'text-brand-red');
+      });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [showToast]);
 
   const handleFinish = useCallback(
     (resultScore: number = score) => {
@@ -131,6 +148,24 @@ export default function Exam() {
     const remainder = seconds % 60;
     return `${minutes}:${remainder < 10 ? '0' : ''}${remainder}`;
   };
+
+  if (loadError) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col items-center justify-center p-6 text-center">
+        <div className="glass-panel w-full p-6">
+          <div className="mb-3 text-4xl">⚠️</div>
+          <div className="mb-4 text-sm leading-relaxed text-slate-300">{loadError}</div>
+          <button
+            type="button"
+            className="glass-button w-full py-3 font-bold uppercase"
+            onClick={() => navigate('home')}
+          >
+            ← На главную
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (questions.length === 0) {
     return <div className="p-10 text-center text-slate-400">Загрузка экзамена...</div>;

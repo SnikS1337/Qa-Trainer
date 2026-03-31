@@ -25,22 +25,43 @@ export default function Lesson({ id }: { id: string }) {
   const [awardedXP, setAwardedXP] = useState(0);
   const [wasReplay, setWasReplay] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isTransitioning, runQuestionTransition } = useQuestionTransition();
 
   useEffect(() => {
     let isMounted = true;
+    setLoadError(null);
 
-    void loadLessonById(id).then((loadedLesson) => {
-      if (!isMounted) {
-        return;
-      }
+    void loadLessonById(id)
+      .then((loadedLesson) => {
+        if (!isMounted) {
+          return;
+        }
 
-      setLesson(loadedLesson);
-      setQuestions(loadedLesson ? buildLessonSessionQuestions(loadedLesson.questions) : []);
-      setAwardedXP(0);
-      setWasReplay(false);
-    });
+        if (!loadedLesson) {
+          setLesson(null);
+          setQuestions([]);
+          setLoadError('Урок не найден. Вернись на главную и выбери другой урок.');
+          return;
+        }
+
+        setLesson(loadedLesson);
+        setQuestions(buildLessonSessionQuestions(loadedLesson.questions));
+        setAwardedXP(0);
+        setWasReplay(false);
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error('Failed to load lesson content:', error);
+        setLesson(null);
+        setQuestions([]);
+        setLoadError('Не удалось загрузить урок. Попробуй открыть его снова.');
+        showToast('Ошибка загрузки урока', 'text-brand-red');
+      });
 
     return () => {
       isMounted = false;
@@ -48,7 +69,25 @@ export default function Lesson({ id }: { id: string }) {
         clearTimeout(confettiTimerRef.current);
       }
     };
-  }, [id]);
+  }, [id, showToast]);
+
+  if (loadError) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col items-center justify-center p-6 text-center">
+        <div className="glass-panel w-full p-6">
+          <div className="mb-3 text-4xl">⚠️</div>
+          <div className="mb-4 text-sm leading-relaxed text-slate-300">{loadError}</div>
+          <button
+            type="button"
+            className="glass-button w-full py-3 font-bold uppercase"
+            onClick={() => navigate('home')}
+          >
+            ← На главную
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const finishLesson = () => {
     if (!lesson) {
