@@ -130,10 +130,7 @@ export function finalizeExamResult(
   const awardedXP = passed && !nextState.examPassed ? rewardXP : 0;
 
   nextState.examAttempts += 1;
-  nextState.examBestScore = Math.max(
-    nextState.examBestScore,
-    Math.round((score / maxScore) * 100)
-  );
+  nextState.examBestScore = Math.max(nextState.examBestScore, Math.round((score / maxScore) * 100));
 
   if (passed && !nextState.examPassed) {
     nextState.totalXP += rewardXP;

@@ -90,7 +90,9 @@ export const tests = [
     name: 'real daily samples never let one fixed slot reach pass threshold',
     run: () => {
       for (let run = 0; run < 300; run += 1) {
-        const prepared = prepareQuestionsWithShuffledChoices(shuffle(ALL_CHOICE_QUESTIONS).slice(0, 5));
+        const prepared = prepareQuestionsWithShuffledChoices(
+          shuffle(ALL_CHOICE_QUESTIONS).slice(0, 5)
+        );
         const counts = getCorrectIndexCounts(prepared);
 
         assert.ok(

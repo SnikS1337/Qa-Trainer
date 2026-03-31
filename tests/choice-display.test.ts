@@ -81,7 +81,10 @@ export const tests = [
       assert.equal(capitalizeDisplayedChoiceText('проверяет API'), 'Проверяет API');
       assert.equal(capitalizeDisplayedChoiceText('  «проверяет API»'), '  «Проверяет API»');
       assert.equal(capitalizeDisplayedChoiceText('Проверяет API'), 'Проверяет API');
-      assert.equal(capitalizeDisplayedChoiceText('iOS показывает экран входа'), 'iOS показывает экран входа');
+      assert.equal(
+        capitalizeDisplayedChoiceText('iOS показывает экран входа'),
+        'iOS показывает экран входа'
+      );
     },
   },
   {
