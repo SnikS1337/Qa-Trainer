@@ -1,147 +1,224 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAppStore } from '../store';
-import { LESSONS, ACHIEVEMENTS } from '../data';
-import { shuffle } from '../utils';
+import { useCallback, useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal';
-import { QuestionChoice } from '../types';
+import { loadChoiceQuestions } from '../data/content_loaders';
+import { finalizeExamResult, getAchievementUnlockTitles } from '../domain/progression';
+import { useQuestionTransition } from '../hooks/useQuestionTransition';
+import { useAppStore } from '../store';
+import type { QuestionChoice } from '../types';
+import {
+  compactQuestionText,
+  getChoiceOptionDisplayTexts,
+  prepareQuestionsWithShuffledChoices,
+  shuffle,
+} from '../utils';
+
+function buildExamQuestions(questions: QuestionChoice[]) {
+  return prepareQuestionsWithShuffledChoices(shuffle(questions).slice(0, 20));
+}
 
 export default function Exam() {
-  const { updateState, navigate, showToast } = useAppStore();
-  
+  const { state, updateState, navigate, showToast } = useAppStore();
+
   const [questions, setQuestions] = useState<QuestionChoice[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
+  const [timeLeft, setTimeLeft] = useState(600);
   const [finished, setFinished] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [earnedXP, setEarnedXP] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const { isTransitioning, runQuestionTransition } = useQuestionTransition();
 
   useEffect(() => {
-    // Gather all choice questions from all lessons
-    const allQ: QuestionChoice[] = [];
-    LESSONS.forEach(l => {
-      if (l.questions) {
-        allQ.push(...l.questions.filter((q): q is QuestionChoice => q.type === 'choice'));
+    let isMounted = true;
+    setLoadError(null);
+
+    void loadChoiceQuestions()
+      .then((allQuestions) => {
+        if (!isMounted) {
+          return;
+        }
+
+        if (allQuestions.length === 0) {
+          setLoadError('Не удалось собрать экзамен. Вопросы недоступны.');
+          return;
+        }
+
+        setQuestions(buildExamQuestions(allQuestions));
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error('Failed to load exam questions:', error);
+        setLoadError('Ошибка загрузки экзамена. Попробуй снова.');
+        showToast('Ошибка загрузки экзамена', 'text-brand-red');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showToast]);
+
+  const handleFinish = useCallback(
+    (resultScore: number = score) => {
+      if (finished) {
+        return;
       }
-    });
-    
-    // Select 20 random questions
-    const shuffled = shuffle(allQ).slice(0, 20);
-    setQuestions(shuffled);
-  }, []);
 
-  const handleFinish = useCallback((resultScore: number = score) => {
-    if (finished) return;
+      setFinished(true);
+      setFinalScore(resultScore);
 
-    setFinished(true);
-    setFinalScore(resultScore);
-    const passed = resultScore >= 16; // 80% to pass
-    
-    updateState(prev => {
-      const s = { ...prev };
-      s.examAttempts += 1;
-      s.examBestScore = Math.max(s.examBestScore, Math.round((resultScore / 20) * 100));
+      const result = finalizeExamResult(state, { score: resultScore });
+      setEarnedXP(result.awardedXP);
+      updateState(result.nextState);
 
-      if (passed) {
-        s.totalXP += 500;
-        if (!s.examPassed) s.examPassed = true;
-        
-        // Check achievements
-        ACHIEVEMENTS.forEach(a => {
-          if (!s.unlockedAchievements.includes(a.id) && a.check(s)) {
-            s.unlockedAchievements.push(a.id);
-            showToast(`🏆 Достижение: ${a.title}!`, 'text-brand-amber');
-          }
-        });
+      for (const title of getAchievementUnlockTitles(result.unlockedAchievements)) {
+        showToast(`🏆 Достижение: ${title}!`, 'text-brand-amber');
       }
 
-      return s;
-    });
+      if (result.passed) {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
-    if (passed) {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      showToast('🎓 Экзамен сдан! +500 XP', 'text-brand-green');
-    } else {
-      showToast('❌ Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
+        if (result.awardedXP > 0) {
+          showToast('Экзамен сдан! +500 XP', 'text-brand-green');
+        } else {
+          showToast(
+            'Экзамен сдан повторно. XP за него начисляется только один раз.',
+            'text-brand-amber'
+          );
+        }
+      } else {
+        showToast('Экзамен не сдан. Нужно 80% правильных ответов.', 'text-brand-red');
+      }
+    },
+    [finished, score, showToast, state, updateState]
+  );
+
+  useEffect(() => {
+    if (finished || questions.length === 0) {
+      return;
     }
-  }, [finished, score, updateState, showToast]);
 
-  useEffect(() => {
-    if (finished || questions.length === 0) return;
-    
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           handleFinish();
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, [finished, questions.length, handleFinish]);
 
   const handleAnswer = () => {
-    if (selectedOption === null) return;
-    
-    const q = questions[currentIdx];
-    const isCorrect = selectedOption === q.ans;
-    const finalScore = isCorrect ? score + 1 : score;
+    if (selectedOption === null || isTransitioning) {
+      return;
+    }
+
+    const question = questions[currentIdx];
+    const isCorrect = selectedOption === question.ans;
+    const nextScore = isCorrect ? score + 1 : score;
 
     if (isCorrect) {
-      setScore(finalScore);
+      setScore(nextScore);
     }
-    
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx(prev => prev + 1);
-      setSelectedOption(null);
-    } else {
-      handleFinish(finalScore);
-    }
+
+    runQuestionTransition(() => {
+      if (currentIdx < questions.length - 1) {
+        setCurrentIdx((prev) => prev + 1);
+        setSelectedOption(null);
+        return;
+      }
+
+      handleFinish(nextScore);
+    });
   };
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return `${minutes}:${remainder < 10 ? '0' : ''}${remainder}`;
   };
 
-  if (questions.length === 0) return <div className="p-10 text-center text-slate-400">Загрузка экзамена...</div>;
+  if (loadError) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col items-center justify-center p-6 text-center">
+        <div className="glass-panel w-full p-6">
+          <div className="mb-3 text-4xl">⚠️</div>
+          <div className="mb-4 text-sm leading-relaxed text-slate-300">{loadError}</div>
+          <button
+            type="button"
+            className="glass-button w-full py-3 font-bold uppercase"
+            onClick={() => navigate('home')}
+          >
+            ← На главную
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return <div className="p-10 text-center text-slate-400">Загрузка экзамена...</div>;
+  }
 
   if (finished) {
     const resolvedScore = finalScore ?? score;
     const passed = resolvedScore >= 16;
+
     return (
-      <div className="max-w-[500px] mx-auto p-6 pt-20 text-center w-full">
-        <div className="text-6xl mb-6">{passed ? '🎓' : '💔'}</div>
-        <h2 className="text-3xl font-extrabold mb-2 text-white">{passed ? 'Экзамен сдан!' : 'Экзамен провален'}</h2>
-        <p className="text-slate-400 mb-8">Твой результат: <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>{resolvedScore} / 20</span></p>
-        
-        <div className="glass-panel p-6 mb-8 text-left">
-          <div className="text-sm text-slate-300 mb-4">
-            {passed 
-              ? 'Поздравляем! Ты доказал свои знания и готов к реальным задачам. Сертификат теперь доступен в профиле.' 
+      <div className="mx-auto w-full max-w-[500px] p-4 pt-16 text-center sm:p-6 sm:pt-20">
+        <div className="mb-6 text-6xl">{passed ? '🎓' : '💔'}</div>
+        <h2 className="mb-2 text-2xl font-extrabold text-white sm:text-3xl">
+          {passed ? 'Экзамен сдан!' : 'Экзамен провален'}
+        </h2>
+        <p className="mb-8 text-slate-400">
+          Твой результат:{' '}
+          <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-red'}`}>
+            {resolvedScore} / 20
+          </span>
+        </p>
+
+        <div className="glass-panel mb-8 p-6 text-left">
+          <div className="mb-4 text-sm text-slate-300">
+            {passed
+              ? earnedXP > 0
+                ? 'Поздравляем! Ты доказал свои знания и готов к реальным задачам. Сертификат теперь доступен в профиле.'
+                : 'Экзамен снова сдан. Сертификат уже доступен, но дополнительный XP за повтор не начисляется.'
               : 'Не расстраивайся. Повтори теорию, пройди практику и попробуй снова. Для сдачи нужно минимум 16 правильных ответов.'}
           </div>
-          {passed && (
-            <div className="flex items-center justify-between p-3 bg-brand-green/10 border border-brand-green/30 rounded-xl">
-              <span className="text-brand-green font-bold text-sm">+500 XP</span>
+
+          {earnedXP > 0 && (
+            <div className="bg-brand-green/10 border-brand-green/30 flex items-center justify-between rounded-xl border p-3">
+              <span className="text-brand-green text-sm font-bold">+{earnedXP} XP</span>
               <span className="text-brand-green text-xl">✨</span>
             </div>
           )}
         </div>
-        
+
         <div className="flex flex-col gap-3">
           {passed && (
-            <button onClick={() => navigate('certificate')} className="w-full bg-brand-purple/80 hover:bg-brand-purple backdrop-blur-md border border-brand-purple/50 text-white font-bold py-4 rounded-xl uppercase tracking-wide transition-all">
+            <button
+              onClick={() => navigate('certificate')}
+              className="bg-brand-purple/80 hover:bg-brand-purple border-brand-purple/50 w-full rounded-xl border py-4 font-bold tracking-wide text-white uppercase backdrop-blur-md transition-all"
+            >
               Получить сертификат
             </button>
           )}
-          <button onClick={() => navigate('home')} className="w-full glass-button text-white font-bold py-4 uppercase tracking-wide">
+
+          <button
+            onClick={() => navigate('home')}
+            className="glass-button w-full py-4 font-bold tracking-wide text-white uppercase"
+          >
             На главную
           </button>
         </div>
@@ -149,59 +226,91 @@ export default function Exam() {
     );
   }
 
-  const q = questions[currentIdx];
+  const question = questions[currentIdx];
+  const choiceOptionTexts = getChoiceOptionDisplayTexts(question.opts);
 
   return (
-    <div className="flex flex-col min-h-screen w-full">
-      <ConfirmModal 
-        isOpen={showConfirm} 
-        title="Прервать экзамен?" 
-        message="Прогресс будет потерян. Вы уверены?" 
+    <div className="flex min-h-screen w-full flex-col">
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Прервать экзамен?"
+        message="Прогресс будет потерян. Вы уверены?"
         confirmText="Да, прервать"
-        onConfirm={() => navigate('home')} 
-        onCancel={() => setShowConfirm(false)} 
+        onConfirm={() => navigate('home')}
+        onCancel={() => setShowConfirm(false)}
       />
-      <div className="solid-header p-4">
-        <div className="max-w-[600px] mx-auto flex items-center justify-between mb-3">
-          <button onClick={() => setShowConfirm(true)} className="text-slate-400 hover:text-white text-sm font-bold transition-colors">✕ ПРЕРВАТЬ</button>
-          <div className={`font-mono font-bold text-lg ${timeLeft < 60 ? 'text-brand-red animate-pulse' : 'text-brand-amber'}`}>
+
+      <div className="solid-header p-3 sm:p-4">
+        <div className="mx-auto mb-3 flex max-w-[600px] items-center justify-between">
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="mobile-tap-target text-sm font-bold text-slate-400 transition-colors hover:text-white"
+          >
+            ✕ ПРЕРВАТЬ
+          </button>
+          <div
+            className={`font-mono text-base font-bold sm:text-lg ${timeLeft < 60 ? 'text-brand-red animate-pulse' : 'text-brand-amber'}`}
+          >
             ⏱ {formatTime(timeLeft)}
           </div>
         </div>
-        <div className="max-w-[600px] mx-auto bg-black/30 border border-white/5 rounded-full h-2.5 overflow-hidden">
-          <div className="bg-brand-purple h-full rounded-full transition-all duration-300" style={{ width: `${(currentIdx / 20) * 100}%` }}></div>
+
+        <div className="mx-auto h-2.5 max-w-[600px] overflow-hidden rounded-full border border-white/5 bg-black/30">
+          <div
+            className="bg-brand-purple h-full rounded-full transition-all duration-300"
+            style={{ width: `${(currentIdx / 20) * 100}%` }}
+          ></div>
         </div>
       </div>
 
-      <div className="max-w-[600px] mx-auto w-full p-6 flex flex-col flex-1">
-        <div className="text-sm text-brand-purple font-bold tracking-widest mb-4 font-mono uppercase">Вопрос {currentIdx + 1} из 20</div>
-        <h2 className="text-[22px] font-semibold leading-snug mb-8 text-white">{q.q}</h2>
+      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-4 sm:p-6">
+        <div
+          key={currentIdx}
+          className={isTransitioning ? 'question-stage-exit' : 'question-stage-enter'}
+        >
+          <div className="text-brand-purple mb-4 font-mono text-sm font-bold tracking-widest uppercase">
+            Вопрос {currentIdx + 1} из 20
+          </div>
+          <h2 className="mb-6 text-[20px] leading-snug font-semibold text-white sm:mb-8 sm:text-[22px]">
+            {compactQuestionText(question.q)}
+          </h2>
 
-        <div className="flex-1 flex flex-col gap-3">
-          {(q.opts || []).map((opt: string, idx: number) => (
+          <div className="flex flex-1 flex-col gap-3">
+            {question.opts.map((_, idx) => {
+              const optionText = choiceOptionTexts[idx];
+              const isSelected = selectedOption === idx;
+
+              return (
+                <button
+                  key={idx}
+                  disabled={isTransitioning}
+                  onClick={() => setSelectedOption(idx)}
+                  className={`min-h-[74px] rounded-2xl border-[1.5px] px-3.5 py-3 text-left backdrop-blur-md transition-all duration-300 ease-out sm:min-h-[86px] sm:px-4 ${isSelected ? 'answer-choice-selected border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300'} ${!isTransitioning && !isSelected ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${isSelected ? 'border-brand-purple' : 'border-white/20'}`}
+                    >
+                      {isSelected && <div className="bg-brand-purple h-3 w-3 rounded-full"></div>}
+                    </div>
+                    <span className="flex-1 text-[14px] leading-relaxed sm:text-[15px]">
+                      {optionText}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-8">
             <button
-              key={idx}
-              onClick={() => setSelectedOption(idx)}
-              className={`text-left p-4 rounded-2xl border-[1.5px] transition-all duration-200 backdrop-blur-md ${selectedOption === idx ? 'border-brand-purple/50 bg-brand-purple/10 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:border-white/20'}`}
+              disabled={selectedOption === null || isTransitioning}
+              onClick={handleAnswer}
+              className={`w-full rounded-xl border py-3.5 font-bold tracking-wide uppercase backdrop-blur-md transition-all sm:py-4 ${selectedOption !== null && !isTransitioning ? 'bg-brand-purple/80 border-brand-purple/50 hover:bg-brand-purple text-white' : 'cursor-not-allowed border-white/5 bg-black/20 text-slate-500'}`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${selectedOption === idx ? 'border-brand-purple' : 'border-white/20'}`}>
-                  {selectedOption === idx && <div className="w-3 h-3 rounded-full bg-brand-purple"></div>}
-                </div>
-                <span className="text-[15px] leading-relaxed">{opt}</span>
-              </div>
+              {currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ ЭКЗАМЕН' : 'СЛЕДУЮЩИЙ ВОПРОС'}
             </button>
-          ))}
-        </div>
-
-        <div className="mt-8">
-          <button 
-            disabled={selectedOption === null} 
-            onClick={handleAnswer} 
-            className={`w-full font-bold py-4 rounded-xl uppercase tracking-wide transition-all backdrop-blur-md border ${selectedOption !== null ? 'bg-brand-purple/80 border-brand-purple/50 text-white hover:bg-brand-purple' : 'bg-black/20 border-white/5 text-slate-500 cursor-not-allowed'}`}
-          >
-            {currentIdx === questions.length - 1 ? 'ЗАВЕРШИТЬ ЭКЗАМЕН' : 'СЛЕДУЮЩИЙ ВОПРОС'}
-          </button>
+          </div>
         </div>
       </div>
     </div>
