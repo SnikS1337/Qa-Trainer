@@ -335,6 +335,7 @@ export default function Home() {
   const [openingLessonId, setOpeningLessonId] = useState<string | null>(null);
   const [hoveredLessonId, setHoveredLessonId] = useState<string | null>(null);
   const [isPageScrolling, setIsPageScrolling] = useState(false);
+  const isPageScrollingRef = useRef(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openLessonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -381,6 +382,10 @@ export default function Home() {
       openLessonTimer.current = null;
     }, 460);
   };
+
+  useEffect(() => {
+    isPageScrollingRef.current = isPageScrolling;
+  }, [isPageScrolling]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -453,14 +458,16 @@ export default function Home() {
     updateScrollGlass();
 
     const handleScroll = () => {
-      if (!isPageScrolling) {
+      if (!isPageScrollingRef.current) {
         setIsPageScrolling(true);
+        isPageScrollingRef.current = true;
       }
       if (scrollIdleTimer.current) {
         clearTimeout(scrollIdleTimer.current);
       }
       scrollIdleTimer.current = setTimeout(() => {
         setIsPageScrolling(false);
+        isPageScrollingRef.current = false;
         scrollIdleTimer.current = null;
       }, 140);
 
@@ -482,7 +489,7 @@ export default function Home() {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [isPageScrolling]);
+  }, []);
 
   useEffect(() => {
     preloadLessonsContent();

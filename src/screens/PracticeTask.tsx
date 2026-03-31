@@ -444,7 +444,7 @@ export default function PracticeTask({ id }: { id: string }) {
           <div className="text-brand-amber mb-1.5 font-mono text-[10px] font-bold tracking-[2px]">
             {task.type === 'write_test' ? '📄 ТРЕБОВАНИЕ' : '🔍 СЦЕНАРИЙ'}
           </div>
-          {task.type === 'write_test' ? task.requirement : task.scenario}
+          {task.type === 'write_test' ? task.requirement : (task.scenario ?? task.requirement)}
         </div>
 
         <div className="flex flex-1 flex-col gap-3.5">
