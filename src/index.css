@@ -264,12 +264,109 @@ html,
     ),
     linear-gradient(180deg, rgba(58, 74, 97, 0.52) 0%, rgba(34, 47, 68, 0.54) 100%),
     rgba(18, 26, 40, 0.52);
-  backdrop-filter: blur(18px) saturate(132%);
-  -webkit-backdrop-filter: blur(18px) saturate(132%);
+  backdrop-filter: blur(12px) saturate(118%);
+  -webkit-backdrop-filter: blur(12px) saturate(118%);
   box-shadow:
     0 18px 30px rgba(2, 6, 23, 0.14),
     inset 0 0 0 1px rgba(255, 255, 255, 0.01);
   background-clip: padding-box;
+}
+
+.home-surface-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      112deg,
+      rgba(255, 255, 255, 0) 14%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0.016) 58%,
+      rgba(255, 255, 255, 0) 82%
+    ),
+    radial-gradient(circle at 16% 32%, rgba(52, 211, 153, 0.16) 0%, rgba(52, 211, 153, 0) 48%);
+  background-size: 165% 100%;
+  background-position: 0% 50%;
+  opacity: 0.06;
+  mix-blend-mode: normal;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 240ms ease,
+    transform 260ms ease,
+    background-position 260ms ease;
+}
+
+.home-surface-card.lesson-tilt-face::before {
+  opacity: var(--home-lesson-react-alpha, 0.16);
+  transform: translate3d(calc(var(--home-lesson-glass-shift, 0px) * 0.58), 0, 0);
+  background-position: var(--home-lesson-gloss-position, 8%) 50%;
+}
+
+.lesson-meta-glass {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 4px 9px;
+  border: 1px solid rgba(203, 213, 225, 0.3);
+  background:
+    radial-gradient(
+      circle at 0% var(--home-glass-left-y, 50%),
+      rgba(52, 211, 153, var(--home-glass-green-alpha-soft, 0.045)) 0%,
+      rgba(52, 211, 153, 0) 38%
+    ),
+    radial-gradient(
+      circle at 100% var(--home-glass-right-y, 50%),
+      rgba(96, 165, 250, var(--home-glass-blue-alpha-soft, 0.06)) 0%,
+      rgba(96, 165, 250, 0) 40%
+    ),
+    rgba(15, 23, 42, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 6px 14px rgba(2, 6, 23, 0.14);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  line-height: 1;
+  vertical-align: middle;
+  transform: translateZ(0);
+  background-clip: padding-box;
+  white-space: nowrap;
+  transition:
+    background 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.device-mobile .home-surface-card::before,
+.device-mobile .home-surface-card.lesson-tilt-face::before {
+  opacity: 0.045;
+  transform: none;
+}
+
+.lesson-meta-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.05) 36%,
+    rgba(255, 255, 255, 0) 64%
+  );
+  opacity: 0.45;
+}
+
+.lesson-meta-glass > * {
+  position: relative;
+  z-index: 1;
 }
 
 .home-surface-card--quote {
@@ -562,6 +659,14 @@ html,
   animation: mode-gloss-practice-sheen 7.8s ease-in-out infinite;
 }
 
+.sort-picked-chip {
+  animation: sort-chip-enter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sort-option-return {
+  animation: sort-option-return 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @keyframes mode-gloss-daily {
   0%,
   100% {
@@ -631,6 +736,30 @@ html,
 
   50% {
     opacity: 0.32;
+  }
+}
+
+@keyframes sort-chip-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(16px, 0, 0) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes sort-option-return {
+  0% {
+    opacity: 0.35;
+    transform: translate3d(8px, 0, 0) scale(0.97);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -1479,20 +1608,20 @@ html,
 @keyframes ambient-outline-pulse {
   0%,
   100% {
-    opacity: 0.78;
+    opacity: 0.86;
   }
 
   50% {
-    opacity: 1;
+    opacity: 1.22;
   }
 }
 
 .ambient-card-outline-pulse-soft {
-  animation: ambient-outline-pulse 5.2s ease-in-out infinite;
+  animation: ambient-outline-pulse 4.2s ease-in-out infinite;
 }
 
 .ambient-card-outline-pulse {
-  animation: ambient-outline-pulse 3.8s ease-in-out infinite;
+  animation: ambient-outline-pulse 2.9s ease-in-out infinite;
 }
 
 .ambient-card-outline-pulse-quote {

@@ -39,6 +39,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.totalXP >= 300,
   },
   {
+    id: 'xp700',
+    icon: '🚀',
+    title: 'Ракета прогресса',
+    desc: 'Набери 700 XP',
+    check: (s) => s.totalXP >= 700,
+  },
+  {
     id: 'half',
     icon: '🎯',
     title: 'На полпути',
@@ -60,6 +67,29 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.retries >= 1,
   },
   {
+    id: 'lessons10',
+    icon: '📚',
+    title: 'В рабочем ритме',
+    desc: 'Пройди 10 уроков',
+    check: (s) => s.completedLessons.length >= 10,
+  },
+  {
+    id: 'practice3',
+    icon: '🧩',
+    title: 'Практик',
+    desc: 'Заверши 3 практических задания',
+    check: (s) => (s.completedPractice?.length ?? 0) >= 3,
+  },
+  {
+    id: 'accuracy70',
+    icon: '🎯',
+    title: 'Меткий QA',
+    desc: 'Держи точность 70%+ после 60 ответов',
+    check: (s) =>
+      s.totalQuestionsAnswered >= 60 &&
+      Math.round((s.totalCorrect / Math.max(1, s.totalQuestionsAnswered)) * 100) >= 70,
+  },
+  {
     id: 'exam_pass',
     icon: '🎯',
     title: 'Экзамен сдан!',
@@ -72,5 +102,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     title: 'Недельная серия',
     desc: 'Пройди ежедневный квиз 7 дней подряд',
     check: (s) => s.dailyStreak >= 7,
+  },
+  {
+    id: 'weekly_checkpoint',
+    icon: '🗓️',
+    title: 'Ритм недели',
+    desc: 'Закрой 3 разные темы за одну неделю',
+    check: (s) => s.weeklyCheckpointCompletions >= 1,
   },
 ];

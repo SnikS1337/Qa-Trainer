@@ -128,6 +128,15 @@ export default function Exam() {
     const isCorrect = selectedOption === question.ans;
     const nextScore = isCorrect ? score + 1 : score;
 
+    updateState((prev) => {
+      const nextState = { ...prev };
+      nextState.totalQuestionsAnswered += 1;
+      if (isCorrect) {
+        nextState.totalCorrect += 1;
+      }
+      return nextState;
+    });
+
     if (isCorrect) {
       setScore(nextScore);
     }

@@ -5,6 +5,9 @@ import { loadLessonById } from '../data/content_loaders';
 import { buildLessonSessionQuestions } from '../domain/lesson_session';
 import { MOTIVATIONAL_MESSAGES } from '../data/messages';
 import { finalizeLessonResult, getAchievementUnlockTitles } from '../domain/progression';
+import { unlockAchievements } from '../domain/achievements';
+import { getLocalDateKey } from '../domain/dates';
+import { consumeWeakTopicCompletion, hideWeakTopicsForDate } from '../domain/weak_topics';
 import { useQuestionTransition } from '../hooks/useQuestionTransition';
 import { useAppStore } from '../store';
 import type { Lesson as LessonType, Question } from '../types';
@@ -27,6 +30,8 @@ export default function Lesson({ id }: { id: string }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sortReturnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [sortReturnItem, setSortReturnItem] = useState<string | null>(null);
   const { isTransitioning, runQuestionTransition } = useQuestionTransition();
 
   useEffect(() => {
@@ -68,6 +73,9 @@ export default function Lesson({ id }: { id: string }) {
       if (confettiTimerRef.current) {
         clearTimeout(confettiTimerRef.current);
       }
+      if (sortReturnTimerRef.current) {
+        clearTimeout(sortReturnTimerRef.current);
+      }
     };
   }, [id, showToast]);
 
@@ -99,16 +107,51 @@ export default function Lesson({ id }: { id: string }) {
     const result = finalizeLessonResult(state, {
       lessonId: lesson.id,
       lessonXP: lesson.xp,
+      lessonCategory: lesson.category,
       correctAnswers: correct,
       totalQuestions: questions.length,
       heartsLeft: hearts,
     });
 
-    setAwardedXP(result.awardedXP);
+    setAwardedXP(result.totalAwardedXP);
     setWasReplay(result.alreadyCompleted);
-    updateState(result.nextState);
+    let nextState = result.nextState;
+    const unlockedFromBonus = [] as string[];
 
-    for (const title of getAchievementUnlockTitles(result.unlockedAchievements)) {
+    if (result.passed && result.alreadyCompleted) {
+      const todayKey = getLocalDateKey();
+      const weakTopicResult = consumeWeakTopicCompletion(lesson.id, todayKey);
+
+      if (weakTopicResult.fromWeakTopicSession) {
+        hideWeakTopicsForDate(todayKey);
+      }
+
+      if (weakTopicResult.bonusXP > 0) {
+        const withBonus = { ...nextState, totalXP: nextState.totalXP + weakTopicResult.bonusXP };
+        const achievementAfterBonus = unlockAchievements(withBonus);
+        nextState = achievementAfterBonus.nextState;
+        setAwardedXP((prev) => prev + weakTopicResult.bonusXP);
+        showToast(`🔁 Бонус за повтор: +${weakTopicResult.bonusXP} XP`, 'text-brand-amber');
+        unlockedFromBonus.push(...getAchievementUnlockTitles(achievementAfterBonus.unlocked));
+      }
+    }
+
+    updateState(nextState);
+
+    if (result.returningBonusXP > 0) {
+      showToast(`🎁 Бонус за возвращение: +${result.returningBonusXP} XP`, 'text-brand-amber');
+    }
+
+    if (result.weeklyCheckpointUnlocked) {
+      showToast('🏅 Weekly checkpoint: закрыто 3 темы недели!', 'text-brand-green');
+    }
+
+    const unlockedTitles = new Set(getAchievementUnlockTitles(result.unlockedAchievements));
+    for (const title of unlockedFromBonus) {
+      unlockedTitles.add(title);
+    }
+
+    for (const title of unlockedTitles) {
       showToast(`🏆 Достижение: ${title}!`, 'text-brand-amber');
     }
 
@@ -251,10 +294,17 @@ export default function Lesson({ id }: { id: string }) {
             )}
           </div>
 
-          {passed && wasReplay && (
+          {passed && wasReplay && awardedXP === 0 && (
             <div className="mt-4 text-[12px] leading-relaxed text-slate-400">
-              XP и прогресс за этот урок уже были начислены ранее. Повтор доступен только для
-              практики.
+              XP и прогресс за этот урок уже были начислены ранее. Этот повтор засчитан как
+              тренировка.
+            </div>
+          )}
+
+          {passed && wasReplay && awardedXP > 0 && (
+            <div className="mt-4 text-[12px] leading-relaxed text-slate-300">
+              Базовый XP за урок уже был получен ранее, но за повтор из блока «Повтори слабые темы»
+              начислен бонус.
             </div>
           )}
         </div>
@@ -378,7 +428,7 @@ export default function Lesson({ id }: { id: string }) {
                     key={index}
                     disabled={answered || isTransitioning}
                     onClick={() => setSelected(index)}
-                    className={`flex min-h-[72px] w-full items-start gap-3 rounded-xl border-[1.5px] px-3 py-2.5 text-left text-[13px] font-semibold backdrop-blur-md transition-all duration-300 ease-out sm:min-h-[78px] sm:px-3.5 sm:py-3 sm:text-[14px] ${isSelected && !answered ? 'answer-choice-selected' : ''} ${bgClass} ${borderClass} ${textClass} ${!answered && !isTransitioning ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
+                    className={`flex min-h-[72px] w-full items-center gap-3 rounded-xl border-[1.5px] px-3 py-2.5 text-left text-[13px] font-semibold backdrop-blur-md transition-all duration-300 ease-out sm:min-h-[78px] sm:px-3.5 sm:py-3 sm:text-[14px] ${isSelected && !answered ? 'answer-choice-selected' : ''} ${bgClass} ${borderClass} ${textClass} ${!answered && !isTransitioning ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
                     style={
                       !answered && isSelected
                         ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` }
@@ -420,7 +470,7 @@ export default function Lesson({ id }: { id: string }) {
 
                           setSortOrder(sortOrder.filter((value) => value !== item));
                         }}
-                        className="bg-brand-green/10 border-brand-green/30 flex cursor-pointer items-center justify-between rounded-lg border-[1.5px] px-2.5 py-2 text-[12px] font-semibold text-white sm:px-3 sm:text-[13px]"
+                        className="sort-picked-chip bg-brand-green/10 border-brand-green/30 flex cursor-pointer items-center justify-between rounded-lg border-[1.5px] px-2.5 py-2 text-[12px] font-semibold text-white sm:px-3 sm:text-[13px]"
                       >
                         <span>
                           {index + 1}. {item}
@@ -442,12 +492,20 @@ export default function Lesson({ id }: { id: string }) {
                         onClick={() => {
                           if (isSelected) {
                             setSortOrder(sortOrder.filter((value) => value !== item));
+                            setSortReturnItem(item);
+                            if (sortReturnTimerRef.current) {
+                              clearTimeout(sortReturnTimerRef.current);
+                            }
+                            sortReturnTimerRef.current = setTimeout(() => {
+                              setSortReturnItem((prev) => (prev === item ? null : prev));
+                              sortReturnTimerRef.current = null;
+                            }, 360);
                             return;
                           }
 
                           setSortOrder([...sortOrder, item]);
                         }}
-                        className={`w-full rounded-xl border-[1.5px] p-2.5 text-left text-[12px] font-semibold text-white backdrop-blur-md transition-all duration-300 ease-out sm:p-3 sm:text-[13px] ${isSelected ? 'border-white/5 bg-black/20 opacity-35' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
+                        className={`w-full rounded-xl border-[1.5px] p-2.5 text-left text-[12px] font-semibold text-white backdrop-blur-md transition-all duration-300 ease-out sm:p-3 sm:text-[13px] ${isSelected ? 'translate-x-0.5 scale-[0.99] border-white/5 bg-black/20 opacity-35' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'} ${sortReturnItem === item && !isSelected ? 'sort-option-return' : ''}`}
                       >
                         {item}
                       </button>

@@ -167,22 +167,48 @@ export default function App() {
       return;
     }
 
+    let preloaded = false;
     let preloadTimer: number | null = null;
     let idleId: number | null = null;
 
     const runPreload = () => {
+      if (preloaded) {
+        return;
+      }
+
+      preloaded = true;
       preloadLessonsContent();
       preloadPracticeTasksContent();
     };
 
-    preloadTimer = window.setTimeout(() => {
-      if (typeof window.requestIdleCallback === 'function') {
-        idleId = window.requestIdleCallback(runPreload, { timeout: 1800 });
+    const schedulePreload = (delayMs: number) => {
+      if (preloaded) {
         return;
       }
 
-      runPreload();
-    }, 900);
+      if (preloadTimer !== null) {
+        window.clearTimeout(preloadTimer);
+      }
+
+      preloadTimer = window.setTimeout(() => {
+        if (typeof window.requestIdleCallback === 'function') {
+          idleId = window.requestIdleCallback(runPreload, { timeout: 2600 });
+          return;
+        }
+
+        runPreload();
+      }, delayMs);
+    };
+
+    const postponePreloadOnInteraction = () => {
+      schedulePreload(1900);
+    };
+
+    schedulePreload(1100);
+
+    window.addEventListener('scroll', postponePreloadOnInteraction, { passive: true });
+    window.addEventListener('touchstart', postponePreloadOnInteraction, { passive: true });
+    window.addEventListener('wheel', postponePreloadOnInteraction, { passive: true });
 
     return () => {
       if (preloadTimer !== null) {
@@ -191,6 +217,9 @@ export default function App() {
       if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
         window.cancelIdleCallback(idleId);
       }
+      window.removeEventListener('scroll', postponePreloadOnInteraction);
+      window.removeEventListener('touchstart', postponePreloadOnInteraction);
+      window.removeEventListener('wheel', postponePreloadOnInteraction);
     };
   }, [isSlowNetwork]);
 
@@ -254,24 +283,7 @@ export default function App() {
 
     updateDevice();
 
-    const handleChange = () => updateDevice();
-    if (typeof mobileWidthQuery.addEventListener === 'function') {
-      mobileWidthQuery.addEventListener('change', handleChange);
-      coarsePointerQuery.addEventListener('change', handleChange);
-    } else {
-      mobileWidthQuery.addListener(handleChange);
-      coarsePointerQuery.addListener(handleChange);
-    }
-
-    return () => {
-      if (typeof mobileWidthQuery.removeEventListener === 'function') {
-        mobileWidthQuery.removeEventListener('change', handleChange);
-        coarsePointerQuery.removeEventListener('change', handleChange);
-      } else {
-        mobileWidthQuery.removeListener(handleChange);
-        coarsePointerQuery.removeListener(handleChange);
-      }
-    };
+    return () => undefined;
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,4 @@
 import { useAppStore } from '../store';
-import { preloadLessonsContent, preloadPracticeTasksContent } from '../data/content_loaders';
 import { LESSON_META } from '../data/lesson_meta';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
@@ -9,6 +8,11 @@ import DevMenu from '../components/DevMenu';
 import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
 import { getLessonSessionQuestionCount } from '../domain/lesson_session';
+import {
+  clearWeakTopicsState,
+  getWeakTopicsHiddenDate,
+  markWeakTopicLaunch,
+} from '../domain/weak_topics';
 import type { Quote } from '../types';
 
 const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
@@ -136,13 +140,13 @@ function CardOutline({
   ];
   const isActive = isAmbient || opening || hovered;
   const isSoftPulse = isAmbient && pulseMode === 'soft';
-  const glowOpacity = isAmbient ? (isSoftPulse ? 0.16 : 0.22) : 0.5;
-  const lineOpacity = isAmbient ? (isSoftPulse ? 0.38 : 0.5) : 1;
+  const glowOpacity = isAmbient ? (isSoftPulse ? 0.22 : 0.3) : 0.5;
+  const lineOpacity = isAmbient ? (isSoftPulse ? 0.5 : 0.64) : 1;
   const glowFilter = isAmbient
-    ? `blur(2px) drop-shadow(0 0 ${isSoftPulse ? '7px' : '9px'} ${color}38) drop-shadow(0 0 ${isSoftPulse ? '12px' : '16px'} ${color}18)`
+    ? `blur(2px) drop-shadow(0 0 ${isSoftPulse ? '9px' : '12px'} ${color}52) drop-shadow(0 0 ${isSoftPulse ? '16px' : '22px'} ${color}24)`
     : `blur(3px) drop-shadow(0 0 10px ${color}88) drop-shadow(0 0 24px ${color}55)`;
   const lineFilter = isAmbient
-    ? `drop-shadow(0 0 ${isSoftPulse ? '4px' : '5px'} ${color}44) drop-shadow(0 0 ${isSoftPulse ? '8px' : '11px'} ${color}1c)`
+    ? `drop-shadow(0 0 ${isSoftPulse ? '5px' : '7px'} ${color}66) drop-shadow(0 0 ${isSoftPulse ? '10px' : '14px'} ${color}2a)`
     : `drop-shadow(0 0 6px ${color}aa) drop-shadow(0 0 18px ${color}55)`;
   const pulseClassName = isAmbient
     ? isSoftPulse
@@ -323,7 +327,6 @@ export default function Home() {
   const today = getLocalDateKey();
 
   const [now, setNow] = useState(() => new Date());
-  const [scrollGlassProgress, setScrollGlassProgress] = useState(0);
   const [isQuoteCollapsed, setIsQuoteCollapsed] = useState(() => {
     try {
       return localStorage.getItem(QUOTE_VISIBILITY_STORAGE_KEY) === today;
@@ -348,6 +351,13 @@ export default function Home() {
   const [isCompleteCelebrating, setIsCompleteCelebrating] = useState(false);
   const [completeCooldownUntil, setCompleteCooldownUntil] = useState(0);
   const [completeStarParticles, setCompleteStarParticles] = useState<CompleteStarParticle[]>([]);
+  const isWeakTopicsHiddenToday = getWeakTopicsHiddenDate() === today;
+
+  useEffect(() => {
+    if (state.completedLessons.length === 0) {
+      clearWeakTopicsState();
+    }
+  }, [state.completedLessons.length]);
 
   const handlePointerDown = () => {
     if (pressTimer.current) {
@@ -445,19 +455,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    let frame = 0;
-
-    const updateScrollGlass = () => {
-      frame = 0;
-      const maxScroll = Math.max(window.innerHeight * 1.35, 1);
-      const nextProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
-      setScrollGlassProgress((prev) =>
-        Math.abs(prev - nextProgress) < 0.01 ? prev : nextProgress
-      );
-    };
-
-    updateScrollGlass();
-
     const handleScroll = () => {
       if (!isPageScrollingRef.current) {
         setIsPageScrolling(true);
@@ -471,18 +468,12 @@ export default function Home() {
         isPageScrollingRef.current = false;
         scrollIdleTimer.current = null;
       }, 140);
-
-      if (frame) return;
-      frame = window.requestAnimationFrame(updateScrollGlass);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
 
     return () => {
-      if (frame) {
-        window.cancelAnimationFrame(frame);
-      }
       if (scrollIdleTimer.current) {
         clearTimeout(scrollIdleTimer.current);
         scrollIdleTimer.current = null;
@@ -493,9 +484,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    preloadLessonsContent();
-    preloadPracticeTasksContent();
-
     if (state.dailyQuoteDate !== today) {
       updateState({
         lastQuoteIndex: Math.floor(Math.random() * QUOTES.length),
@@ -567,19 +555,82 @@ export default function Home() {
 
   const greeting = getTimeOfDayGreeting(now);
   const homeGlassStyle = {
-    ['--home-glass-left-y' as string]: `${34 + scrollGlassProgress * 30}%`,
-    ['--home-glass-right-y' as string]: `${68 - scrollGlassProgress * 24}%`,
-    ['--home-glass-green-alpha' as string]: (0.07 + scrollGlassProgress * 0.04).toFixed(3),
-    ['--home-glass-blue-alpha' as string]: (0.095 + scrollGlassProgress * 0.03).toFixed(3),
-    ['--home-glass-green-alpha-soft' as string]: (0.04 + scrollGlassProgress * 0.025).toFixed(3),
-    ['--home-glass-blue-alpha-soft' as string]: (0.055 + scrollGlassProgress * 0.02).toFixed(3),
-    ['--home-glass-green-alpha-strong' as string]: (0.085 + scrollGlassProgress * 0.045).toFixed(3),
-    ['--home-glass-blue-alpha-strong' as string]: (0.1 + scrollGlassProgress * 0.03).toFixed(3),
+    ['--home-glass-left-y' as string]: '36%',
+    ['--home-glass-right-y' as string]: '66%',
+    ['--home-glass-green-alpha' as string]: '0.078',
+    ['--home-glass-blue-alpha' as string]: '0.096',
+    ['--home-glass-green-alpha-soft' as string]: '0.042',
+    ['--home-glass-blue-alpha-soft' as string]: '0.056',
+    ['--home-glass-green-alpha-strong' as string]: '0.088',
+    ['--home-glass-blue-alpha-strong' as string]: '0.102',
+    ['--home-lesson-glass-shift' as string]: '0px',
+    ['--home-lesson-react-alpha' as string]: '0.17',
+    ['--home-lesson-gloss-position' as string]: '12%',
   };
 
   const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
   const dailyDone = state.lastDailyDate === today;
   const practDone = state.completedPractice?.length || 0;
+  const lessonsByCategory = new Map(
+    categories.map((category) => [
+      category,
+      LESSON_META.filter((lesson) => lesson.category === category),
+    ])
+  );
+
+  const categoryUnlockedMap = new Map<string, boolean>();
+  let previousCategoryLessons: typeof LESSON_META = [];
+  categories.forEach((category, index) => {
+    const unlocked =
+      index === 0 ||
+      previousCategoryLessons.every((lesson) => state.completedLessons.includes(lesson.id));
+    categoryUnlockedMap.set(category, unlocked);
+    previousCategoryLessons = lessonsByCategory.get(category) ?? [];
+  });
+
+  const lessonLockedMap = new Map<string, boolean>();
+  categories.forEach((category) => {
+    const catLessons = lessonsByCategory.get(category) ?? [];
+    const catUnlocked = categoryUnlockedMap.get(category) ?? false;
+
+    catLessons.forEach((lesson, lessonIndex) => {
+      const locked =
+        !catUnlocked ||
+        (lessonIndex > 0 && !state.completedLessons.includes(catLessons[lessonIndex - 1].id));
+      lessonLockedMap.set(lesson.id, locked);
+    });
+  });
+
+  const weakCategoryCandidates = categories
+    .map((category) => {
+      const catLessons = lessonsByCategory.get(category) ?? [];
+      const done = catLessons.filter((lesson) => state.completedLessons.includes(lesson.id)).length;
+      const ratio = catLessons.length > 0 ? done / catLessons.length : 1;
+
+      return {
+        category,
+        ratio,
+        lessons: catLessons,
+      };
+    })
+    .filter((item) => (categoryUnlockedMap.get(item.category) ?? false) && item.ratio < 1)
+    .sort((a, b) => a.ratio - b.ratio);
+
+  const weakLessonSuggestions = weakCategoryCandidates
+    .flatMap((item) =>
+      item.lessons.filter(
+        (lesson) =>
+          state.completedLessons.includes(lesson.id) && !(lessonLockedMap.get(lesson.id) ?? true)
+      )
+    )
+    .slice(0, 3);
+
+  const dailyLessonBonusAvailable = state.lastLessonRewardDate !== today;
+
+  const handleWeakLessonOpen = (lessonId: string) => {
+    markWeakTopicLaunch(lessonId, today);
+    handleLessonOpen(lessonId, false);
+  };
 
   const hideQuoteForToday = () => {
     try {
@@ -694,6 +745,11 @@ export default function Home() {
                 style={{ width: `${lvl.pct}%` }}
               ></div>
             </div>
+            <div className="mt-1.5 text-[10px] text-slate-400">
+              {dailyLessonBonusAvailable
+                ? '🎁 Первый пройденный урок сегодня: +10 XP'
+                : '🎁 Бонус за первый урок сегодня уже получен'}
+            </div>
           </div>
         </div>
       </div>
@@ -710,16 +766,39 @@ export default function Home() {
           onShowAgain={showQuoteAgain}
         />
 
-        {/* Lessons */}
-        {categories.map((cat, catIdx) => {
-          const catLessons = LESSON_META.filter((lesson) => lesson.category === cat);
-          const prevCat = catIdx > 0 ? categories[catIdx - 1] : null;
-          const prevCatLessons = prevCat
-            ? LESSON_META.filter((lesson) => lesson.category === prevCat)
-            : [];
+        {state.completedLessons.length > 0 &&
+          !isWeakTopicsHiddenToday &&
+          weakLessonSuggestions.length > 0 && (
+            <div className="relative mt-3 mb-4">
+              <div className="glass-panel home-surface-card--mode mode-gloss mode-gloss--practice p-3.5">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="text-[11px] font-bold tracking-[2px] text-slate-100 uppercase">
+                    🔁 Повтори слабые темы
+                  </div>
+                  <div className="text-[10px] text-slate-300">2-3 минуты на урок</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {weakLessonSuggestions.map((lesson) => (
+                    <button
+                      key={`weak-${lesson.id}`}
+                      type="button"
+                      className="glass-button flex items-center gap-2 rounded-full px-3 py-1.5 text-xs"
+                      onClick={() => handleWeakLessonOpen(lesson.id)}
+                    >
+                      <span>{lesson.icon}</span>
+                      <span className="max-w-[170px] truncate">{lesson.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
-          const catUnlocked =
-            catIdx === 0 || prevCatLessons.every((l) => state.completedLessons.includes(l.id));
+        {/* Lessons */}
+        {categories.map((cat) => {
+          const catLessons = lessonsByCategory.get(cat) ?? [];
+
+          const catUnlocked = categoryUnlockedMap.get(cat) ?? false;
           const catDone = catLessons.filter((l) => state.completedLessons.includes(l.id)).length;
 
           return (
@@ -823,7 +902,7 @@ export default function Home() {
                             <div className="mb-2 truncate text-xs text-slate-300">
                               {lesson.desc}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="lesson-meta-glass flex items-center gap-2">
                               <span className="font-mono text-[11px] text-slate-300">
                                 {questionCountLabel}
                               </span>

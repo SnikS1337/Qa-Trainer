@@ -61,3 +61,17 @@ export function normalizeStoredDateKey(value: string) {
 
   return getLocalDateKey(legacyDate);
 }
+
+export function getLocalWeekKey(date: Date = new Date()) {
+  const local = new Date(date.getTime());
+  local.setHours(0, 0, 0, 0);
+
+  const day = local.getDay() || 7;
+  local.setDate(local.getDate() + 4 - day);
+
+  const yearStart = new Date(local.getFullYear(), 0, 1);
+  const diffDays = Math.floor((local.getTime() - yearStart.getTime()) / 86400000);
+  const week = Math.ceil((diffDays + 1) / 7);
+
+  return `${local.getFullYear()}-W${String(week).padStart(2, '0')}`;
+}

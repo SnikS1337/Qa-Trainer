@@ -24,6 +24,11 @@ export const initialState: AppState = {
   completedPractice: [],
   certName: '',
   lastActiveDate: '',
+  lastLaunchDate: '',
+  lastLessonRewardDate: '',
+  weeklyCheckpointWeek: '',
+  weeklyCheckpointCategories: [],
+  weeklyCheckpointCompletions: 0,
   isCheater: false,
   examPassed: false,
 };

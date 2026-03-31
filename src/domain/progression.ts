@@ -1,6 +1,8 @@
 import type { Achievement, AppState, PracticeTask } from '../types';
 import { unlockAchievements } from './achievements';
-import { getPreviousDateKey } from './dates';
+import { getLocalDateKey, getLocalWeekKey, getPreviousDateKey } from './dates';
+
+const DAILY_RETURN_BONUS_XP = 10;
 
 function cloneState(state: AppState): AppState {
   return {
@@ -28,12 +30,14 @@ export function finalizeLessonResult(
   {
     lessonId,
     lessonXP,
+    lessonCategory,
     correctAnswers,
     totalQuestions,
     heartsLeft,
   }: {
     lessonId: string;
     lessonXP: number;
+    lessonCategory?: string;
     correctAnswers: number;
     totalQuestions: number;
     heartsLeft: number;
@@ -45,6 +49,8 @@ export function finalizeLessonResult(
   const alreadyCompleted = nextState.completedLessons.includes(lessonId);
   const awardedXP =
     passed && !alreadyCompleted ? (perfect ? Math.round(lessonXP * 1.5) : lessonXP) : 0;
+  let returningBonusXP = 0;
+  let weeklyCheckpointUnlocked = false;
 
   if (!alreadyCompleted) {
     nextState.totalXP += awardedXP;
@@ -55,6 +61,32 @@ export function finalizeLessonResult(
 
     if (passed) {
       nextState.completedLessons.push(lessonId);
+
+      if (lessonCategory) {
+        const todayKey = getLocalDateKey();
+        if (nextState.lastLessonRewardDate !== todayKey) {
+          returningBonusXP = DAILY_RETURN_BONUS_XP;
+          nextState.totalXP += returningBonusXP;
+          nextState.lastLessonRewardDate = todayKey;
+        }
+
+        const currentWeekKey = getLocalWeekKey();
+        if (nextState.weeklyCheckpointWeek !== currentWeekKey) {
+          nextState.weeklyCheckpointWeek = currentWeekKey;
+          nextState.weeklyCheckpointCategories = [];
+        }
+
+        const categoriesSet = new Set(nextState.weeklyCheckpointCategories);
+        const beforeCount = categoriesSet.size;
+        categoriesSet.add(lessonCategory);
+        const afterCount = categoriesSet.size;
+        nextState.weeklyCheckpointCategories = [...categoriesSet];
+
+        if (beforeCount < 3 && afterCount >= 3) {
+          weeklyCheckpointUnlocked = true;
+          nextState.weeklyCheckpointCompletions += 1;
+        }
+      }
     } else {
       nextState.retries += 1;
     }
@@ -69,6 +101,9 @@ export function finalizeLessonResult(
   return {
     alreadyCompleted,
     awardedXP,
+    returningBonusXP,
+    totalAwardedXP: awardedXP + returningBonusXP,
+    weeklyCheckpointUnlocked,
     passed,
     perfect,
     nextState: achievementResult.nextState,

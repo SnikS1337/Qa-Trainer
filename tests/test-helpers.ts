@@ -21,6 +21,11 @@ export function createAppState(overrides: Partial<AppState> = {}): AppState {
     completedPractice: [],
     certName: '',
     lastActiveDate: '',
+    lastLaunchDate: '',
+    lastLessonRewardDate: '',
+    weeklyCheckpointWeek: '',
+    weeklyCheckpointCategories: [],
+    weeklyCheckpointCompletions: 0,
     isCheater: false,
     examPassed: false,
     ...overrides,
@@ -31,6 +36,9 @@ export function createAppState(overrides: Partial<AppState> = {}): AppState {
     ...(overrides.unlockedAchievements ?? nextState.unlockedAchievements),
   ];
   nextState.completedPractice = [...(overrides.completedPractice ?? nextState.completedPractice)];
+  nextState.weeklyCheckpointCategories = [
+    ...(overrides.weeklyCheckpointCategories ?? nextState.weeklyCheckpointCategories),
+  ];
 
   return nextState;
 }

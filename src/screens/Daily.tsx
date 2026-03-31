@@ -127,10 +127,20 @@ export default function Daily() {
 
     if (!answered) {
       const question = questions[currentIdx];
+      const isCorrect = selectedOption === question.ans;
 
-      if (selectedOption === question.ans) {
+      if (isCorrect) {
         setScore((prev) => prev + 1);
       }
+
+      updateState((prev) => {
+        const nextState = { ...prev };
+        nextState.totalQuestionsAnswered += 1;
+        if (isCorrect) {
+          nextState.totalCorrect += 1;
+        }
+        return nextState;
+      });
 
       setAnswered(true);
       return;

@@ -10,6 +10,7 @@ import {
   FOUNDATION_LESSON_IDS,
   getCertificateProgress,
 } from '../domain/course';
+import { clearWeakTopicsState } from '../domain/weak_topics';
 
 export function Stats() {
   const { state, navigate, updateState, showToast } = useAppStore();
@@ -24,6 +25,7 @@ export function Stats() {
         message="Это действие нельзя отменить. Вы уверены?"
         onConfirm={() => {
           localStorage.removeItem(APP_STATE_STORAGE_KEY);
+          clearWeakTopicsState();
           updateState(initialState);
           setShowConfirm(false);
           navigate('splash');

@@ -72,6 +72,11 @@ export interface AppState {
   completedPractice: string[];
   certName: string;
   lastActiveDate: string;
+  lastLaunchDate: string;
+  lastLessonRewardDate: string;
+  weeklyCheckpointWeek: string;
+  weeklyCheckpointCategories: string[];
+  weeklyCheckpointCompletions: number;
   isCheater?: boolean;
   examPassed?: boolean;
 }
