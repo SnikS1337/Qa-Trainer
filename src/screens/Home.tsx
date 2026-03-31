@@ -334,8 +334,10 @@ export default function Home() {
   const [showDevMenu, setShowDevMenu] = useState(false);
   const [openingLessonId, setOpeningLessonId] = useState<string | null>(null);
   const [hoveredLessonId, setHoveredLessonId] = useState<string | null>(null);
+  const [isPageScrolling, setIsPageScrolling] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openLessonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quoteUnmountTimerRef = useRef<number | null>(null);
   const completeCelebrateTimerRef = useRef<number | null>(null);
   const quoteExpandedRef = useRef<HTMLDivElement | null>(null);
@@ -371,7 +373,7 @@ export default function Home() {
   };
 
   const handleLessonOpen = (lessonId: string, locked: boolean) => {
-    if (locked || openingLessonId) return;
+    if (locked || openingLessonId || isPageScrolling) return;
 
     setOpeningLessonId(lessonId);
     openLessonTimer.current = setTimeout(() => {
@@ -390,6 +392,10 @@ export default function Home() {
       if (openLessonTimer.current) {
         clearTimeout(openLessonTimer.current);
         openLessonTimer.current = null;
+      }
+      if (scrollIdleTimer.current) {
+        clearTimeout(scrollIdleTimer.current);
+        scrollIdleTimer.current = null;
       }
       if (quoteUnmountTimerRef.current) {
         window.clearTimeout(quoteUnmountTimerRef.current);
@@ -447,6 +453,17 @@ export default function Home() {
     updateScrollGlass();
 
     const handleScroll = () => {
+      if (!isPageScrolling) {
+        setIsPageScrolling(true);
+      }
+      if (scrollIdleTimer.current) {
+        clearTimeout(scrollIdleTimer.current);
+      }
+      scrollIdleTimer.current = setTimeout(() => {
+        setIsPageScrolling(false);
+        scrollIdleTimer.current = null;
+      }, 140);
+
       if (frame) return;
       frame = window.requestAnimationFrame(updateScrollGlass);
     };
@@ -458,10 +475,14 @@ export default function Home() {
       if (frame) {
         window.cancelAnimationFrame(frame);
       }
+      if (scrollIdleTimer.current) {
+        clearTimeout(scrollIdleTimer.current);
+        scrollIdleTimer.current = null;
+      }
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, []);
+  }, [isPageScrolling]);
 
   useEffect(() => {
     preloadLessonsContent();
@@ -740,7 +761,7 @@ export default function Home() {
                     role="button"
                     tabIndex={locked ? -1 : 0}
                     aria-disabled={locked}
-                    className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer'} ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
+                    className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer'} ${openingLessonId === lesson.id ? 'lesson-card-opening scale-[0.995]' : ''}`}
                   >
                     <TiltedSurface disabled={locked} className="rounded-[24px]">
                       {!locked && (

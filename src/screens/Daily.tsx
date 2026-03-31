@@ -157,9 +157,9 @@ export default function Daily() {
     const xpEarned = DAILY_XP_REWARD;
 
     return (
-      <div className="mx-auto w-full max-w-[500px] p-6 pt-20 text-center">
+      <div className="mx-auto w-full max-w-[500px] p-4 pt-16 text-center sm:p-6 sm:pt-20">
         <div className="mb-6 text-6xl">{passed ? '🌟' : '👍'}</div>
-        <h2 className="mb-2 text-3xl font-extrabold text-white">Дейлик завершён!</h2>
+        <h2 className="mb-2 text-2xl font-extrabold text-white sm:text-3xl">Дейлик завершён!</h2>
         <p className="mb-8 text-slate-400">
           Правильных ответов:{' '}
           <span className={`font-bold ${passed ? 'text-brand-green' : 'text-brand-amber'}`}>
@@ -211,15 +211,15 @@ export default function Daily() {
         onCancel={() => setShowConfirm(false)}
       />
 
-      <div className="solid-header p-4">
+      <div className="solid-header p-3 sm:p-4">
         <div className="mx-auto mb-3 flex max-w-[600px] items-center justify-between">
           <button
             onClick={() => setShowConfirm(true)}
-            className="text-sm font-bold text-slate-400 transition-colors hover:text-white"
+            className="mobile-tap-target text-sm font-bold text-slate-400 transition-colors hover:text-white"
           >
             ✕ ПРЕРВАТЬ
           </button>
-          <div className="text-brand-amber font-mono text-lg font-bold">🔥 ДЕЙЛИК</div>
+          <div className="text-brand-amber font-mono text-base font-bold sm:text-lg">🔥 ДЕЙЛИК</div>
         </div>
         <div className="mx-auto h-2.5 max-w-[600px] overflow-hidden rounded-full border border-white/5 bg-black/30">
           <div
@@ -229,7 +229,7 @@ export default function Daily() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-6">
+      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-4 sm:p-6">
         <div
           key={currentIdx}
           className={isTransitioning ? 'question-stage-exit' : 'question-stage-enter'}
@@ -237,7 +237,7 @@ export default function Daily() {
           <div className="text-brand-amber mb-4 font-mono text-sm font-bold tracking-widest uppercase">
             Вопрос {currentIdx + 1} из 5
           </div>
-          <h2 className="mb-8 text-[22px] leading-snug font-semibold text-white">
+          <h2 className="mb-6 text-[20px] leading-snug font-semibold text-white sm:mb-8 sm:text-[22px]">
             {compactQuestionText(question.q)}
           </h2>
 
@@ -270,7 +270,7 @@ export default function Daily() {
                   key={idx}
                   disabled={answered || isTransitioning}
                   onClick={() => setSelectedOption(idx)}
-                  className={`min-h-[86px] rounded-2xl border-[1.5px] px-4 py-3 text-left backdrop-blur-md transition-all duration-300 ease-out ${isSelected && !answered ? 'answer-choice-selected' : ''} ${bgClass} ${borderClass} ${textClass} ${!answered && !isTransitioning ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
+                  className={`min-h-[74px] rounded-2xl border-[1.5px] px-3.5 py-3 text-left backdrop-blur-md transition-all duration-300 ease-out sm:min-h-[86px] sm:px-4 ${isSelected && !answered ? 'answer-choice-selected' : ''} ${bgClass} ${borderClass} ${textClass} ${!answered && !isTransitioning ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -282,7 +282,9 @@ export default function Daily() {
                         ></div>
                       )}
                     </div>
-                    <span className="flex-1 text-[15px] leading-relaxed">{optionText}</span>
+                    <span className="flex-1 text-[14px] leading-relaxed sm:text-[15px]">
+                      {optionText}
+                    </span>
                   </div>
                 </button>
               );
@@ -306,7 +308,7 @@ export default function Daily() {
             <button
               disabled={selectedOption === null || isTransitioning}
               onClick={handleAnswer}
-              className={`w-full rounded-xl border py-4 font-bold tracking-wide uppercase backdrop-blur-md transition-all ${selectedOption !== null && !isTransitioning ? answered ? 'bg-brand-amber/80 border-brand-amber/50 hover:bg-brand-amber text-white' : 'border-white/20 bg-white/10 text-white hover:bg-white/20' : 'cursor-not-allowed border-white/5 bg-black/20 text-slate-500'}`}
+              className={`w-full rounded-xl border py-3.5 font-bold tracking-wide uppercase backdrop-blur-md transition-all sm:py-4 ${selectedOption !== null && !isTransitioning ? (answered ? 'bg-brand-amber/80 border-brand-amber/50 hover:bg-brand-amber text-white' : 'border-white/20 bg-white/10 text-white hover:bg-white/20') : 'cursor-not-allowed border-white/5 bg-black/20 text-slate-500'}`}
             >
               {answered
                 ? currentIdx === questions.length - 1

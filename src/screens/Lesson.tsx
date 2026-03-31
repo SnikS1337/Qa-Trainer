@@ -288,7 +288,7 @@ export default function Lesson({ id }: { id: string }) {
         <div className="mx-auto flex max-w-[600px] items-center gap-3">
           <button
             onClick={() => setShowConfirm(true)}
-            className="p-1 text-xl text-slate-300 transition-colors hover:text-white"
+            className="mobile-tap-target p-1 text-xl text-slate-300 transition-colors hover:text-white"
           >
             ✕
           </button>
@@ -311,7 +311,7 @@ export default function Lesson({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-5">
+      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-4 sm:p-5">
         <div
           key={qIndex}
           className={isTransitioning ? 'question-stage-exit' : 'question-stage-enter'}
@@ -329,14 +329,14 @@ export default function Lesson({ id }: { id: string }) {
             </span>
           </div>
 
-          <div className="mb-4 font-mono text-xs text-slate-300">
+          <div className="mb-3 font-mono text-xs text-slate-300 sm:mb-4">
             Вопрос {qIndex + 1} из {questions.length}
           </div>
 
           <div
-            className={`glass-panel mb-5 p-5 transition-colors duration-300 ${answered ? (isCorrectAnswer ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}
+            className={`glass-panel mb-4 p-4 transition-colors duration-300 sm:mb-5 sm:p-5 ${answered ? (isCorrectAnswer ? 'border-brand-green/50 bg-brand-green/5' : 'border-brand-red/50 bg-brand-red/5') : ''}`}
           >
-            <div className="text-[17px] leading-relaxed font-bold text-white">
+            <div className="text-[16px] leading-relaxed font-bold text-white sm:text-[17px]">
               {compactQuestionText(question.q)}
             </div>
 
@@ -378,7 +378,7 @@ export default function Lesson({ id }: { id: string }) {
                     key={index}
                     disabled={answered || isTransitioning}
                     onClick={() => setSelected(index)}
-                    className={`flex min-h-[78px] w-full items-start gap-3 rounded-xl border-[1.5px] px-3.5 py-3 text-left text-[14px] font-semibold backdrop-blur-md transition-all duration-300 ease-out ${isSelected && !answered ? 'answer-choice-selected' : ''} ${bgClass} ${borderClass} ${textClass} ${!answered && !isTransitioning ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
+                    className={`flex min-h-[72px] w-full items-start gap-3 rounded-xl border-[1.5px] px-3 py-2.5 text-left text-[13px] font-semibold backdrop-blur-md transition-all duration-300 ease-out sm:min-h-[78px] sm:px-3.5 sm:py-3 sm:text-[14px] ${isSelected && !answered ? 'answer-choice-selected' : ''} ${bgClass} ${borderClass} ${textClass} ${!answered && !isTransitioning ? 'hover:border-white/20 hover:bg-white/10' : ''}`}
                     style={
                       !answered && isSelected
                         ? { borderColor: lesson.color, backgroundColor: `${lesson.color}18` }
@@ -404,7 +404,7 @@ export default function Lesson({ id }: { id: string }) {
 
             {question.type === 'sort' && (
               <>
-                <div className="glass-panel mb-3 flex min-h-[60px] flex-col gap-1.5 border-dashed p-2.5">
+                <div className="glass-panel mb-3 flex min-h-[56px] flex-col gap-1.5 border-dashed p-2 sm:min-h-[60px] sm:p-2.5">
                   {sortOrder.length === 0 ? (
                     <div className="p-1 text-xs text-slate-400">
                       Сюда появятся выбранные варианты...
@@ -420,7 +420,7 @@ export default function Lesson({ id }: { id: string }) {
 
                           setSortOrder(sortOrder.filter((value) => value !== item));
                         }}
-                        className="bg-brand-green/10 border-brand-green/30 flex cursor-pointer items-center justify-between rounded-lg border-[1.5px] px-3 py-2 text-[13px] font-semibold text-white"
+                        className="bg-brand-green/10 border-brand-green/30 flex cursor-pointer items-center justify-between rounded-lg border-[1.5px] px-2.5 py-2 text-[12px] font-semibold text-white sm:px-3 sm:text-[13px]"
                       >
                         <span>
                           {index + 1}. {item}
@@ -447,7 +447,7 @@ export default function Lesson({ id }: { id: string }) {
 
                           setSortOrder([...sortOrder, item]);
                         }}
-                        className={`w-full rounded-xl border-[1.5px] p-3 text-left text-[13px] font-semibold text-white backdrop-blur-md transition-all duration-300 ease-out ${isSelected ? 'border-white/5 bg-black/20 opacity-35' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
+                        className={`w-full rounded-xl border-[1.5px] p-2.5 text-left text-[12px] font-semibold text-white backdrop-blur-md transition-all duration-300 ease-out sm:p-3 sm:text-[13px] ${isSelected ? 'border-white/5 bg-black/20 opacity-35' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
                       >
                         {item}
                       </button>
@@ -475,7 +475,7 @@ export default function Lesson({ id }: { id: string }) {
             <button
               disabled={!isReady || isTransitioning}
               onClick={handleCheck}
-              className={`w-full rounded-xl border py-4 font-bold tracking-wide uppercase backdrop-blur-md transition-all ${isReady && !isTransitioning ? answered ? isCorrectAnswer ? 'bg-brand-green/80 border-brand-green/50 hover:bg-brand-green text-white' : 'bg-brand-red/80 border-brand-red/50 hover:bg-brand-red text-white' : 'border-white/20 text-white' : 'border-white/5 bg-black/20 text-slate-400 opacity-50'}`}
+              className={`w-full rounded-xl border py-4 font-bold tracking-wide uppercase backdrop-blur-md transition-all ${isReady && !isTransitioning ? (answered ? (isCorrectAnswer ? 'bg-brand-green/80 border-brand-green/50 hover:bg-brand-green text-white' : 'bg-brand-red/80 border-brand-red/50 hover:bg-brand-red text-white') : 'border-white/20 text-white') : 'border-white/5 bg-black/20 text-slate-400 opacity-50'}`}
               style={{
                 backgroundColor:
                   isReady && !answered && !isTransitioning ? `${lesson.color}CC` : undefined,

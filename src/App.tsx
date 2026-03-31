@@ -3,18 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Home from './screens/Home';
-import Lesson from './screens/Lesson';
-import Practice from './screens/Practice';
-import PracticeTask from './screens/PracticeTask';
-import Exam from './screens/Exam';
-import Daily from './screens/Daily';
-import { Achievements, Certificate, Splash, Stats } from './screens/Misc';
+import Splash from './screens/Splash';
 import { preloadLessonsContent, preloadPracticeTasksContent } from './data/content_loaders';
 import { AppContext, useAppStoreInit } from './store';
 import { getBackgroundGradient } from './utils';
+
+const Lesson = lazy(() => import('./screens/Lesson'));
+const Practice = lazy(() => import('./screens/Practice'));
+const PracticeTask = lazy(() => import('./screens/PracticeTask'));
+const Exam = lazy(() => import('./screens/Exam'));
+const Daily = lazy(() => import('./screens/Daily'));
+const Stats = lazy(() => import('./screens/Misc').then((module) => ({ default: module.Stats })));
+const Achievements = lazy(() =>
+  import('./screens/Misc').then((module) => ({ default: module.Achievements }))
+);
+const Certificate = lazy(() =>
+  import('./screens/Misc').then((module) => ({ default: module.Certificate }))
+);
+
+type MotionReactModule = typeof import('motion/react');
 
 type ScreenName =
   | 'splash'
@@ -38,6 +47,104 @@ const PAGE_MOTION = {
   exit: { opacity: 0, filter: 'blur(3px)' },
   transition: PAGE_TRANSITION,
 };
+
+const MOBILE_PAGE_MOTION = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: PAGE_TRANSITION,
+};
+
+function detectMobileDevice() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return (
+    window.matchMedia('(max-width: 900px)').matches ||
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches
+  );
+}
+
+function isSlowConnection() {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const connection = (
+    navigator as Navigator & {
+      connection?: { effectiveType?: string; saveData?: boolean };
+    }
+  ).connection;
+
+  if (!connection) {
+    return false;
+  }
+
+  if (connection.saveData) {
+    return true;
+  }
+
+  return (
+    connection.effectiveType === 'slow-2g' ||
+    connection.effectiveType === '2g' ||
+    connection.effectiveType === '3g'
+  );
+}
+
+function preloadScreenChunks() {
+  void import('./screens/Lesson');
+  void import('./screens/Practice');
+  void import('./screens/PracticeTask');
+  void import('./screens/Exam');
+  void import('./screens/Daily');
+  void import('./screens/Misc');
+}
+
+function ensureScreenChunkLoaded(screen: ScreenName) {
+  switch (screen) {
+    case 'lesson':
+      return import('./screens/Lesson');
+    case 'practice':
+      return import('./screens/Practice');
+    case 'practice-task':
+      return import('./screens/PracticeTask');
+    case 'exam':
+      return import('./screens/Exam');
+    case 'daily':
+      return import('./screens/Daily');
+    case 'stats':
+    case 'achievements':
+    case 'certificate':
+      return import('./screens/Misc');
+    default:
+      return Promise.resolve();
+  }
+}
+
+function ScreenChunkFallback({
+  isOffline,
+  isSlowNetwork,
+}: {
+  isOffline: boolean;
+  isSlowNetwork: boolean;
+}) {
+  const hint = isOffline
+    ? 'Похоже, сеть недоступна. Проверь интернет и попробуй снова.'
+    : isSlowNetwork
+      ? 'Медленное соединение — загружаем раздел, это может занять чуть больше времени.'
+      : 'Подождите, открываем раздел...';
+
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center p-6 text-center">
+      <div className="glass-panel w-full max-w-[320px] p-5">
+        <div className="mb-2 text-3xl">🧪</div>
+        <div className="text-sm font-semibold text-white">Открываем раздел...</div>
+        <div className="mt-2 text-xs leading-relaxed text-slate-300">{hint}</div>
+      </div>
+    </div>
+  );
+}
 
 const AMBIENT_LAYERS = [
   {
@@ -70,14 +177,45 @@ export default function App() {
   const [toasts, setToasts] = useState<Array<{ id: number; msg: string; color: string }>>([]);
   const toastTimersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
   const nextToastIdRef = useRef(1);
+  const navigationRequestIdRef = useRef(0);
   const backgroundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [baseGradient, setBaseGradient] = useState(() => getBackgroundGradient('splash'));
   const [transitionGradient, setTransitionGradient] = useState<string | null>(null);
+  const [isMobileDevice, setIsMobileDevice] = useState(() => detectMobileDevice());
+  const [motionReact, setMotionReact] = useState<MotionReactModule | null>(null);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
+  const [isSlowNetwork, setIsSlowNetwork] = useState(() => isSlowConnection());
 
-  const navigate = useCallback((nextScreen: ScreenName, id?: string) => {
-    setScreen(nextScreen);
-    setCurrentId(id ?? null);
-  }, []);
+  const navigate = useCallback(
+    (nextScreen: ScreenName, id?: string) => {
+      const requestId = ++navigationRequestIdRef.current;
+
+      const commitNavigation = () => {
+        if (requestId !== navigationRequestIdRef.current) {
+          return;
+        }
+
+        setScreen(nextScreen);
+        setCurrentId(id ?? null);
+      };
+
+      if (!isMobileDevice && !isSlowNetwork && !isOffline) {
+        void ensureScreenChunkLoaded(nextScreen)
+          .then(() => {
+            commitNavigation();
+          })
+          .catch(() => {
+            commitNavigation();
+          });
+        return;
+      }
+
+      commitNavigation();
+    },
+    [isMobileDevice, isOffline, isSlowNetwork]
+  );
 
   const showToast = useCallback((msg: string, color: string = 'text-brand-green') => {
     if (/^🔥\s*\d+\s+подряд!?$/i.test(msg.trim())) {
@@ -114,12 +252,161 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const preloadTimer = window.setTimeout(() => {
+    if (isSlowNetwork) {
+      return;
+    }
+
+    let preloadTimer: number | null = null;
+    let idleId: number | null = null;
+
+    const runPreload = () => {
       preloadLessonsContent();
       preloadPracticeTasksContent();
-    }, 120);
+    };
 
-    return () => window.clearTimeout(preloadTimer);
+    preloadTimer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(runPreload, { timeout: 1800 });
+        return;
+      }
+
+      runPreload();
+    }, 900);
+
+    return () => {
+      if (preloadTimer !== null) {
+        window.clearTimeout(preloadTimer);
+      }
+      if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+    };
+  }, [isSlowNetwork]);
+
+  useEffect(() => {
+    const handleNetworkState = () => {
+      setIsOffline(!navigator.onLine);
+      setIsSlowNetwork(isSlowConnection());
+    };
+
+    window.addEventListener('online', handleNetworkState);
+    window.addEventListener('offline', handleNetworkState);
+
+    const connection = (navigator as Navigator & { connection?: EventTarget }).connection;
+    if (connection && 'addEventListener' in connection) {
+      connection.addEventListener('change', handleNetworkState as EventListener);
+    }
+
+    return () => {
+      window.removeEventListener('online', handleNetworkState);
+      window.removeEventListener('offline', handleNetworkState);
+      if (connection && 'removeEventListener' in connection) {
+        connection.removeEventListener('change', handleNetworkState as EventListener);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobileDevice || isSlowNetwork) {
+      return;
+    }
+
+    preloadScreenChunks();
+  }, [isMobileDevice, isSlowNetwork]);
+
+  const shouldUseMotion = !isMobileDevice && !isSlowNetwork;
+
+  useEffect(() => {
+    if (!shouldUseMotion) {
+      setMotionReact(null);
+      return;
+    }
+
+    let active = true;
+
+    void import('motion/react')
+      .then((module) => {
+        if (!active) return;
+        setMotionReact(module);
+      })
+      .catch(() => {
+        if (!active) return;
+        setMotionReact(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [shouldUseMotion]);
+
+  useEffect(() => {
+    if (screen !== 'home' || isSlowNetwork) {
+      return;
+    }
+
+    let warmupTimer: number | null = null;
+    let idleId: number | null = null;
+
+    const warmup = () => preloadScreenChunks();
+
+    warmupTimer = window.setTimeout(
+      () => {
+        if (!isMobileDevice) {
+          warmup();
+          return;
+        }
+
+        if (typeof window.requestIdleCallback === 'function') {
+          idleId = window.requestIdleCallback(warmup, { timeout: 2200 });
+          return;
+        }
+
+        warmup();
+      },
+      isMobileDevice ? 1200 : 80
+    );
+
+    return () => {
+      if (warmupTimer !== null) {
+        window.clearTimeout(warmupTimer);
+      }
+      if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+    };
+  }, [screen, isMobileDevice, isSlowNetwork]);
+
+  useEffect(() => {
+    const mobileWidthQuery = window.matchMedia('(max-width: 900px)');
+    const coarsePointerQuery = window.matchMedia('(hover: none) and (pointer: coarse)');
+
+    const updateDevice = () => {
+      const mobile = mobileWidthQuery.matches || coarsePointerQuery.matches;
+      setIsMobileDevice(mobile);
+      document.documentElement.dataset.device = mobile ? 'mobile' : 'desktop';
+      document.body.dataset.device = mobile ? 'mobile' : 'desktop';
+    };
+
+    updateDevice();
+
+    const handleChange = () => updateDevice();
+    if (typeof mobileWidthQuery.addEventListener === 'function') {
+      mobileWidthQuery.addEventListener('change', handleChange);
+      coarsePointerQuery.addEventListener('change', handleChange);
+    } else {
+      mobileWidthQuery.addListener(handleChange);
+      coarsePointerQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (typeof mobileWidthQuery.removeEventListener === 'function') {
+        mobileWidthQuery.removeEventListener('change', handleChange);
+        coarsePointerQuery.removeEventListener('change', handleChange);
+      } else {
+        mobileWidthQuery.removeListener(handleChange);
+        coarsePointerQuery.removeListener(handleChange);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -199,43 +486,110 @@ export default function App() {
     }
   }, [screen, currentId]);
 
+  const ambientLayers = useMemo(
+    () => (isMobileDevice ? AMBIENT_LAYERS.slice(0, 2) : AMBIENT_LAYERS),
+    [isMobileDevice]
+  );
+
+  const pageMotion = isMobileDevice ? MOBILE_PAGE_MOTION : PAGE_MOTION;
+  const ambientOpacity = isMobileDevice ? 0.72 : 0.9;
+  const shouldShowChunkFallback = isOffline || isSlowNetwork;
+  const MotionDiv = motionReact?.motion.div;
+  const AnimatePresence = motionReact?.AnimatePresence;
+
   return (
     <AppContext.Provider value={appContextValue}>
-      <div className="selection:bg-brand-purple/30 relative min-h-screen overflow-x-hidden font-sans text-white">
-        <motion.div
-          className="pointer-events-none fixed -inset-10"
-          style={{
-            backgroundColor: '#0f111a',
-            backgroundImage: baseGradient,
-            backgroundPosition: '50% 50%',
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: '120% 120%',
-          }}
-        />
+      <div
+        className={`selection:bg-brand-purple/30 relative min-h-screen overflow-x-hidden font-sans text-white ${isMobileDevice ? 'device-mobile' : 'device-desktop'}`}
+      >
+        {MotionDiv ? (
+          <MotionDiv
+            className="pointer-events-none fixed -inset-10"
+            style={{
+              backgroundColor: '#0f111a',
+              backgroundImage: baseGradient,
+              backgroundPosition: '50% 50%',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '120% 120%',
+            }}
+          />
+        ) : (
+          <div
+            className="pointer-events-none fixed -inset-10"
+            style={{
+              backgroundColor: '#0f111a',
+              backgroundImage: baseGradient,
+              backgroundPosition: '50% 50%',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '120% 120%',
+            }}
+          />
+        )}
         <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden">
-          {AMBIENT_LAYERS.map((layer) => (
-            <motion.div
-              key={layer.key}
-              className={`absolute rounded-full blur-2xl ${layer.className}`}
-              animate={layer.animate}
-              transition={{ duration: layer.duration, repeat: Infinity, ease: 'easeInOut' }}
-              style={{
-                background: `radial-gradient(circle, ${layer.color} 0%, rgba(255, 255, 255, 0.05) 34%, rgba(255, 255, 255, 0) 72%)`,
-                mixBlendMode: 'screen',
-                opacity: 0.9,
-                willChange: 'transform',
-              }}
-            />
-          ))}
+          {ambientLayers.map((layer) =>
+            MotionDiv ? (
+              <MotionDiv
+                key={layer.key}
+                className={`absolute rounded-full ${isMobileDevice ? 'blur-xl' : 'blur-2xl'} ${layer.className}`}
+                animate={layer.animate}
+                transition={{ duration: layer.duration, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  background: `radial-gradient(circle, ${layer.color} 0%, rgba(255, 255, 255, 0.05) 34%, rgba(255, 255, 255, 0) 72%)`,
+                  mixBlendMode: 'screen',
+                  opacity: ambientOpacity,
+                  willChange: 'transform',
+                }}
+              />
+            ) : (
+              <div
+                key={layer.key}
+                className={`absolute rounded-full ${isMobileDevice ? 'blur-xl' : 'blur-2xl'} ${layer.className}`}
+                style={{
+                  background: `radial-gradient(circle, ${layer.color} 0%, rgba(255, 255, 255, 0.05) 34%, rgba(255, 255, 255, 0) 72%)`,
+                  mixBlendMode: 'screen',
+                  opacity: ambientOpacity,
+                }}
+              />
+            )
+          )}
         </div>
-        <AnimatePresence>
-          {transitionGradient && (
-            <motion.div
-              key={transitionGradient}
-              initial={{ opacity: 0, scale: 1.02, filter: 'blur(14px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
-              transition={{ duration: BACKGROUND_TRANSITION_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+        {AnimatePresence && MotionDiv ? (
+          <AnimatePresence>
+            {transitionGradient && (
+              <MotionDiv
+                key={transitionGradient}
+                initial={
+                  isMobileDevice
+                    ? { opacity: 0, scale: 1.01 }
+                    : { opacity: 0, scale: 1.02, filter: 'blur(14px)' }
+                }
+                animate={
+                  isMobileDevice
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+                }
+                exit={
+                  isMobileDevice
+                    ? { opacity: 0, scale: 1.01 }
+                    : { opacity: 0, scale: 1.02, filter: 'blur(10px)' }
+                }
+                transition={{ duration: BACKGROUND_TRANSITION_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+                className="pointer-events-none fixed -inset-10"
+                style={{
+                  backgroundColor: '#0f111a',
+                  backgroundImage: transitionGradient,
+                  backgroundPosition: '50% 50%',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '120% 120%',
+                  transformOrigin: 'center center',
+                  willChange: 'opacity, transform, filter',
+                }}
+              />
+            )}
+          </AnimatePresence>
+        ) : (
+          transitionGradient && (
+            <div
               className="pointer-events-none fixed -inset-10"
               style={{
                 backgroundColor: '#0f111a',
@@ -243,39 +597,70 @@ export default function App() {
                 backgroundPosition: '50% 50%',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: '120% 120%',
-                transformOrigin: 'center center',
-                willChange: 'opacity, transform, filter',
               }}
             />
-          )}
-        </AnimatePresence>
+          )
+        )}
 
         <div className="noise-overlay pointer-events-none z-0"></div>
 
         <div className="relative z-10 flex min-h-screen flex-col overflow-x-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div key={currentScreen.key} {...PAGE_MOTION} className="flex w-full flex-1">
-              {currentScreen.element}
-            </motion.div>
-          </AnimatePresence>
+          {AnimatePresence && MotionDiv ? (
+            <AnimatePresence mode="wait">
+              <MotionDiv key={currentScreen.key} {...pageMotion} className="flex w-full flex-1">
+                <Suspense
+                  fallback={
+                    shouldShowChunkFallback ? (
+                      <ScreenChunkFallback isOffline={isOffline} isSlowNetwork={isSlowNetwork} />
+                    ) : null
+                  }
+                >
+                  {currentScreen.element}
+                </Suspense>
+              </MotionDiv>
+            </AnimatePresence>
+          ) : (
+            <div className="flex w-full flex-1">
+              <Suspense
+                fallback={
+                  shouldShowChunkFallback ? (
+                    <ScreenChunkFallback isOffline={isOffline} isSlowNetwork={isSlowNetwork} />
+                  ) : null
+                }
+              >
+                {currentScreen.element}
+              </Suspense>
+            </div>
+          )}
         </div>
 
         <div className="pointer-events-none fixed right-4 bottom-6 left-4 z-[140] flex flex-col items-center gap-3">
-          <AnimatePresence>
-            {toasts.map((toast) => (
-              <motion.div
+          {AnimatePresence && MotionDiv ? (
+            <AnimatePresence>
+              {toasts.map((toast) => (
+                <MotionDiv
+                  key={toast.id}
+                  layout
+                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 14, scale: 0.96 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  className={`glass-panel w-full max-w-[420px] px-5 py-3 text-center text-[13px] font-bold tracking-wide ${toast.color}`}
+                >
+                  {toast.msg}
+                </MotionDiv>
+              ))}
+            </AnimatePresence>
+          ) : (
+            toasts.map((toast) => (
+              <div
                 key={toast.id}
-                layout
-                initial={{ opacity: 0, y: 24, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 14, scale: 0.96 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 className={`glass-panel w-full max-w-[420px] px-5 py-3 text-center text-[13px] font-bold tracking-wide ${toast.color}`}
               >
                 {toast.msg}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </AppContext.Provider>

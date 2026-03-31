@@ -584,7 +584,7 @@ export default function PracticeTask({ id }: { id: string }) {
         <div className="mx-auto flex max-w-[600px] items-center gap-3">
           <button
             onClick={() => navigate('practice')}
-            className="p-1 text-xl text-slate-300 transition-colors hover:text-white"
+            className="mobile-tap-target p-1 text-xl text-slate-300 transition-colors hover:text-white"
           >
             ✕
           </button>
@@ -597,7 +597,7 @@ export default function PracticeTask({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-5">
+      <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col p-4 sm:p-5">
         <div className="mb-2">
           <span
             className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] font-bold tracking-[0.5px] backdrop-blur-sm"

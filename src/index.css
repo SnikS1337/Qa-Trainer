@@ -68,6 +68,43 @@ html,
   background-clip: padding-box;
 }
 
+.device-mobile .glass-panel,
+.device-mobile .home-surface-card,
+.device-mobile .home-clean-glass {
+  backdrop-filter: blur(14px) saturate(124%);
+  -webkit-backdrop-filter: blur(14px) saturate(124%);
+}
+
+.device-mobile .mode-gloss::before,
+.device-mobile .home-complete-panel::before {
+  opacity: 0.34;
+}
+
+.device-mobile .mode-gloss::after {
+  opacity: 0.16;
+}
+
+.device-mobile .complete-panel-star-trigger {
+  top: 7px;
+  right: 8px;
+}
+
+.mobile-tap-target {
+  min-height: 40px;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.device-mobile .home-toolbar-button:hover,
+.device-mobile .quote-dock__collapsed--visible:hover,
+.device-mobile .glass-button:hover,
+.device-mobile .complete-panel-star-trigger:hover {
+  transform: none;
+}
+
 .status-ribbon {
   position: absolute;
   top: 0;
@@ -1284,14 +1321,20 @@ html,
 
   .lesson-tilt-icon,
   .lesson-tilt-xp {
-    transform: none !important;
-    left: 0 !important;
-    top: 0 !important;
-    animation: none !important;
+    transform: none;
+    left: 0;
+    top: 0;
+    animation: none;
   }
 
   .lesson-tilt-icon::after {
     animation: none !important;
+  }
+
+  .lesson-tilt-surface[data-tilt-active='true'] .lesson-tilt-icon {
+    transform: translate3d(0, 0, 0) !important;
+    top: 0 !important;
+    left: 0 !important;
   }
 
   .lesson-tilt-icon-well {
@@ -1309,6 +1352,32 @@ html,
   .lesson-tilt-face,
   .lesson-tilt-surface[data-tilt-active='true'] .lesson-tilt-face {
     transform: none !important;
+  }
+
+  .lesson-card-opening {
+    transform: none !important;
+  }
+
+  .lesson-card-opening .lesson-tilt-icon {
+    animation: mobile-lesson-icon-hop 560ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+}
+
+@keyframes mobile-lesson-icon-hop {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  42% {
+    transform: translate3d(0, -6px, 0);
+  }
+
+  70% {
+    transform: translate3d(0, -1.6px, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
   }
 }
 
