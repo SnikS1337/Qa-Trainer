@@ -32,16 +32,18 @@ export function loadPracticeTasksContent() {
 
 export function loadChoiceQuestions() {
   if (!choiceQuestionsPromise) {
-    choiceQuestionsPromise = loadLessonsContent().then((lessons) =>
-      lessons.flatMap((lesson) =>
-        lesson.questions.filter(
-          (question): question is QuestionChoice => question.type === 'choice'
+    choiceQuestionsPromise = loadLessonsContent()
+      .then((lessons) =>
+        lessons.flatMap((lesson) =>
+          lesson.questions.filter(
+            (question): question is QuestionChoice => question.type === 'choice'
+          )
         )
       )
-    ).catch((error) => {
-      choiceQuestionsPromise = null;
-      throw error;
-    });
+      .catch((error) => {
+        choiceQuestionsPromise = null;
+        throw error;
+      });
   }
 
   return choiceQuestionsPromise;

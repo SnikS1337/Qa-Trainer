@@ -6,10 +6,7 @@ import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 export default function Practice() {
   const { state, navigate } = useAppStore();
 
-  const handleKeyboardActivation = (
-    event: KeyboardEvent<HTMLElement>,
-    action: () => void
-  ) => {
+  const handleKeyboardActivation = (event: KeyboardEvent<HTMLElement>, action: () => void) => {
     if (event.key !== 'Enter' && event.key !== ' ') {
       return;
     }
@@ -62,7 +59,10 @@ export default function Practice() {
               className={`glass-panel relative cursor-pointer overflow-hidden p-4 transition-all duration-200 hover:translate-x-1 ${done ? 'opacity-70' : ''}`}
             >
               {done && (
-                <div className="status-ribbon text-black" style={{ ['--status-bg' as string]: task.color }}>
+                <div
+                  className="status-ribbon text-black"
+                  style={{ ['--status-bg' as string]: task.color }}
+                >
                   ПРОЙДЕНО ✓
                 </div>
               )}

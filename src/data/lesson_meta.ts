@@ -5,7 +5,11 @@ import { LESSON_EXPANSIONS_BONUS_2 } from './lesson_expansions_bonus_2';
 
 const QUESTION_COUNT_INCREMENTS = new Map<string, number>();
 
-for (const expansionSet of [LESSON_EXPANSIONS, LESSON_EXPANSIONS_BONUS, LESSON_EXPANSIONS_BONUS_2]) {
+for (const expansionSet of [
+  LESSON_EXPANSIONS,
+  LESSON_EXPANSIONS_BONUS,
+  LESSON_EXPANSIONS_BONUS_2,
+]) {
   for (const [lessonId, questions] of Object.entries(expansionSet)) {
     QUESTION_COUNT_INCREMENTS.set(
       lessonId,
