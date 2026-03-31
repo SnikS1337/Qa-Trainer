@@ -3,25 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Home from './screens/Home';
 import Splash from './screens/Splash';
+import Lesson from './screens/Lesson';
+import Practice from './screens/Practice';
+import PracticeTask from './screens/PracticeTask';
+import Exam from './screens/Exam';
+import Daily from './screens/Daily';
+import { Achievements, Certificate, Stats } from './screens/Misc';
 import { preloadLessonsContent, preloadPracticeTasksContent } from './data/content_loaders';
 import { AppContext, useAppStoreInit } from './store';
 import { getBackgroundGradient } from './utils';
-
-const Lesson = lazy(() => import('./screens/Lesson'));
-const Practice = lazy(() => import('./screens/Practice'));
-const PracticeTask = lazy(() => import('./screens/PracticeTask'));
-const Exam = lazy(() => import('./screens/Exam'));
-const Daily = lazy(() => import('./screens/Daily'));
-const Stats = lazy(() => import('./screens/Misc').then((module) => ({ default: module.Stats })));
-const Achievements = lazy(() =>
-  import('./screens/Misc').then((module) => ({ default: module.Achievements }))
-);
-const Certificate = lazy(() =>
-  import('./screens/Misc').then((module) => ({ default: module.Certificate }))
-);
 
 type MotionReactModule = typeof import('motion/react');
 
@@ -92,60 +85,6 @@ function isSlowConnection() {
   );
 }
 
-function preloadScreenChunks() {
-  void import('./screens/Lesson');
-  void import('./screens/Practice');
-  void import('./screens/PracticeTask');
-  void import('./screens/Exam');
-  void import('./screens/Daily');
-  void import('./screens/Misc');
-}
-
-function ensureScreenChunkLoaded(screen: ScreenName) {
-  switch (screen) {
-    case 'lesson':
-      return import('./screens/Lesson');
-    case 'practice':
-      return import('./screens/Practice');
-    case 'practice-task':
-      return import('./screens/PracticeTask');
-    case 'exam':
-      return import('./screens/Exam');
-    case 'daily':
-      return import('./screens/Daily');
-    case 'stats':
-    case 'achievements':
-    case 'certificate':
-      return import('./screens/Misc');
-    default:
-      return Promise.resolve();
-  }
-}
-
-function ScreenChunkFallback({
-  isOffline,
-  isSlowNetwork,
-}: {
-  isOffline: boolean;
-  isSlowNetwork: boolean;
-}) {
-  const hint = isOffline
-    ? 'Похоже, сеть недоступна. Проверь интернет и попробуй снова.'
-    : isSlowNetwork
-      ? 'Медленное соединение — загружаем раздел, это может занять чуть больше времени.'
-      : 'Подождите, открываем раздел...';
-
-  return (
-    <div className="flex min-h-screen w-full items-center justify-center p-6 text-center">
-      <div className="glass-panel w-full max-w-[320px] p-5">
-        <div className="mb-2 text-3xl">🧪</div>
-        <div className="text-sm font-semibold text-white">Открываем раздел...</div>
-        <div className="mt-2 text-xs leading-relaxed text-slate-300">{hint}</div>
-      </div>
-    </div>
-  );
-}
-
 const AMBIENT_LAYERS = [
   {
     key: 'ambient-a',
@@ -177,45 +116,17 @@ export default function App() {
   const [toasts, setToasts] = useState<Array<{ id: number; msg: string; color: string }>>([]);
   const toastTimersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
   const nextToastIdRef = useRef(1);
-  const navigationRequestIdRef = useRef(0);
   const backgroundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [baseGradient, setBaseGradient] = useState(() => getBackgroundGradient('splash'));
   const [transitionGradient, setTransitionGradient] = useState<string | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(() => detectMobileDevice());
   const [motionReact, setMotionReact] = useState<MotionReactModule | null>(null);
-  const [isOffline, setIsOffline] = useState(
-    typeof navigator !== 'undefined' ? !navigator.onLine : false
-  );
   const [isSlowNetwork, setIsSlowNetwork] = useState(() => isSlowConnection());
 
-  const navigate = useCallback(
-    (nextScreen: ScreenName, id?: string) => {
-      const requestId = ++navigationRequestIdRef.current;
-
-      const commitNavigation = () => {
-        if (requestId !== navigationRequestIdRef.current) {
-          return;
-        }
-
-        setScreen(nextScreen);
-        setCurrentId(id ?? null);
-      };
-
-      if (!isMobileDevice && !isSlowNetwork && !isOffline) {
-        void ensureScreenChunkLoaded(nextScreen)
-          .then(() => {
-            commitNavigation();
-          })
-          .catch(() => {
-            commitNavigation();
-          });
-        return;
-      }
-
-      commitNavigation();
-    },
-    [isMobileDevice, isOffline, isSlowNetwork]
-  );
+  const navigate = useCallback((nextScreen: ScreenName, id?: string) => {
+    setScreen(nextScreen);
+    setCurrentId(id ?? null);
+  }, []);
 
   const showToast = useCallback((msg: string, color: string = 'text-brand-green') => {
     if (/^🔥\s*\d+\s+подряд!?$/i.test(msg.trim())) {
@@ -285,7 +196,6 @@ export default function App() {
 
   useEffect(() => {
     const handleNetworkState = () => {
-      setIsOffline(!navigator.onLine);
       setIsSlowNetwork(isSlowConnection());
     };
 
@@ -305,14 +215,6 @@ export default function App() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (isMobileDevice || isSlowNetwork) {
-      return;
-    }
-
-    preloadScreenChunks();
-  }, [isMobileDevice, isSlowNetwork]);
 
   const shouldUseMotion = !isMobileDevice && !isSlowNetwork;
 
@@ -338,43 +240,6 @@ export default function App() {
       active = false;
     };
   }, [shouldUseMotion]);
-
-  useEffect(() => {
-    if (screen !== 'home' || isSlowNetwork) {
-      return;
-    }
-
-    let warmupTimer: number | null = null;
-    let idleId: number | null = null;
-
-    const warmup = () => preloadScreenChunks();
-
-    warmupTimer = window.setTimeout(
-      () => {
-        if (!isMobileDevice) {
-          warmup();
-          return;
-        }
-
-        if (typeof window.requestIdleCallback === 'function') {
-          idleId = window.requestIdleCallback(warmup, { timeout: 2200 });
-          return;
-        }
-
-        warmup();
-      },
-      isMobileDevice ? 1200 : 80
-    );
-
-    return () => {
-      if (warmupTimer !== null) {
-        window.clearTimeout(warmupTimer);
-      }
-      if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
-        window.cancelIdleCallback(idleId);
-      }
-    };
-  }, [screen, isMobileDevice, isSlowNetwork]);
 
   useEffect(() => {
     const mobileWidthQuery = window.matchMedia('(max-width: 900px)');
@@ -493,7 +358,6 @@ export default function App() {
 
   const pageMotion = isMobileDevice ? MOBILE_PAGE_MOTION : PAGE_MOTION;
   const ambientOpacity = isMobileDevice ? 0.72 : 0.9;
-  const shouldShowChunkFallback = isOffline || isSlowNetwork;
   const MotionDiv = motionReact?.motion.div;
   const AnimatePresence = motionReact?.AnimatePresence;
 
@@ -608,29 +472,11 @@ export default function App() {
           {AnimatePresence && MotionDiv ? (
             <AnimatePresence mode="wait">
               <MotionDiv key={currentScreen.key} {...pageMotion} className="flex w-full flex-1">
-                <Suspense
-                  fallback={
-                    shouldShowChunkFallback ? (
-                      <ScreenChunkFallback isOffline={isOffline} isSlowNetwork={isSlowNetwork} />
-                    ) : null
-                  }
-                >
-                  {currentScreen.element}
-                </Suspense>
+                {currentScreen.element}
               </MotionDiv>
             </AnimatePresence>
           ) : (
-            <div className="flex w-full flex-1">
-              <Suspense
-                fallback={
-                  shouldShowChunkFallback ? (
-                    <ScreenChunkFallback isOffline={isOffline} isSlowNetwork={isSlowNetwork} />
-                  ) : null
-                }
-              >
-                {currentScreen.element}
-              </Suspense>
-            </div>
+            <div className="flex w-full flex-1">{currentScreen.element}</div>
           )}
         </div>
 
