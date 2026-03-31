@@ -1,10 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, type KeyboardEvent } from 'react';
 import { useAppStore } from '../store';
 import { preloadPracticeTasksContent } from '../data/content_loaders';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 
 export default function Practice() {
   const { state, navigate } = useAppStore();
+
+  const handleKeyboardActivation = (
+    event: KeyboardEvent<HTMLElement>,
+    action: () => void
+  ) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    action();
+  };
 
   useEffect(() => {
     preloadPracticeTasksContent();
@@ -21,7 +33,11 @@ export default function Practice() {
   return (
     <div className="mx-auto w-full max-w-[600px] p-6 pb-10">
       <div className="mb-2 flex items-center gap-3">
-        <button className="glass-button px-3.5 py-2 text-[13px]" onClick={() => navigate('home')}>
+        <button
+          type="button"
+          className="glass-button px-3.5 py-2 text-[13px]"
+          onClick={() => navigate('home')}
+        >
           ← Назад
         </button>
         <h2 className="text-[22px] font-extrabold text-white">🛠️ Практика</h2>
@@ -38,10 +54,15 @@ export default function Practice() {
             <div
               key={task.id}
               onClick={() => navigate('practice-task', task.id)}
+              onKeyDown={(event) =>
+                handleKeyboardActivation(event, () => navigate('practice-task', task.id))
+              }
+              role="button"
+              tabIndex={0}
               className={`glass-panel relative cursor-pointer overflow-hidden p-4 transition-all duration-200 hover:translate-x-1 ${done ? 'opacity-70' : ''}`}
             >
               {done && (
-                <div className="status-ribbon text-black" style={{ backgroundColor: task.color }}>
+                <div className="status-ribbon text-black" style={{ ['--status-bg' as string]: task.color }}>
                   ПРОЙДЕНО ✓
                 </div>
               )}

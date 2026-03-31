@@ -5,7 +5,7 @@ import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
 import { getLessonSessionQuestionCount } from '../domain/lesson_session';
 import { getLevelInfo, getTimeOfDayGreeting, plural } from '../utils';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import DevMenu from '../components/DevMenu';
 import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
@@ -166,6 +166,7 @@ export default function Home() {
   const today = getLocalDateKey();
 
   const [now, setNow] = useState(() => new Date());
+  const [scrollGlassProgress, setScrollGlassProgress] = useState(0);
   const [isQuoteCollapsed, setIsQuoteCollapsed] = useState(() => {
     try {
       return localStorage.getItem(QUOTE_VISIBILITY_STORAGE_KEY) === today;
@@ -197,6 +198,18 @@ export default function Home() {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+  };
+
+  const handleKeyboardActivation = (
+    event: KeyboardEvent<HTMLElement>,
+    action: () => void
+  ) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    action();
   };
 
   const handleLessonOpen = (lessonId: string, locked: boolean) => {
@@ -233,6 +246,35 @@ export default function Home() {
     }, 60000);
 
     return () => clearInterval(greetingTimer);
+  }, []);
+
+  useEffect(() => {
+    let frame = 0;
+
+    const updateScrollGlass = () => {
+      frame = 0;
+      const maxScroll = Math.max(window.innerHeight * 1.35, 1);
+      const nextProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      setScrollGlassProgress((prev) => (Math.abs(prev - nextProgress) < 0.01 ? prev : nextProgress));
+    };
+
+    updateScrollGlass();
+
+    const handleScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(updateScrollGlass);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -309,6 +351,16 @@ export default function Home() {
   }, [isQuoteExpandedRendered, state.lastQuoteIndex]);
 
   const greeting = getTimeOfDayGreeting(now);
+  const homeGlassStyle = {
+    ['--home-glass-left-y' as string]: `${34 + scrollGlassProgress * 30}%`,
+    ['--home-glass-right-y' as string]: `${68 - scrollGlassProgress * 24}%`,
+    ['--home-glass-green-alpha' as string]: (0.07 + scrollGlassProgress * 0.04).toFixed(3),
+    ['--home-glass-blue-alpha' as string]: (0.095 + scrollGlassProgress * 0.03).toFixed(3),
+    ['--home-glass-green-alpha-soft' as string]: (0.04 + scrollGlassProgress * 0.025).toFixed(3),
+    ['--home-glass-blue-alpha-soft' as string]: (0.055 + scrollGlassProgress * 0.02).toFixed(3),
+    ['--home-glass-green-alpha-strong' as string]: (0.085 + scrollGlassProgress * 0.045).toFixed(3),
+    ['--home-glass-blue-alpha-strong' as string]: (0.1 + scrollGlassProgress * 0.03).toFixed(3),
+  };
 
   const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
   const dailyDone = state.lastDailyDate === today;
@@ -341,7 +393,7 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full pb-10">
+    <div className="w-full pb-10" style={homeGlassStyle}>
       {/* Header */}
       <div className="solid-header p-4">
         <div className="mx-auto max-w-[600px]">
@@ -364,20 +416,26 @@ export default function Home() {
             </div>
             <div className="flex gap-2">
               <button
+                type="button"
                 className="home-toolbar-button text-sm"
                 onClick={() => navigate('achievements')}
+                aria-label="Открыть достижения"
               >
                 🏆
               </button>
               <button
+                type="button"
                 className="home-toolbar-button text-sm"
                 onClick={() => navigate('stats')}
+                aria-label="Открыть статистику"
               >
                 📊
               </button>
               <button
+                type="button"
                 className="home-toolbar-button text-sm"
                 onClick={() => navigate('certificate')}
+                aria-label="Открыть сертификат"
               >
                 🎓
               </button>
@@ -526,10 +584,16 @@ export default function Home() {
                   <div
                     key={lesson.id}
                     onClick={() => handleLessonOpen(lesson.id, locked)}
+                    onKeyDown={(event) =>
+                      handleKeyboardActivation(event, () => handleLessonOpen(lesson.id, locked))
+                    }
                     onMouseEnter={() => !locked && setHoveredLessonId(lesson.id)}
                     onMouseLeave={() =>
                       setHoveredLessonId((prev) => (prev === lesson.id ? null : prev))
                     }
+                    role="button"
+                    tabIndex={locked ? -1 : 0}
+                    aria-disabled={locked}
                     className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer'} ${openingLessonId === lesson.id ? 'scale-[0.995]' : ''}`}
                   >
                     <TiltedSurface disabled={locked} className="rounded-[24px]">
@@ -544,7 +608,7 @@ export default function Home() {
                         }}
                       >
                       {done && (
-                        <div className="status-ribbon text-black" style={{ backgroundColor: lesson.color }}>
+                        <div className="status-ribbon text-black" style={{ ['--status-bg' as string]: lesson.color }}>
                           ГОТОВО ✓
                         </div>
                       )}
@@ -607,6 +671,15 @@ export default function Home() {
             <CardOutline color="#a78bfa" variant="ambient" />
             <div
               onClick={() => !dailyDone && navigate('daily')}
+              onKeyDown={(event) => {
+                if (dailyDone) {
+                  return;
+                }
+                handleKeyboardActivation(event, () => navigate('daily'));
+              }}
+              role="button"
+              tabIndex={dailyDone ? -1 : 0}
+              aria-disabled={dailyDone}
               className={`home-surface-card home-surface-card--mode border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
             >
               <div className="relative z-[1] flex items-center gap-3">
@@ -631,6 +704,9 @@ export default function Home() {
               <CardOutline color="#f87171" variant="ambient" />
               <div
                 onClick={() => navigate('exam')}
+                onKeyDown={(event) => handleKeyboardActivation(event, () => navigate('exam'))}
+                role="button"
+                tabIndex={0}
                 className="home-surface-card home-surface-card--mode cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
               >
                 <div className="relative z-[1] flex items-center gap-3">
@@ -659,6 +735,9 @@ export default function Home() {
             <CardOutline color="#34d399" variant="ambient" />
             <div
               onClick={() => navigate('practice')}
+              onKeyDown={(event) => handleKeyboardActivation(event, () => navigate('practice'))}
+              role="button"
+              tabIndex={0}
               className="home-surface-card home-surface-card--mode cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
             >
               <div className="relative z-[1] flex items-center gap-3">
