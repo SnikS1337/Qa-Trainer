@@ -1,22 +1,4 @@
 import type { LessonMeta } from '../types';
-import { LESSON_EXPANSIONS } from './lesson_expansions';
-import { LESSON_EXPANSIONS_BONUS } from './lesson_expansions_bonus';
-import { LESSON_EXPANSIONS_BONUS_2 } from './lesson_expansions_bonus_2';
-
-const QUESTION_COUNT_INCREMENTS = new Map<string, number>();
-
-for (const expansionSet of [
-  LESSON_EXPANSIONS,
-  LESSON_EXPANSIONS_BONUS,
-  LESSON_EXPANSIONS_BONUS_2,
-]) {
-  for (const [lessonId, questions] of Object.entries(expansionSet)) {
-    QUESTION_COUNT_INCREMENTS.set(
-      lessonId,
-      (QUESTION_COUNT_INCREMENTS.get(lessonId) ?? 0) + questions.length
-    );
-  }
-}
 
 const BASE_LESSON_META: LessonMeta[] = [
   {
@@ -27,7 +9,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 20,
     desc: 'Три уровня автоматизации',
-    questionCount: 15,
+    questionCount: 20,
   },
   {
     id: 'equiv',
@@ -37,7 +19,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Техники тест-дизайна',
     xp: 25,
     desc: 'Разбивай входные данные на классы',
-    questionCount: 12,
+    questionCount: 18,
   },
   {
     id: 'boundary',
@@ -47,7 +29,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Техники тест-дизайна',
     xp: 25,
     desc: 'Там, где чаще всего живут баги',
-    questionCount: 10,
+    questionCount: 16,
   },
   {
     id: 'testcase',
@@ -57,7 +39,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 30,
     desc: 'Пиши правильно и понятно',
-    questionCount: 9,
+    questionCount: 15,
   },
   {
     id: 'states',
@@ -67,7 +49,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 25,
     desc: 'Диаграммы состояний и переходов',
-    questionCount: 4,
+    questionCount: 15,
   },
   {
     id: 'checklist',
@@ -77,7 +59,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 20,
     desc: 'Когда что использовать',
-    questionCount: 8,
+    questionCount: 15,
   },
   {
     id: 'types',
@@ -87,7 +69,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 25,
     desc: 'Функциональное, нефункциональное и другие',
-    questionCount: 7,
+    questionCount: 17,
   },
   {
     id: 'api',
@@ -97,7 +79,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 35,
     desc: 'REST, HTTP, Postman и основы API QA',
-    questionCount: 10,
+    questionCount: 17,
   },
   {
     id: 'buglife',
@@ -107,7 +89,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 25,
     desc: 'От нахождения до закрытия — каждый статус и переход',
-    questionCount: 9,
+    questionCount: 17,
   },
   {
     id: 'requirements',
@@ -117,7 +99,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 25,
     desc: 'Анализируй требования до начала разработки',
-    questionCount: 8,
+    questionCount: 17,
   },
   {
     id: 'mobile',
@@ -127,7 +109,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 30,
     desc: 'Специфика iOS и Android: жесты, прерывания, сеть',
-    questionCount: 8,
+    questionCount: 15,
   },
   {
     id: 'sql',
@@ -137,7 +119,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 35,
     desc: 'Сложные запросы: JOIN, GROUP BY, агрегаты',
-    questionCount: 8,
+    questionCount: 17,
   },
   {
     id: 'metrics',
@@ -147,7 +129,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Процессы',
     xp: 30,
     desc: 'Как объективно оценить качество продукта',
-    questionCount: 4,
+    questionCount: 15,
   },
   {
     id: 'crossbrowser',
@@ -157,7 +139,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 30,
     desc: 'Chrome, Safari, Firefox: борьба за единообразие',
-    questionCount: 4,
+    questionCount: 15,
   },
   {
     id: 'a11y',
@@ -167,7 +149,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 30,
     desc: 'Тестирование доступности для всех пользователей',
-    questionCount: 4,
+    questionCount: 16,
   },
   {
     id: 'performance',
@@ -177,7 +159,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 40,
     desc: 'Нагрузка, стресс и стабильность системы',
-    questionCount: 7,
+    questionCount: 17,
   },
   {
     id: 'automation',
@@ -187,7 +169,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 45,
     desc: 'Selenium, Playwright и паттерны проектирования',
-    questionCount: 7,
+    questionCount: 17,
   },
   {
     id: 'security',
@@ -197,7 +179,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 50,
     desc: 'OWASP Top 10: SQLi, XSS и другие угрозы',
-    questionCount: 7,
+    questionCount: 18,
   },
   {
     id: 'testplan',
@@ -207,7 +189,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Процессы',
     xp: 35,
     desc: 'Стратегия, риски и критерии выхода',
-    questionCount: 6,
+    questionCount: 17,
   },
   {
     id: 'database',
@@ -217,7 +199,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 40,
     desc: 'ACID, индексы и целостность данных',
-    questionCount: 6,
+    questionCount: 18,
   },
   {
     id: 'interview',
@@ -227,7 +209,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Карьера',
     xp: 50,
     desc: 'STAR, логика и каверзные вопросы',
-    questionCount: 4,
+    questionCount: 17,
   },
   {
     id: 'smoke_sanity',
@@ -237,7 +219,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 25,
     desc: 'Быстрая проверка работоспособности',
-    questionCount: 5,
+    questionCount: 16,
   },
   {
     id: 'pairwise',
@@ -247,7 +229,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 40,
     desc: 'Комбинаторика: как сократить миллион тестов',
-    questionCount: 6,
+    questionCount: 17,
   },
   {
     id: 'exploratory',
@@ -257,7 +239,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 35,
     desc: 'Исследовательское тестирование: интуиция и опыт',
-    questionCount: 5,
+    questionCount: 16,
   },
   {
     id: 'defect_types',
@@ -267,7 +249,7 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Основы',
     xp: 30,
     desc: 'Severity vs Priority: расставляем акценты',
-    questionCount: 5,
+    questionCount: 16,
   },
   {
     id: 'configuration',
@@ -277,11 +259,8 @@ const BASE_LESSON_META: LessonMeta[] = [
     category: 'Продвинутый уровень',
     xp: 30,
     desc: 'Окружения, флаги и переменные',
-    questionCount: 5,
+    questionCount: 17,
   },
 ];
 
-export const LESSON_META: LessonMeta[] = BASE_LESSON_META.map((lesson) => ({
-  ...lesson,
-  questionCount: lesson.questionCount + (QUESTION_COUNT_INCREMENTS.get(lesson.id) ?? 0),
-}));
+export const LESSON_META: LessonMeta[] = BASE_LESSON_META;

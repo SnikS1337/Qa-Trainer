@@ -8,6 +8,7 @@ import { useState, useRef, useEffect, type KeyboardEvent, type RefObject } from 
 import DevMenu from '../components/DevMenu';
 import TiltedSurface from '../components/TiltedSurface';
 import { getLocalDateKey } from '../domain/dates';
+import { getLessonSessionQuestionCount } from '../domain/lesson_session';
 import type { Quote } from '../types';
 
 const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
@@ -747,12 +748,16 @@ export default function Home() {
                 }
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
-                const questionCountLabel = `До ${lesson.questionCount} ${plural(
-                  lesson.questionCount,
-                  'вопрос',
-                  'вопроса',
-                  'вопросов'
-                )}`;
+                const sessionQuestionCount = getLessonSessionQuestionCount(lesson.questionCount);
+                const questionCountLabel =
+                  lesson.questionCount > sessionQuestionCount
+                    ? `${sessionQuestionCount} за попытку · ${lesson.questionCount} всего`
+                    : `${lesson.questionCount} ${plural(
+                        lesson.questionCount,
+                        'вопрос',
+                        'вопроса',
+                        'вопросов'
+                      )}`;
 
                 return (
                   <div
