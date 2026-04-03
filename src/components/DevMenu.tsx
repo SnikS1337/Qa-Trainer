@@ -44,10 +44,14 @@ export default function DevMenu({ onClose }: { onClose: () => void }) {
     showToast('Прогресс сброшен', 'text-brand-green');
   };
 
-  const exportProgress = () => {
+  const exportProgress = async () => {
     const data = JSON.stringify(state);
-    navigator.clipboard.writeText(data);
-    showToast('Прогресс скопирован в буфер обмена', 'text-brand-green');
+    try {
+      await navigator.clipboard.writeText(data);
+      showToast('Прогресс скопирован в буфер обмена', 'text-brand-green');
+    } catch {
+      showToast('Не удалось скопировать прогресс в буфер обмена', 'text-brand-red');
+    }
   };
 
   const importProgress = () => {
