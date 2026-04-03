@@ -5,6 +5,8 @@ import {
   loadLessonsContent,
   loadPracticeTaskById,
   loadPracticeTasksContent,
+  preloadLessonsContent,
+  preloadPracticeTasksContent,
 } from '../src/data/content_loaders';
 import { LESSON_META } from '../src/data/lesson_meta';
 import { PRACTICE_TASK_META } from '../src/data/practice_task_meta';
@@ -77,6 +79,23 @@ export const tests = [
 
       assert.equal(task?.id, knownId);
       assert.equal(missingTask, null);
+    },
+  },
+  {
+    name: 'preload helpers are safe and keep loaders operational',
+    run: async () => {
+      preloadLessonsContent();
+      preloadPracticeTasksContent();
+
+      const [lessons, practiceTasks, choices] = await Promise.all([
+        loadLessonsContent(),
+        loadPracticeTasksContent(),
+        loadChoiceQuestions(),
+      ]);
+
+      assert.ok(lessons.length > 0);
+      assert.ok(practiceTasks.length > 0);
+      assert.ok(choices.length > 0);
     },
   },
 ];

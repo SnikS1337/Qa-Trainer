@@ -730,14 +730,10 @@ export function Certificate() {
           )}
           {!isCheater && !debugUnlocked && (
             <div className="glass-panel border-brand-green/30 bg-brand-green/10 text-brand-green mb-5 p-3.5 text-center text-[13px]">
-              {certType === 'career' && (
-                <>
-                  <div className="mb-2">
-                    ✅ Вся цепочка уроков завершена: Основы, Техники тест-дизайна и Карьера.
-                  </div>
-                  {'✅ Введи своё имя и скачай сертификат.'}
-                </>
-              )}
+              <div className="mb-2">
+                ✅ Вся цепочка уроков завершена: Основы, Техники тест-дизайна и Карьера.
+              </div>
+              {'✅ Введи своё имя и скачай сертификат.'}
             </div>
           )}
 
