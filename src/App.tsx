@@ -85,6 +85,32 @@ function isSlowConnection() {
   );
 }
 
+function canPreloadContent() {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const connection = (
+    navigator as Navigator & {
+      connection?: { effectiveType?: string; saveData?: boolean };
+    }
+  ).connection;
+
+  if (!connection) {
+    return false;
+  }
+
+  if (connection.saveData) {
+    return false;
+  }
+
+  return (
+    connection.effectiveType !== 'slow-2g' &&
+    connection.effectiveType !== '2g' &&
+    connection.effectiveType !== '3g'
+  );
+}
+
 export default function App() {
   const store = useAppStoreInit();
   const [screen, setScreen] = useState<ScreenName>('splash');
@@ -98,6 +124,7 @@ export default function App() {
   const [isMobileDevice, setIsMobileDevice] = useState(() => detectMobileDevice());
   const [motionReact, setMotionReact] = useState<MotionReactModule | null>(null);
   const [isSlowNetwork, setIsSlowNetwork] = useState(() => isSlowConnection());
+  const [allowContentPreload, setAllowContentPreload] = useState(() => canPreloadContent());
 
   const navigate = useCallback((nextScreen: ScreenName, id?: string) => {
     setScreen(nextScreen);
@@ -139,7 +166,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (isSlowNetwork) {
+    if (!allowContentPreload) {
       return;
     }
 
@@ -168,11 +195,12 @@ export default function App() {
         window.cancelIdleCallback(idleId);
       }
     };
-  }, [isSlowNetwork]);
+  }, [allowContentPreload]);
 
   useEffect(() => {
     const handleNetworkState = () => {
       setIsSlowNetwork(isSlowConnection());
+      setAllowContentPreload(canPreloadContent());
     };
 
     window.addEventListener('online', handleNetworkState);

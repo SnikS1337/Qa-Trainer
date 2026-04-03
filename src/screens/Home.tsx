@@ -1,5 +1,4 @@
 import { useAppStore } from '../store';
-import { preloadLessonsContent, preloadPracticeTasksContent } from '../data/content_loaders';
 import { LESSON_META } from '../data/lesson_meta';
 import { PRACTICE_TASK_META } from '../data/practice_task_meta';
 import { QUOTES } from '../data/quotes';
@@ -11,6 +10,7 @@ import HomeLessonCard from '../components/home/HomeLessonCard';
 import HomeModes from '../components/home/HomeModes';
 import HomeQuoteDock from '../components/home/HomeQuoteDock';
 import { getLocalDateKey } from '../domain/dates';
+import { useHomeLessonsModel } from '../hooks/useHomeLessonsModel';
 
 const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
 const QUOTE_HIDE_ANIMATION_MS = 420;
@@ -224,9 +224,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    preloadLessonsContent();
-    preloadPracticeTasksContent();
-
     if (state.dailyQuoteDate !== today) {
       updateState({
         lastQuoteIndex: Math.floor(Math.random() * QUOTES.length),
@@ -308,7 +305,7 @@ export default function Home() {
     ['--home-glass-blue-alpha-strong' as string]: (0.1 + scrollGlassProgress * 0.03).toFixed(3),
   };
 
-  const categories = Array.from(new Set(LESSON_META.map((lesson) => lesson.category)));
+  const lessonsModel = useHomeLessonsModel(state.completedLessons);
   const dailyDone = state.lastDailyDate === today;
   const practDone = state.completedPractice?.length || 0;
 
@@ -371,16 +368,11 @@ export default function Home() {
         />
 
         {/* Lessons */}
-        {categories.map((cat, catIdx) => {
-          const catLessons = LESSON_META.filter((lesson) => lesson.category === cat);
-          const prevCat = catIdx > 0 ? categories[catIdx - 1] : null;
-          const prevCatLessons = prevCat
-            ? LESSON_META.filter((lesson) => lesson.category === prevCat)
-            : [];
-
-          const catUnlocked =
-            catIdx === 0 || prevCatLessons.every((l) => state.completedLessons.includes(l.id));
-          const catDone = catLessons.filter((l) => state.completedLessons.includes(l.id)).length;
+        {lessonsModel.map((categoryModel) => {
+          const cat = categoryModel.category;
+          const catLessons = categoryModel.lessons;
+          const catUnlocked = categoryModel.unlocked;
+          const catDone = categoryModel.doneCount;
 
           return (
             <div key={cat} className="mb-7">
@@ -400,20 +392,11 @@ export default function Home() {
                 <span className="h-[1px] flex-1 bg-white/20"></span>
               </div>
 
-              {catLessons.map((lesson, idxInCat) => {
-                const done = state.completedLessons.includes(lesson.id);
-                let locked = !catUnlocked;
-                if (catUnlocked && idxInCat > 0) {
-                  locked = !state.completedLessons.includes(catLessons[idxInCat - 1].id);
-                }
+              {catLessons.map((item) => {
+                const { lesson, done, locked } = item;
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
-                const questionCountLabel = `До ${lesson.questionCount} ${plural(
-                  lesson.questionCount,
-                  'вопрос',
-                  'вопроса',
-                  'вопросов'
-                )}`;
+                const questionCountLabel = `До ${lesson.questionCount} ${plural(lesson.questionCount, 'вопрос', 'вопроса', 'вопросов')}`;
 
                 return (
                   <HomeLessonCard
