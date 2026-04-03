@@ -1495,11 +1495,6 @@ html,
   animation: ambient-outline-pulse 3.8s ease-in-out infinite;
 }
 
-.ambient-card-outline-pulse-quote {
-  animation: quote-outline-bright-pulse 2.35s ease-in-out infinite;
-  transform-origin: 50% 50%;
-}
-
 @keyframes quote-outline-pulse {
   0%,
   100% {
@@ -1514,19 +1509,6 @@ html,
     box-shadow:
       0 0 22px rgba(52, 211, 153, 0.28),
       0 0 42px rgba(52, 211, 153, 0.12);
-  }
-}
-
-@keyframes quote-outline-bright-pulse {
-  0%,
-  100% {
-    opacity: 0.58;
-    filter: brightness(0.72) saturate(0.95);
-  }
-
-  50% {
-    opacity: 1;
-    filter: brightness(1.55) saturate(1.18);
   }
 }
 
