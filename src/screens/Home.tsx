@@ -6,8 +6,9 @@ import { QUOTES } from '../data/quotes';
 import { getLevelInfo, getTimeOfDayGreeting, plural } from '../utils';
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import DevMenu from '../components/DevMenu';
-import TiltedSurface from '../components/TiltedSurface';
-import CardOutline from '../components/home/CardOutline';
+import HomeHeader from '../components/home/HomeHeader';
+import HomeLessonCard from '../components/home/HomeLessonCard';
+import HomeModes from '../components/home/HomeModes';
 import HomeQuoteDock from '../components/home/HomeQuoteDock';
 import { getLocalDateKey } from '../domain/dates';
 
@@ -339,94 +340,23 @@ export default function Home() {
 
   return (
     <div className="w-full pb-10" style={homeGlassStyle}>
-      {/* Header */}
-      <div className="solid-header p-4">
-        <div className="mx-auto max-w-[600px]">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span
-                className="cursor-pointer text-2xl select-none"
-                onPointerDown={handlePointerDown}
-                onPointerUp={handlePointerUpOrLeave}
-                onPointerLeave={handlePointerUpOrLeave}
-              >
-                🧪
-              </span>
-              <div>
-                <div className="text-brand-green font-mono text-[10px] tracking-[3px]">
-                  QA TRAINER
-                </div>
-                <div className="text-lg font-extrabold text-white">{greeting}, тестировщик!</div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="home-toolbar-button"
-                onClick={() => navigate('achievements')}
-                aria-label="Открыть достижения"
-              >
-                <span className="home-toolbar-icon">🏆</span>
-              </button>
-              <button
-                type="button"
-                className="home-toolbar-button"
-                onClick={() => navigate('stats')}
-                aria-label="Открыть статистику"
-              >
-                <span className="home-toolbar-icon">📊</span>
-              </button>
-              <button
-                type="button"
-                className="home-toolbar-button"
-                onClick={() => navigate('certificate')}
-                aria-label="Открыть сертификат"
-              >
-                <span className="home-toolbar-icon">🎓</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="mb-3 grid grid-cols-4 gap-2">
-            {[
-              { icon: '⚡', val: state.totalXP, label: 'XP', color: 'text-brand-amber' },
-              { icon: '🎯', val: lvl.level, label: 'Уровень', color: 'text-brand-green' },
-              { icon: '🔥', val: state.streak, label: 'Серия', color: 'text-brand-red' },
-              {
-                icon: '✅',
-                val: `${state.completedLessons.length}/${LESSON_META.length}`,
-                label: 'Уроки',
-                color: 'text-brand-blue',
-              },
-            ].map((s, i) => (
-              <div key={i} className="home-clean-glass home-stat-card">
-                <div className="mb-1 text-base">{s.icon}</div>
-                <div className={`font-mono text-lg font-extrabold ${s.color}`}>{s.val}</div>
-                <div className="mt-1 text-[9px] tracking-[1.5px] text-slate-300 uppercase">
-                  {s.label}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <div className="mb-1 flex justify-between text-[11px] text-slate-300">
-              <span>
-                Уровень {lvl.level} — {lvl.name}
-              </span>
-              <span>
-                {lvl.xpInLevel} / {lvl.xpToNext} XP
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full border border-white/5 bg-black/30">
-              <div
-                className="bg-brand-amber h-full rounded-full transition-all duration-500"
-                style={{ width: `${lvl.pct}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HomeHeader
+        greeting={greeting}
+        totalXP={state.totalXP}
+        level={lvl.level}
+        levelName={lvl.name}
+        streak={state.streak}
+        completedLessonsCount={state.completedLessons.length}
+        totalLessonsCount={LESSON_META.length}
+        xpInLevel={lvl.xpInLevel}
+        xpToNext={lvl.xpToNext}
+        levelProgressPct={lvl.pct}
+        onOpenAchievements={() => navigate('achievements')}
+        onOpenStats={() => navigate('stats')}
+        onOpenCertificate={() => navigate('certificate')}
+        onDevPointerDown={handlePointerDown}
+        onDevPointerUpOrLeave={handlePointerUpOrLeave}
+      />
 
       <div className="mx-auto max-w-[600px] px-5 pt-5">
         {/* Quote */}
@@ -486,253 +416,45 @@ export default function Home() {
                 )}`;
 
                 return (
-                  <div
+                  <HomeLessonCard
                     key={lesson.id}
-                    onClick={() => handleLessonOpen(lesson.id, locked)}
-                    onKeyDown={(event) =>
-                      handleKeyboardActivation(event, () => handleLessonOpen(lesson.id, locked))
-                    }
-                    onMouseEnter={() => !locked && setHoveredLessonId(lesson.id)}
-                    onMouseLeave={() =>
+                    lesson={lesson}
+                    done={done}
+                    locked={locked}
+                    isOpening={isOpening}
+                    isHovered={isHovered}
+                    questionCountLabel={questionCountLabel}
+                    onOpen={() => handleLessonOpen(lesson.id, locked)}
+                    onKeyDown={handleKeyboardActivation}
+                    onHoverStart={() => !locked && setHoveredLessonId(lesson.id)}
+                    onHoverEnd={() =>
                       setHoveredLessonId((prev) => (prev === lesson.id ? null : prev))
                     }
-                    role="button"
-                    tabIndex={locked ? -1 : 0}
-                    aria-disabled={locked}
-                    className={`relative mb-3 overflow-visible transition-all duration-300 ${locked ? 'cursor-default opacity-50' : 'cursor-pointer'} ${openingLessonId === lesson.id ? 'lesson-card-opening scale-[0.995]' : ''}`}
-                  >
-                    <TiltedSurface disabled={locked} className="rounded-[24px]">
-                      {!locked && (
-                        <CardOutline color={lesson.color} hovered={isHovered} opening={isOpening} />
-                      )}
-                      <div
-                        className={`home-surface-card lesson-tilt-face relative overflow-hidden p-4 transition-all duration-300 ${locked ? '' : 'hover:bg-white/10'} ${done ? 'border-opacity-50' : ''}`}
-                        style={{
-                          ['--lesson-accent' as string]: lesson.color,
-                          borderColor: !locked && !done ? 'rgba(255,255,255,0.2)' : undefined,
-                        }}
-                      >
-                        {done && (
-                          <div
-                            className="status-ribbon text-black"
-                            style={{ ['--status-bg' as string]: lesson.color }}
-                          >
-                            ГОТОВО ✓
-                          </div>
-                        )}
-                        <div className="lesson-tilt-content relative z-[1] flex items-center gap-3">
-                          <div className="lesson-tilt-icon-slot relative h-12 w-12 shrink-0">
-                            <div
-                              aria-hidden="true"
-                              className="lesson-tilt-icon-well absolute inset-0 rounded-xl"
-                              style={{
-                                ['--icon-accent' as string]: locked
-                                  ? 'rgba(255,255,255,0.18)'
-                                  : lesson.color,
-                              }}
-                            />
-                            <div
-                              className="lesson-tilt-icon absolute top-0 left-0 flex h-12 w-12 items-center justify-center rounded-xl border bg-black/20 text-2xl"
-                              data-icon={locked ? '🔒' : lesson.icon}
-                              style={{
-                                ['--icon-color' as string]: locked ? '#94a3b8' : lesson.color,
-                                borderColor: locked ? 'rgba(255,255,255,0.1)' : `${lesson.color}50`,
-                              }}
-                            >
-                              {locked ? '🔒' : lesson.icon}
-                            </div>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-0.5 text-sm font-bold text-white">
-                              {lesson.title}
-                            </div>
-                            <div className="mb-2 truncate text-xs text-slate-300">
-                              {lesson.desc}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[11px] text-slate-300">
-                                {questionCountLabel}
-                              </span>
-                              <span className="text-slate-500">·</span>
-                              <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
-                                До {Math.round(lesson.xp * 1.5)} XP
-                              </span>
-                            </div>
-                          </div>
-                          {!locked && (
-                            <div
-                              className={`shrink-0 text-lg transition-all duration-200 ${openingLessonId === lesson.id ? 'translate-x-0.5 text-white' : ''}`}
-                              style={{
-                                color: openingLessonId === lesson.id ? undefined : lesson.color,
-                              }}
-                            >
-                              ›
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TiltedSurface>
-                  </div>
+                  />
                 );
               })}
             </div>
           );
         })}
 
-        {/* Extra Modes */}
-        <div className="pb-10">
-          <div className={`relative mb-3 ${dailyDone ? 'opacity-60' : ''}`}>
-            <CardOutline color="#a78bfa" variant="ambient" />
-            <div
-              onClick={() => !dailyDone && navigate('daily')}
-              onKeyDown={(event) => {
-                if (dailyDone) {
-                  return;
-                }
-                handleKeyboardActivation(event, () => navigate('daily'));
-              }}
-              role="button"
-              tabIndex={dailyDone ? -1 : 0}
-              aria-disabled={dailyDone}
-              className={`home-surface-card home-surface-card--mode mode-gloss mode-gloss--daily border-purple-400/30 bg-purple-400/5 p-4 transition-all duration-300 ${dailyDone ? 'cursor-default' : 'cursor-pointer hover:bg-purple-400/10'}`}
-            >
-              <div className="relative z-[1] flex items-center gap-3">
-                <div className="text-3xl">{dailyDone ? '✅' : '📅'}</div>
-                <div className="flex-1">
-                  <div className="mb-1 text-sm font-extrabold text-white">
-                    Ежедневный квиз {state.dailyStreak > 1 && `🔥${state.dailyStreak}`}
-                  </div>
-                  <div className="text-xs text-slate-300">
-                    {dailyDone
-                      ? 'Уже пройден сегодня — возвращайся завтра!'
-                      : '5 случайных вопросов · +15 XP · Обновляется каждый день'}
-                  </div>
-                </div>
-                {!dailyDone && <div className="text-brand-purple text-lg">›</div>}
-              </div>
-            </div>
-          </div>
-
-          {state.completedLessons.length >= 4 && (
-            <div className="relative mb-3">
-              <CardOutline color="#f87171" variant="ambient" />
-              <div
-                onClick={() => navigate('exam')}
-                onKeyDown={(event) => handleKeyboardActivation(event, () => navigate('exam'))}
-                role="button"
-                tabIndex={0}
-                className="home-surface-card home-surface-card--mode mode-gloss mode-gloss--exam cursor-pointer border-red-400/30 bg-red-400/5 p-4 transition-all duration-300 hover:bg-red-400/10"
-              >
-                <div className="relative z-[1] flex items-center gap-3">
-                  <div className="text-3xl">🎯</div>
-                  <div className="flex-1">
-                    <div className="mb-1 text-sm font-extrabold text-white">Режим экзамена</div>
-                    <div className="text-xs text-slate-300">
-                      20 вопросов · 10 минут · Без подсказок{' '}
-                      {state.examBestScore > 0 && (
-                        <span>
-                          · Рекорд:{' '}
-                          <span className="text-brand-red font-extrabold">
-                            {state.examBestScore}%
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-brand-red text-lg">›</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="relative mb-3">
-            <CardOutline color="#34d399" variant="ambient" />
-            <div
-              onClick={() => navigate('practice')}
-              onKeyDown={(event) => handleKeyboardActivation(event, () => navigate('practice'))}
-              role="button"
-              tabIndex={0}
-              className="home-surface-card home-surface-card--mode mode-gloss mode-gloss--practice cursor-pointer border-emerald-400/30 bg-emerald-400/5 p-4 transition-all duration-300 hover:bg-emerald-400/10"
-            >
-              <div className="relative z-[1] flex items-center gap-3">
-                <div className="text-3xl">🛠️</div>
-                <div className="flex-1">
-                  <div className="mb-1 text-sm font-extrabold text-white">Практические задания</div>
-                  <div className="text-xs text-slate-300">
-                    Реальные сценарии · {practDone}/{PRACTICE_TASK_META.length} пройдено
-                  </div>
-                </div>
-                <div className="text-lg text-emerald-400">›</div>
-              </div>
-            </div>
-          </div>
-
-          {state.completedLessons.length === 0 ? (
-            <div className="p-5 text-center text-[13px] leading-relaxed text-slate-300">
-              <div className="mb-2 text-3xl">🚀</div>
-              Начни с первого урока! Каждый профессиональный тестировщик начинал именно так.
-            </div>
-          ) : state.completedLessons.length < LESSON_META.length ? (
-            <div className="glass-panel mt-1 p-4 text-center">
-              <div className="mb-1 text-2xl">
-                {state.completedLessons.length > LESSON_META.length / 2 ? '💪' : '🌱'}
-              </div>
-              <div className="mb-1 text-sm font-bold text-white">
-                {Math.round((state.completedLessons.length / LESSON_META.length) * 100)}% пройдено
-              </div>
-              <div className="text-xs text-slate-300">
-                Ещё {LESSON_META.length - state.completedLessons.length}{' '}
-                {plural(
-                  LESSON_META.length - state.completedLessons.length,
-                  'урок',
-                  'урока',
-                  'уроков'
-                )}{' '}
-                до финала!
-              </div>
-            </div>
-          ) : (
-            <div className="glass-panel home-complete-panel border-brand-green/40 bg-brand-green/10 p-5 text-center">
-              <button
-                type="button"
-                className={`complete-panel-star-trigger ${isCompleteCelebrating ? 'complete-panel-star-trigger--active' : ''}`}
-                onClick={handleCompletePanelCelebrate}
-                aria-label="Запустить праздничные звёзды"
-              >
-                ✦
-              </button>
-              {isCompleteCelebrating && (
-                <div
-                  className="complete-panel-stars"
-                  key={completeCelebrationKey}
-                  aria-hidden="true"
-                >
-                  {completeStarParticles.map((particle) => (
-                    <span
-                      key={`${completeCelebrationKey}-${particle.id}`}
-                      className="complete-panel-star"
-                      style={{
-                        left: `${particle.x}%`,
-                        animationDelay: `${particle.delay}ms`,
-                        animationDuration: `${particle.duration}ms`,
-                        ['--star-size' as string]: `${particle.size}px`,
-                        ['--star-drift' as string]: `${particle.drift}px`,
-                        ['--star-rotate' as string]: `${particle.rotate}deg`,
-                      }}
-                    >
-                      ✦
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="mb-2 animate-bounce text-4xl">🏆</div>
-              <div className="text-brand-green text-base font-extrabold">Все уроки пройдены!</div>
-              <div className="mt-1.5 text-xs text-slate-300">
-                Теперь испытай себя в режиме экзамена 👆
-              </div>
-            </div>
-          )}
-        </div>
+        <HomeModes
+          dailyDone={dailyDone}
+          dailyStreak={state.dailyStreak}
+          completedLessonsCount={state.completedLessons.length}
+          examBestScore={state.examBestScore}
+          practDone={practDone}
+          practiceTotal={PRACTICE_TASK_META.length}
+          totalLessons={LESSON_META.length}
+          isCompleteCelebrating={isCompleteCelebrating}
+          completeCelebrationKey={completeCelebrationKey}
+          completeStarParticles={completeStarParticles}
+          onOpenDaily={() => navigate('daily')}
+          onOpenExam={() => navigate('exam')}
+          onOpenPractice={() => navigate('practice')}
+          onCompleteCelebrate={handleCompletePanelCelebrate}
+          onKeyDown={handleKeyboardActivation}
+          plural={plural}
+        />
       </div>
       {showDevMenu && <DevMenu onClose={() => setShowDevMenu(false)} />}
     </div>

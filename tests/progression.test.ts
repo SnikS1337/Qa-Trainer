@@ -181,4 +181,46 @@ export const tests = [
       assert.equal(reset.nextState.lastActiveDate, '2026-03-28');
     },
   },
+  {
+    name: 'finalizeDailyQuizResult keeps streak stable when same day is replayed',
+    run: () => {
+      const sameDayReplay = finalizeDailyQuizResult(
+        createAppState({
+          totalXP: 100,
+          dailyStreak: 5,
+          lastDailyDate: '2026-03-28',
+          lastActiveDate: '2026-03-28',
+        }),
+        {
+          todayKey: '2026-03-28',
+          rewardXP: 15,
+        }
+      );
+
+      assert.equal(sameDayReplay.nextState.dailyStreak, 5);
+      assert.equal(sameDayReplay.nextState.totalXP, 115);
+      assert.equal(sameDayReplay.nextState.lastDailyDate, '2026-03-28');
+    },
+  },
+  {
+    name: 'finalizeDailyQuizResult continues streak across year boundary',
+    run: () => {
+      const yearBoundary = finalizeDailyQuizResult(
+        createAppState({
+          totalXP: 10,
+          dailyStreak: 2,
+          lastDailyDate: '2025-12-31',
+          lastActiveDate: '2025-12-31',
+        }),
+        {
+          todayKey: '2026-01-01',
+          rewardXP: 15,
+        }
+      );
+
+      assert.equal(yearBoundary.nextState.dailyStreak, 3);
+      assert.equal(yearBoundary.nextState.lastDailyDate, '2026-01-01');
+      assert.equal(yearBoundary.nextState.lastActiveDate, '2026-01-01');
+    },
+  },
 ];
