@@ -36,7 +36,6 @@ export function hydrateAppState(raw: unknown, baseState: AppState): AppState {
     maxStreak: asNumber(candidate.maxStreak, baseState.maxStreak),
     perfectLessons: asNumber(candidate.perfectLessons, baseState.perfectLessons),
     retries: asNumber(candidate.retries, baseState.retries),
-    bestStreak: asNumber(candidate.bestStreak, baseState.bestStreak),
     unlockedAchievements: asStringArray(
       candidate.unlockedAchievements,
       baseState.unlockedAchievements
@@ -55,6 +54,16 @@ export function hydrateAppState(raw: unknown, baseState: AppState): AppState {
     completedPractice: asStringArray(candidate.completedPractice, baseState.completedPractice),
     certName: asString(candidate.certName, baseState.certName),
     lastActiveDate: normalizeStoredDateKey(asString(candidate.lastActiveDate, '')),
+    lastLessonRewardDate: normalizeStoredDateKey(asString(candidate.lastLessonRewardDate, '')),
+    weeklyCheckpointWeek: asString(candidate.weeklyCheckpointWeek, baseState.weeklyCheckpointWeek),
+    weeklyCheckpointCategories: asStringArray(
+      candidate.weeklyCheckpointCategories,
+      baseState.weeklyCheckpointCategories
+    ),
+    weeklyCheckpointCompletions: asNumber(
+      candidate.weeklyCheckpointCompletions,
+      baseState.weeklyCheckpointCompletions
+    ),
     isCheater: asBoolean(candidate.isCheater, baseState.isCheater ?? false),
     examPassed: asBoolean(candidate.examPassed, baseState.examPassed ?? false),
   };

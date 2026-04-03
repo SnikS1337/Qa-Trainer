@@ -389,12 +389,6 @@ export function Certificate() {
 
         let headingText = '';
         switch (certType) {
-          case 'foundation':
-            headingText = 'о прохождении курса по основам ручного тестирования';
-            break;
-          case 'design':
-            headingText = 'о прохождении курса по ручному тестированию и тест-дизайну';
-            break;
           case 'career':
             headingText = 'о прохождении полного курса ручного тестировщика';
             break;
@@ -437,12 +431,6 @@ export function Certificate() {
         ctx.fillStyle = '#4B5563';
         let description = '';
         switch (certType) {
-          case 'foundation':
-            description = 'подтвердил(а) базовые навыки ручного тестирования';
-            break;
-          case 'design':
-            description = 'подтвердил(а) навыки ручного тестирования и тест-дизайна';
-            break;
           case 'career':
             description = 'успешно завершил(а) полный курс ручного тестировщика';
             break;
@@ -454,24 +442,6 @@ export function Certificate() {
 
         let skills: string[] = [];
         switch (certType) {
-          case 'foundation':
-            skills = [
-              'Тест-кейсы',
-              'Чек-листы',
-              'Типы тестирования',
-              'Баг-репорты',
-              'Жизненный цикл бага',
-            ];
-            break;
-          case 'design':
-            skills = [
-              'Классы эквивалентности',
-              'Граничные значения',
-              'Таблицы решений',
-              'Переходы состояний',
-              'Приоритизация тестов',
-            ];
-            break;
           case 'career':
             skills = [
               'Ручное тестирование',

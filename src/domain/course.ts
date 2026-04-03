@@ -18,7 +18,7 @@ export const CERTIFICATE_REQUIRED_LESSON_IDS = [
   ...CAREER_LESSON_IDS,
 ] as const;
 
-export type CertificateType = 'none' | 'foundation' | 'design' | 'career';
+export type CertificateType = 'none' | 'career';
 
 function hasAllLessons(completedLessons: string[], requiredLessonIds: readonly string[]) {
   return requiredLessonIds.every((lessonId) => completedLessons.includes(lessonId));

@@ -19,6 +19,44 @@ const sizeClasses: Record<ModalSize, string> = {
   wide: 'max-w-2xl',
 };
 
+let bodyScrollLockCount = 0;
+let bodyLockedScrollY = 0;
+let previousBodyOverflow = '';
+let previousBodyPosition = '';
+let previousBodyTop = '';
+let previousBodyWidth = '';
+
+function lockBodyScroll() {
+  if (bodyScrollLockCount === 0) {
+    bodyLockedScrollY = window.scrollY;
+    previousBodyOverflow = document.body.style.overflow;
+    previousBodyPosition = document.body.style.position;
+    previousBodyTop = document.body.style.top;
+    previousBodyWidth = document.body.style.width;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${bodyLockedScrollY}px`;
+    document.body.style.width = '100%';
+  }
+
+  bodyScrollLockCount += 1;
+}
+
+function unlockBodyScroll() {
+  bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1);
+
+  if (bodyScrollLockCount > 0) {
+    return;
+  }
+
+  document.body.style.overflow = previousBodyOverflow;
+  document.body.style.position = previousBodyPosition;
+  document.body.style.top = previousBodyTop;
+  document.body.style.width = previousBodyWidth;
+  window.scrollTo(0, bodyLockedScrollY);
+}
+
 export default function ModalShell({
   isOpen,
   onClose,
@@ -30,23 +68,10 @@ export default function ModalShell({
   useEffect(() => {
     if (!isOpen) return;
 
-    const scrollY = window.scrollY;
-    const previousOverflow = document.body.style.overflow;
-    const previousPosition = document.body.style.position;
-    const previousTop = document.body.style.top;
-    const previousWidth = document.body.style.width;
-
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
+    lockBodyScroll();
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.position = previousPosition;
-      document.body.style.top = previousTop;
-      document.body.style.width = previousWidth;
-      window.scrollTo(0, scrollY);
+      unlockBodyScroll();
     };
   }, [isOpen]);
 

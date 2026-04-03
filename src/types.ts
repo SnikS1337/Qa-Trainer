@@ -59,7 +59,6 @@ export interface AppState {
   maxStreak: number;
   perfectLessons: number;
   retries: number;
-  bestStreak: number;
   unlockedAchievements: string[];
   lastQuoteIndex: number;
   dailyQuoteDate: string;
@@ -72,6 +71,10 @@ export interface AppState {
   completedPractice: string[];
   certName: string;
   lastActiveDate: string;
+  lastLessonRewardDate: string;
+  weeklyCheckpointWeek: string;
+  weeklyCheckpointCategories: string[];
+  weeklyCheckpointCompletions: number;
   isCheater?: boolean;
   examPassed?: boolean;
 }

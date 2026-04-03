@@ -85,30 +85,6 @@ function isSlowConnection() {
   );
 }
 
-const AMBIENT_LAYERS = [
-  {
-    key: 'ambient-a',
-    className: 'top-[-18%] left-[-14%] h-[58vh] w-[58vh]',
-    color: 'rgba(96, 165, 250, 0.22)',
-    animate: { x: [0, 42, -28, 0], y: [0, -34, 18, 0], scale: [1, 1.09, 0.98, 1] },
-    duration: 18,
-  },
-  {
-    key: 'ambient-b',
-    className: 'top-[8%] right-[-12%] h-[52vh] w-[52vh]',
-    color: 'rgba(52, 211, 153, 0.18)',
-    animate: { x: [0, -36, 26, 0], y: [0, 24, -20, 0], scale: [1.02, 0.96, 1.08, 1.02] },
-    duration: 22,
-  },
-  {
-    key: 'ambient-c',
-    className: 'bottom-[-22%] left-[18%] h-[48vh] w-[48vh]',
-    color: 'rgba(251, 191, 36, 0.16)',
-    animate: { x: [0, 28, -38, 0], y: [0, -20, 26, 0], scale: [0.98, 1.07, 1, 0.98] },
-    duration: 20,
-  },
-];
-
 export default function App() {
   const store = useAppStoreInit();
   const [screen, setScreen] = useState<ScreenName>('splash');
@@ -351,13 +327,7 @@ export default function App() {
     }
   }, [screen, currentId]);
 
-  const ambientLayers = useMemo(
-    () => (isMobileDevice ? AMBIENT_LAYERS.slice(0, 2) : AMBIENT_LAYERS),
-    [isMobileDevice]
-  );
-
   const pageMotion = isMobileDevice ? MOBILE_PAGE_MOTION : PAGE_MOTION;
-  const ambientOpacity = isMobileDevice ? 0.72 : 0.9;
   const MotionDiv = motionReact?.motion.div;
   const AnimatePresence = motionReact?.AnimatePresence;
 
@@ -389,34 +359,6 @@ export default function App() {
             }}
           />
         )}
-        <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden">
-          {ambientLayers.map((layer) =>
-            MotionDiv ? (
-              <MotionDiv
-                key={layer.key}
-                className={`absolute rounded-full ${isMobileDevice ? 'blur-xl' : 'blur-2xl'} ${layer.className}`}
-                animate={layer.animate}
-                transition={{ duration: layer.duration, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  background: `radial-gradient(circle, ${layer.color} 0%, rgba(255, 255, 255, 0.05) 34%, rgba(255, 255, 255, 0) 72%)`,
-                  mixBlendMode: 'screen',
-                  opacity: ambientOpacity,
-                  willChange: 'transform',
-                }}
-              />
-            ) : (
-              <div
-                key={layer.key}
-                className={`absolute rounded-full ${isMobileDevice ? 'blur-xl' : 'blur-2xl'} ${layer.className}`}
-                style={{
-                  background: `radial-gradient(circle, ${layer.color} 0%, rgba(255, 255, 255, 0.05) 34%, rgba(255, 255, 255, 0) 72%)`,
-                  mixBlendMode: 'screen',
-                  opacity: ambientOpacity,
-                }}
-              />
-            )
-          )}
-        </div>
         {AnimatePresence && MotionDiv ? (
           <AnimatePresence>
             {transitionGradient && (

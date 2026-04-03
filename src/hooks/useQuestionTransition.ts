@@ -24,10 +24,13 @@ export function useQuestionTransition(durationMs: number = 280) {
       transitionLockRef.current = true;
       setIsTransitioning(true);
       timerRef.current = setTimeout(() => {
-        callback();
-        transitionLockRef.current = false;
-        setIsTransitioning(false);
-        timerRef.current = null;
+        try {
+          callback();
+        } finally {
+          transitionLockRef.current = false;
+          setIsTransitioning(false);
+          timerRef.current = null;
+        }
       }, durationMs);
     },
     [durationMs, isTransitioning]
