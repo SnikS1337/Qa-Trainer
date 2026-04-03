@@ -2,19 +2,6 @@ import { useMemo } from 'react';
 import { LESSON_META } from '../data/lesson_meta';
 import type { LessonMeta } from '../types';
 
-export type HomeLessonItem = {
-  lesson: LessonMeta;
-  done: boolean;
-  locked: boolean;
-};
-
-export type HomeLessonCategory = {
-  category: string;
-  unlocked: boolean;
-  doneCount: number;
-  lessons: HomeLessonItem[];
-};
-
 export function createHomeLessonsModel(lessons: LessonMeta[], completedLessonIds: string[]) {
   const completedSet = new Set(completedLessonIds);
   const categories = Array.from(new Set(lessons.map((lesson) => lesson.category)));

@@ -66,21 +66,6 @@ export function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export function shuffleChoiceQuestion(question: QuestionChoice): QuestionChoice {
-  const shuffledOptions = shuffle(
-    question.opts.map((option, index) => ({
-      option,
-      isCorrect: index === question.ans,
-    }))
-  );
-
-  return {
-    ...question,
-    opts: shuffledOptions.map((item) => item.option),
-    ans: shuffledOptions.findIndex((item) => item.isCorrect),
-  };
-}
-
 function pickBalancedCorrectIndex(
   question: QuestionChoice,
   usageByIndex: Map<number, number>,
