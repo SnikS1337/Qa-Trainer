@@ -10,6 +10,7 @@ import HomeLessonCard from '../components/home/HomeLessonCard';
 import HomeModes from '../components/home/HomeModes';
 import HomeQuoteDock from '../components/home/HomeQuoteDock';
 import { getLocalDateKey } from '../domain/dates';
+import { getLessonSessionQuestionCount } from '../domain/lesson_session';
 import { useHomeLessonsModel } from '../hooks/useHomeLessonsModel';
 
 const QUOTE_VISIBILITY_STORAGE_KEY = 'qa_trainer_quote_hidden_date';
@@ -396,7 +397,11 @@ export default function Home() {
                 const { lesson, done, locked } = item;
                 const isOpening = openingLessonId === lesson.id;
                 const isHovered = hoveredLessonId === lesson.id;
-                const questionCountLabel = `До ${lesson.questionCount} ${plural(lesson.questionCount, 'вопрос', 'вопроса', 'вопросов')}`;
+                const sessionQuestionCount = getLessonSessionQuestionCount(lesson.questionCount);
+                const questionCountLabel =
+                  lesson.questionCount > sessionQuestionCount
+                    ? `${sessionQuestionCount} за попытку · ${lesson.questionCount} всего`
+                    : `${lesson.questionCount} ${plural(lesson.questionCount, 'вопрос', 'вопроса', 'вопросов')}`;
 
                 return (
                   <HomeLessonCard

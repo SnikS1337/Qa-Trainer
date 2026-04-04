@@ -79,7 +79,7 @@ export default function HomeLessonCard({
             <div className="min-w-0 flex-1">
               <div className="mb-0.5 text-sm font-bold text-white">{lesson.title}</div>
               <div className="mb-2 truncate text-xs text-slate-300">{lesson.desc}</div>
-              <div className="flex items-center gap-2">
+              <div className="lesson-meta-glass flex items-center gap-2">
                 <span className="font-mono text-[11px] text-slate-300">{questionCountLabel}</span>
                 <span className="text-slate-500">·</span>
                 <span className="bg-brand-amber/20 text-brand-amber border-brand-amber/30 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold">
