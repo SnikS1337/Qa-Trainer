@@ -373,6 +373,8 @@ export default function App() {
               backgroundPosition: '50% 50%',
               backgroundRepeat: 'no-repeat',
               backgroundSize: '120% 120%',
+              filter: isMobileDevice ? 'blur(10px) saturate(106%)' : 'blur(14px) saturate(108%)',
+              transform: isMobileDevice ? 'scale(1.03)' : 'scale(1.05)',
             }}
           />
         ) : (
@@ -384,6 +386,8 @@ export default function App() {
               backgroundPosition: '50% 50%',
               backgroundRepeat: 'no-repeat',
               backgroundSize: '120% 120%',
+              filter: isMobileDevice ? 'blur(10px) saturate(106%)' : 'blur(14px) saturate(108%)',
+              transform: isMobileDevice ? 'scale(1.03)' : 'scale(1.05)',
             }}
           />
         )}
@@ -416,6 +420,9 @@ export default function App() {
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: '120% 120%',
                   transformOrigin: 'center center',
+                  filter: isMobileDevice
+                    ? 'blur(10px) saturate(106%)'
+                    : 'blur(14px) saturate(108%)',
                   willChange: 'opacity, transform, filter',
                 }}
               />
@@ -431,6 +438,8 @@ export default function App() {
                 backgroundPosition: '50% 50%',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: '120% 120%',
+                filter: isMobileDevice ? 'blur(10px) saturate(106%)' : 'blur(14px) saturate(108%)',
+                transform: isMobileDevice ? 'scale(1.03)' : 'scale(1.05)',
               }}
             />
           )
